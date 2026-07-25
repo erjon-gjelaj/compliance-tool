@@ -6,15 +6,20 @@ import { SITE_NAME } from "@/lib/constants";
  * minor ones between, the way a steel tape graduates.
  *
  * Kept name-agnostic on purpose — the working name may change.
+ *
+ * `tone="invert"` is for the dark header and footer bands, where verdigris
+ * at full strength sits at about 2.5:1 against millscale.
  */
-export function Wordmark() {
+export function Wordmark({ tone = "default" }: { tone?: "default" | "invert" }) {
   return (
     <span className="inline-flex items-center gap-2.5">
       <svg
         aria-hidden="true"
         focusable="false"
         viewBox="0 0 24 24"
-        className="h-6 w-6 text-verdigris"
+        className={`h-6 w-6 ${
+          tone === "invert" ? "text-verdigris-pale" : "text-verdigris"
+        }`}
         fill="none"
         stroke="currentColor"
         strokeWidth="2"

@@ -14,12 +14,12 @@ const YEAR = new Date().getFullYear();
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-zinc-dust">
+    <footer className="surface-dark">
       <div className="mx-auto max-w-5xl px-6 py-12">
         <div className="grid gap-10 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] sm:gap-14">
           <div>
-            <Wordmark />
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-slate-wash">
+            <Wordmark tone="invert" />
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-zinc-dust">
               {SITE_NAME} is an independent service and is not affiliated with,
               endorsed by, or acting on behalf of ISNetworld, Avetta, or any
               hiring client. A gap check is guidance to help you prepare your
@@ -35,7 +35,7 @@ export function SiteFooter() {
                   <li key={href}>
                     <Link
                       href={href}
-                      className="text-slate-wash underline decoration-zinc-dust underline-offset-4 transition-colors hover:text-verdigris hover:decoration-verdigris"
+                      className="text-zinc-dust underline decoration-slate-wash underline-offset-4 transition-colors hover:text-verdigris-pale hover:decoration-verdigris-pale"
                     >
                       {label}
                     </Link>
@@ -44,7 +44,7 @@ export function SiteFooter() {
                 <li>
                   <Link
                     href={GAP_CHECK_HREF}
-                    className="text-slate-wash underline decoration-zinc-dust underline-offset-4 transition-colors hover:text-verdigris hover:decoration-verdigris"
+                    className="text-zinc-dust underline decoration-slate-wash underline-offset-4 transition-colors hover:text-verdigris-pale hover:decoration-verdigris-pale"
                   >
                     Free gap check
                   </Link>
@@ -54,24 +54,23 @@ export function SiteFooter() {
 
             <div>
               <h2 className="tag">Contact</h2>
-              <ul className="mt-4 space-y-2.5 text-sm text-slate-wash">
+              <ul className="mt-4 space-y-2.5 text-sm text-zinc-dust">
                 <li>
                   <a
                     href={`mailto:${CONTACT_EMAIL}`}
-                    className="text-verdigris underline decoration-zinc-dust underline-offset-4 transition-colors hover:decoration-verdigris"
+                    className="text-verdigris-pale underline decoration-slate-wash underline-offset-4 transition-colors hover:decoration-verdigris-pale"
                   >
                     {CONTACT_EMAIL}
                   </a>
                 </li>
-                <li>Email only — we don&apos;t run a phone line yet.</li>
               </ul>
             </div>
           </div>
         </div>
 
-        <TickRule id="tick-footer" className="mt-12" />
+        <TickRule id="tick-footer" className="mt-12 text-slate-wash" />
 
-        <p className="mt-5 text-xs text-slate-wash">
+        <p className="mt-5 text-xs text-zinc-dust">
           &copy; {YEAR} {SITE_NAME}. All rights reserved.
         </p>
       </div>

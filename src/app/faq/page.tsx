@@ -163,11 +163,20 @@ export default function FaqPage() {
            * whether open or closed, which matters here — this page is meant
            * to be indexable, and collapsing behind JS would have hidden the
            * substance from crawlers.
+           *
+           * A shared `name` makes them an exclusive accordion: opening one
+           * closes the rest. That is a native attribute, so it still costs
+           * no JavaScript. Where a browser predates it the group simply
+           * behaves as it did before, with several open at once.
+           *
+           * `select-none` on the summary because dragging across a question
+           * to click it otherwise highlights the text; the answers below
+           * stay selectable, which is the part worth copying.
            */}
           <div className="grid gap-px border border-zinc-dust bg-zinc-dust">
             {FAQS.map(({ question, answer }) => (
-              <details key={question} className="bg-paper">
-                <summary className="flex cursor-pointer list-none items-start justify-between gap-6 p-6 transition-colors hover:text-verdigris md:p-8 [&::-webkit-details-marker]:hidden">
+              <details key={question} name="faq" className="bg-paper">
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-6 p-6 transition-colors select-none hover:text-verdigris md:p-8 [&::-webkit-details-marker]:hidden">
                   <h3 className="type-h3 max-w-2xl">{question}</h3>
                   {/* Two icons swapped by display rather than one rotated:
                       a transform on a descendant of <summary> doesn't

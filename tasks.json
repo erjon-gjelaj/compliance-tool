@@ -1,0 +1,40 @@
+{
+  "tasks": [
+    {
+      "id": "001",
+      "title": "Scaffold Next.js project",
+      "status": "pending",
+      "notes": "Create Next.js App Router project with TypeScript. Set up ESLint, .gitignore, basic folder structure. Confirm npm run build works before marking done.",
+      "needs_human_review": false
+    },
+    {
+      "id": "002",
+      "title": "Build the landing page from scratch",
+      "status": "pending",
+      "notes": "Read business-model.md for the product, audience, and positioning. Design and build an original landing page (app/page.tsx) from that context — do not reference or reuse any prior mockup, there isn't one to follow. Follow the Visual identity and Icons sections in CLAUDE.md. Add proper Metadata API title/description.",
+      "needs_human_review": false
+    },
+    {
+      "id": "003",
+      "title": "Set up Supabase lead capture",
+      "status": "pending",
+      "notes": "Create a `leads` table (trade, hiring_client, employee_count, email, created_at). Wire the intake form to write to it via a server action or API route. Add real validation and success/error states.",
+      "needs_human_review": true
+    },
+    {
+      "id": "004",
+      "title": "SEO essentials",
+      "status": "pending",
+      "notes": "Add sitemap.xml, robots.txt, JSON-LD Organization schema, alt text audit, check Core Web Vitals via `next build` output. Follow the SEO requirements section in CLAUDE.md.",
+      "needs_human_review": false
+    },
+    {
+      "id": "005",
+      "title": "Deploy to Vercel",
+      "status": "pending",
+      "notes": "Connect repo to Vercel, set environment variables for Supabase, verify production build. Do not connect a custom domain yet — flag that as needs_human_review.",
+      "needs_human_review": true
+    }
+  ],
+  "current_task_id": "001"
+}

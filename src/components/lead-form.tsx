@@ -1,10 +1,13 @@
 ﻿"use client";
 
+import { useState } from "react";
 import { useActionState } from "react";
 import { ArrowRight, CircleAlert, Mail } from "lucide-react";
 import { submitLead } from "@/app/actions";
+import { SelectField } from "@/components/select-field";
 import {
   CREW_SIZES,
+  OTHER_TRADE,
   TRADES,
   initialLeadFormState,
   type LeadFields,
@@ -61,6 +64,23 @@ function fieldKey(state: LeadFormState, field: LeadFields) {
   return `${field}-${state.values?.[field] ?? ""}`;
 }
 
+/**
+ * Local state that follows the value the server echoes back. Returns the
+ * usual [value, setValue] pair; the only difference from useState is that a
+ * change in `echoed` between renders wins over what is held locally.
+ */
+function useEchoedState(echoed: string) {
+  const [value, setValue] = useState(echoed);
+  const [lastEchoed, setLastEchoed] = useState(echoed);
+
+  if (echoed !== lastEchoed) {
+    setLastEchoed(echoed);
+    setValue(echoed);
+  }
+
+  return [value, setValue] as const;
+}
+
 function SuccessPanel() {
   return (
     <div
@@ -101,6 +121,23 @@ export function LeadForm() {
     initialLeadFormState,
   );
 
+  /*
+   * The two dropdowns are controlled, because SelectField is a listbox rather
+   * than a <select> and the value has to live somewhere. The text inputs stay
+   * uncontrolled on defaultValue as before.
+   *
+   * Both adopt whatever the server echoes back after a failed submission, by
+   * comparing the echoed value to the last one seen during render — React's
+   * documented way to adjust state when props change. Without it a failed
+   * submission would silently clear both dropdowns, and the written-in trade
+   * field would vanish along with whatever had been typed into it. An effect
+   * would work too, but would render the wrong thing for a frame first.
+   */
+  const [trade, setTrade] = useEchoedState(state.values?.trade ?? "");
+  const [crewSize, setCrewSize] = useEchoedState(
+    state.values?.employee_count ?? "",
+  );
+
   if (state.status === "success") {
     return <SuccessPanel />;
   }
@@ -114,21 +151,17 @@ export function LeadForm() {
           <label className={labelClass} htmlFor="trade">
             Your trade
           </label>
-          <select
-            key={fieldKey(state, "trade")}
+          <SelectField
             id="trade"
             name="trade"
-            required
+            options={TRADES}
+            placeholder="Select a trade"
+            value={trade}
+            onChange={setTrade}
             disabled={isPending}
-            {...fieldProps(state, "trade")}
-          >
-            <option value="">Select a trade</option>
-            {TRADES.map((trade) => (
-              <option key={trade} value={trade}>
-                {trade}
-              </option>
-            ))}
-          </select>
+            hasError={Boolean(state.errors?.trade)}
+            describedBy={state.errors?.trade ? "trade-error" : undefined}
+          />
           <FieldError id="trade-error" message={state.errors?.trade} />
         </div>
 
@@ -136,26 +169,55 @@ export function LeadForm() {
           <label className={labelClass} htmlFor="employee_count">
             People on the crew
           </label>
-          <select
-            key={fieldKey(state, "employee_count")}
+          <SelectField
             id="employee_count"
             name="employee_count"
-            required
+            options={CREW_SIZES}
+            placeholder="Select a range"
+            value={crewSize}
+            onChange={setCrewSize}
             disabled={isPending}
-            {...fieldProps(state, "employee_count")}
-          >
-            <option value="">Select a range</option>
-            {CREW_SIZES.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
+            hasError={Boolean(state.errors?.employee_count)}
+            describedBy={
+              state.errors?.employee_count ? "employee_count-error" : undefined
+            }
+          />
           <FieldError
             id="employee_count-error"
             message={state.errors?.employee_count}
           />
         </div>
+
+        {/*
+          * Only rendered for "Other", rather than hidden with CSS: a disabled
+          * or display:none field still posts its value in some browsers, and
+          * a stale "Rigging" arriving alongside a trade of "Electrical" is
+          * exactly the kind of thing that quietly corrupts a lead. Not
+          * rendering it means there is nothing to post.
+          */}
+        {trade === OTHER_TRADE && (
+          <div className="sm:col-span-2">
+            <label className={labelClass} htmlFor="trade_other">
+              Which trade is it?
+            </label>
+            <input
+              key={fieldKey(state, "trade_other")}
+              id="trade_other"
+              name="trade_other"
+              type="text"
+              required
+              maxLength={80}
+              autoFocus
+              placeholder="Rigging, millwrighting, hydroblasting…"
+              disabled={isPending}
+              {...fieldProps(state, "trade_other")}
+            />
+            <FieldError
+              id="trade_other-error"
+              message={state.errors?.trade_other}
+            />
+          </div>
+        )}
 
         <div className="sm:col-span-2">
           <label className={labelClass} htmlFor="hiring_client">

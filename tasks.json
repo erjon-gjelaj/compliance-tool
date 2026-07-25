@@ -160,17 +160,63 @@
       "status": "done",
       "notes": "Done on branch task/022-trade-other, on top of task 022. Task 022 styled the native <select> with appearance-none and a custom chevron, which fixes the field while shut and does nothing to the list that opens — that list is drawn by the OS, so it kept the system font and highlight colour. Replaced with @headlessui/react's Listbox (Tailwind's own unstyled component) wrapped in one shared SelectField used by both dropdowns; the hand-rolled listbox written first was discarded at the human's instruction. The open list is now paper with a verdigris border, the site typeface, a verdigris tick on the chosen option and a galvanise highlight on the active one; the keyboard contract comes from the library rather than from us. The name prop emits a hidden input, so the server action reads the same FormData keys and nothing behind the form changed — validation, the Other-plus-detail combining, and the email builders are untouched. Two consequences: both dropdowns are now controlled, with a shared useEchoedState hook adopting server-echoed values so a rejected submission no longer clears them; and the browser's native 'please fill this in' bubble no longer fires on an empty dropdown, since it does not apply to a hidden input — server-side validation already covers it. The chevron flip was moved off a group-data-[open] variant, which did not apply in the browser, onto Listbox's own render prop. Build and lint pass clean. Browser testing was handed to the human partway through; they checked it and merged, which is what cleared this.",
       "needs_human_review": false
+    },
+    {
+      "id": "024",
+      "title": "Move documented scope from A to B",
+      "status": "in_progress",
+      "notes": "Docs-only change on branch task/024-scope-b-docs, ahead of any Scope B feature code, so the repo does not forbid in CLAUDE.md what the code is about to do. CLAUDE.md drops 'SCOPE A ONLY' and gains a Scope B section, a Regulatory output rules section covering the generated-output guardrails and the eCFR retrieval rule, and stack/secrets notes for the Anthropic API and Supabase Storage. business-model.md records Scope A as shipped, describes the Scope B flow and why uploads earn their place, and adds the indicative-band quoting rule. Source is docs/scope-b-plan.md Part 1; Parts 2 and 3 are business context and were not treated as build instructions.",
+      "needs_human_review": false
+    },
+    {
+      "id": "025",
+      "title": "Expanded multi-step intake form",
+      "status": "todo",
+      "notes": "Scope B deliverable 1. Four steps, every step after the first skippable, email captured early, partial submissions persisted."
+    },
+    {
+      "id": "026",
+      "title": "Document upload handling",
+      "status": "todo",
+      "notes": "Scope B deliverable 2. Private Supabase Storage bucket, signed URLs only, server-side MIME and size validation, recorded consent, deleteSubmission hard-delete path, privacy page."
+    },
+    {
+      "id": "027",
+      "title": "Analysis pipeline",
+      "status": "todo",
+      "notes": "Scope B deliverable 3. Server-side text extraction from PDF and DOCX, Anthropic API call, schema-validated structured JSON, fallback to the generic explainer email on validation failure."
+    },
+    {
+      "id": "028",
+      "title": "Automated response email",
+      "status": "todo",
+      "notes": "Scope B deliverable 4. Renders the analysis JSON to HTML, preliminary-review header, items grouped by confidence with low-confidence rendered as questions, unreadable files listed, one CTA, non-binding price band."
+    },
+    {
+      "id": "029",
+      "title": "Model prompt guardrails",
+      "status": "todo",
+      "notes": "Scope B deliverable 5. No invented regulations or client requirements, no compliance verdicts, omission over speculation, every item cites its basis."
+    },
+    {
+      "id": "030",
+      "title": "Reference data seam",
+      "status": "todo",
+      "notes": "Scope B deliverable 6. lib/requirements/ as typed versioned data by trade x platform, near-empty with TODO-VERIFY markers, hand-editable by a non-developer, preferred by the prompt over model knowledge."
+    },
+    {
+      "id": "031",
+      "title": "Internal ops",
+      "status": "todo",
+      "notes": "Scope B deliverable 7. Submission notification, internal-only submissions page behind a shared env secret, model input/output logged to the DB."
+    },
+    {
+      "id": "032",
+      "title": "OSHA citation verification via eCFR",
+      "status": "todo",
+      "notes": "Scope B deliverable 8. Retrieval not recall: every proposed citation fetched from the eCFR API, confirmed to exist and to support the claim, stripped and downgraded to unknown otherwise, sections cached. Output separates OSHA requirements from ISN/Avetta contractual ones."
     }
   ],
-  "current_task_id": null,
-  "blocked_on": {
-    "task_id": "005",
-    "date": "2026-07-24",
-    "action_needed": "Import the repo into Vercel, set NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY and NEXT_PUBLIC_SITE_URL, then submit the live form once and confirm the row lands in Supabase. Full runbook in DEPLOY.md. Do not attach a custom domain yet.",
-    "why_a_human": "Connecting the repo means signing in to a Vercel account and authorising its GitHub access. There is no Vercel CLI, API token, or existing session in this environment, and entering account credentials is not something I should do on your behalf.",
-    "branches": [
-      "task/005-vercel-deploy"
-    ],
-    "branch_note": "Tasks 001, 002, 004 and 003 are all merged into main and pushed, in that order. task/005-vercel-deploy adds DEPLOY.md and this status update on top of main."
-  }
+  "current_task_id": "024",
+  "blocked_on": null
 }

@@ -72,10 +72,9 @@ export const SITE_URL = toOrigin(
 );
 
 /**
- * Where free gap-check requests are followed up from.
+ * Where free gap-check requests are followed up from. Registered and live.
  *
- * On certloop.net, which is registered — but the mailbox still has to exist
- * before this address goes anywhere. The Contact page is built around it
- * working.
+ * Read by the footer, the Contact page, the FAQ, the form's success panel,
+ * and the Organization structured data — so it only ever changes here.
  */
-export const CONTACT_EMAIL = "hello@certloop.net";
+export const CONTACT_EMAIL = "info@certloop.net";

@@ -90,12 +90,10 @@ taken effect:
 
 ## Still open, unrelated to deploying
 
-- **`hello@certloop.net` has to become a real mailbox.** The domain is now
-  registered, so this is possible where it wasn't before. It matters more
-  than it looks: the Contact page and the FAQ are both built around that
-  address reaching a person, and the form's success panel tells people to
-  reply to it if their deadline is tight. Set up the mailbox or forwarding
-  before driving any traffic here.
+- ~~A real mailbox~~ — done. `info@certloop.net` is registered and live, and
+  is what the site now shows. Worth one manual check after deploying: send a
+  message to it from outside and confirm it arrives, since the Contact page,
+  the FAQ, the footer, and the form's success panel all point people there.
 - `npm audit` reports advisories in Next.js transitive dependencies
   (postcss, sharp). Noted in task 001; no fix available that doesn't
   downgrade Next.js.

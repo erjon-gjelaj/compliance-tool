@@ -17,8 +17,8 @@
     {
       "id": "003",
       "title": "Set up Supabase lead capture",
-      "status": "paused_for_review",
-      "notes": "NOT STARTED — paused here on purpose, as instructed. Tasks 001, 002, and 004 are done and pushed as branches; no PRs opened, awaiting your review. Nothing in this task has been touched: no Supabase project, no table, no credentials, no server action. The form in src/components/lead-form.tsx renders and validates in the browser but has nowhere to submit — pressing the button shows a notice saying lead capture isn't connected yet. Original scope: create a `leads` table (trade, hiring_client, employee_count, email, created_at), wire the form to it via a server action or API route, add real validation and success/error states. Needs a human first because it requires creating a Supabase project and putting live credentials in .env.local (never committed).",
+      "status": "blocked",
+      "notes": "Code is complete on branch task/003-supabase-lead-capture, but ONE MANUAL STEP IS OUTSTANDING: the `leads` table does not exist yet. Run supabase/migrations/0001_leads.sql in the Supabase SQL editor (Dashboard > SQL Editor > New query, paste, run). Until then every submission fails to the generic error message. I could not run it myself: the publishable key only reaches PostgREST, which cannot execute DDL, and there is no service-role key, database password, or CLI token available. Everything else is done and verified against the live project: server action with server-side validation, allow-list checks on both dropdowns, field-level and form-level errors, values echoed back on failure, pending state, and a real success panel replacing the old 'not wired up yet' placeholder. Verified in the browser: validation rejects whitespace-only and malformed input, the database failure path shows a generic message while the real error goes to the server log only, and the success panel renders. The one thing NOT verified end to end is a real row landing in the table — that needs the SQL run first.",
       "needs_human_review": true
     },
     {
@@ -37,15 +37,17 @@
     }
   ],
   "current_task_id": "003",
-  "paused": {
-    "at_task_id": "003",
+  "blocked_on": {
+    "task_id": "003",
     "date": "2026-07-24",
-    "reason": "Stopped here as instructed. Tasks 001, 002 and 004 are complete, committed on their own branches and pushed to GitHub. No PRs opened — you asked to review first. Task 003 has not been started and needs you to create the Supabase project and supply credentials before it can be.",
+    "action_needed": "Run supabase/migrations/0001_leads.sql in the Supabase SQL editor. It creates the leads table, enables and forces row level security, and adds a single INSERT-only policy for anon and authenticated. After running it, submit the form once to confirm a row lands.",
+    "why_a_human": "Creating a table is DDL. The publishable key in .env.local only reaches PostgREST, which cannot run DDL, and no service-role key, database password, or Supabase CLI token is available in this environment.",
     "branches": [
       "task/001-scaffold",
       "task/002-landing-page",
-      "task/004-seo"
+      "task/004-seo",
+      "task/003-supabase-lead-capture"
     ],
-    "branch_note": "Each branch is stacked on the previous one, because main had no commits when this started. Review or merge them in order: 001, then 002, then 004."
+    "branch_note": "Branches are stacked, because main had no commits when this started. Merge order: 001, then 002, then 004, then 003. task/003 already merged task/002 into itself, so it carries the wordmark fix that task/004 is missing. No PRs opened — awaiting review."
   }
 }

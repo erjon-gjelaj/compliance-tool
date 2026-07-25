@@ -19,6 +19,8 @@
   --color-millscale: #151d1a;
   --color-verdigris: #2b6b5d;
   --color-verdigris-deep: #1e4d43;
+  /* Used only to flag a problem — oxide red, the one warm note on the page. */
+  --color-rust-flag: #8c3a2e;
 
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;

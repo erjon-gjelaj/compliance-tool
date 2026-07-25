@@ -16,16 +16,23 @@ rules and `business-model.md` for audience and positioning.
 
 - Next.js (App Router) + TypeScript
 - Tailwind CSS v4
-- Supabase for lead storage (task 003, not wired yet)
+- Supabase for lead storage
 - Deploy target: Vercel
 
 ## Getting started
 
 ```bash
 npm install
-cp .env.local.example .env.local
+cp .env.local.example .env.local   # then fill in the Supabase values
 npm run dev
 ```
+
+## Database
+
+The `leads` table and its row level security policy live in
+`supabase/migrations/0001_leads.sql`. Run it once in the Supabase SQL
+editor. Public callers may INSERT and nothing else — read leads from the
+Supabase dashboard, which bypasses RLS.
 
 ## Checks
 

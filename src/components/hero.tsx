@@ -81,7 +81,7 @@ export function Hero() {
                 Get your free gap check
               </a>
               <span className="text-xs text-slate-wash">
-                Four questions. No account, no card.
+                One short screen to start. No account, no card.
               </span>
             </div>
           </div>

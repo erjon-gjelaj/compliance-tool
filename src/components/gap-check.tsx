@@ -1,4 +1,4 @@
-import { LeadForm } from "@/components/lead-form";
+import { IntakeForm } from "@/components/intake-form";
 import { TickRule } from "@/components/tick-rule";
 
 export function GapCheck() {
@@ -21,12 +21,13 @@ export function GapCheck() {
             <p className="type-body mt-5">
               Most of the owners and office managers we hear from are doing
               this between running jobs, with a deadline already on the
-              calendar. Four questions is all we need to start.
+              calendar. The first screen is all we need to start — everything
+              after it is optional, and your answers are saved as you go.
             </p>
             <TickRule id="tick-gap-check" className="mt-8 hidden md:block" />
           </div>
 
-          <LeadForm />
+          <IntakeForm />
         </div>
       </div>
     </section>

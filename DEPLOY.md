@@ -9,6 +9,24 @@ Two things the live check turned up are recorded at the bottom under
 *Post-deploy findings* — neither blocks anything, both are config rather
 than code.
 
+> **Scope B needs two manual steps before the next deploy.** Both are things
+> only a human with dashboard access can do, and the intake form is dead
+> without them — it replaces the old single-screen lead form, so there is no
+> fallback path.
+>
+> 1. Run `supabase/migrations/0002_submissions.sql` in the Supabase SQL
+>    editor. It creates the `submissions` table.
+> 2. Add `SUPABASE_SERVICE_ROLE_KEY` to the environment, locally in
+>    `.env.local` and in Vercel's project settings (all environments). It is
+>    under Dashboard > Project Settings > API, labelled `service_role`. It
+>    bypasses row level security, so it must never take a `NEXT_PUBLIC_`
+>    prefix and must never be committed.
+>
+> Until both are done, submitting the form shows the generic "something went
+> wrong" panel — the failure is caught and logged rather than crashing, but
+> nothing is saved. The old `leads` table is untouched and keeps its history;
+> nothing writes to it any more.
+
 ## Before you start
 
 Nothing to change in the code. `main` builds clean, is fully static, and the

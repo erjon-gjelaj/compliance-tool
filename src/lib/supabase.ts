@@ -1,25 +1,31 @@
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * Supabase client for server-side use.
+ * Supabase client holding the service role key. Server-side only.
  *
- * This uses the publishable (anon) key on purpose. The `leads` table is
- * insert-only for that role — see supabase/migrations/0001_leads.sql — so
- * the key cannot be used to read anything back out. There is no service
- * role key in this project and nothing here needs one.
+ * This key bypasses row level security completely, so it must never reach
+ * the browser. Two things keep it out: the variable has no NEXT_PUBLIC_
+ * prefix, so Next will not inline it into client code, and this function is
+ * only ever called from server actions.
+ *
+ * It exists because the `submissions` table is written a step at a time —
+ * the server updates a row it created earlier and reads it back to build an
+ * analysis. Granting anonymous callers UPDATE on that table would let anyone
+ * rewrite anyone else's intake by guessing an id, so the table is closed to
+ * anon entirely and this is the only way in.
  */
-export function getSupabaseClient() {
+export function getSupabaseAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !anonKey) {
+  if (!url || !serviceKey) {
     throw new Error(
-      "Supabase is not configured: set NEXT_PUBLIC_SUPABASE_URL and " +
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local",
+      "Supabase admin access is not configured: set NEXT_PUBLIC_SUPABASE_URL " +
+        "and SUPABASE_SERVICE_ROLE_KEY in .env.local (server-side only)",
     );
   }
 
-  return createClient(url, anonKey, {
-    auth: { persistSession: false },
+  return createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 }

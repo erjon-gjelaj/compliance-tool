@@ -1,84 +1,249 @@
 "use server";
 
 import {
-  validateLead,
-  type LeadFields,
-  type LeadFormState,
-} from "@/lib/leads";
-import {
   HONEYPOT_FIELD,
   validateMessage,
   type MessageFields,
   type MessageFormState,
   type MessageInput,
 } from "@/lib/messages";
-import { sendContactMessage, sendLeadEmails } from "@/lib/notify";
-import { getSupabaseClient } from "@/lib/supabase";
+import { sendContactMessage, sendIntakeEmails } from "@/lib/notify";
 import { CONTACT_EMAIL } from "@/lib/constants";
+import {
+  TOTAL_STEPS,
+  initialIntakeState,
+  validateStepOne,
+  validateStepThree,
+  validateStepTwo,
+  type IntakeFormState,
+  type IntakeValues,
+  type StepNumber,
+} from "@/lib/intake";
+import {
+  createSubmission,
+  getSubmission,
+  recordProgress,
+  rowToValues,
+  saveStepThree,
+  saveStepTwo,
+  updateSubmission,
+} from "@/lib/submissions";
+import {
+  INTAKE_START_LIMIT,
+  INTAKE_STEP_LIMIT,
+  callerKey,
+  rateLimit,
+} from "@/lib/rate-limit";
 
-const GENERIC_FAILURE =
-  "Something went wrong on our end and your request wasn't saved. " +
-  "Try again in a moment, or email us and we'll pick it up by hand.";
+/* -------------------------------------------------------------------------
+ * Scope B intake
+ * ---------------------------------------------------------------------- */
 
-function submittedValues(formData: FormData): LeadFormState["values"] {
-  const fields: LeadFields[] = [
+const INTAKE_FAILURE =
+  "Something went wrong on our end and that step wasn't saved. Try again " +
+  `in a moment, or email ${CONTACT_EMAIL} and we'll pick it up by hand.`;
+
+const RATE_LIMITED =
+  "That's a lot of submissions from one place in a short time. Give it a " +
+  `few minutes, or email ${CONTACT_EMAIL} if you're stuck.`;
+
+/** Every field the form posts, echoed back so a rejected step keeps its answers. */
+function submittedIntakeValues(formData: FormData): IntakeValues {
+  const single = [
     "trade",
     "trade_other",
     "hiring_client",
-    "employee_count",
+    "platform",
+    "deadline",
+    "deadline_unknown",
+    "contact_name",
     "email",
-  ];
+    "headcount_band",
+    "emr",
+    "trir",
+    "previously_registered",
+    "documents_unsure",
+  ] as const;
 
-  return Object.fromEntries(
-    fields.map((field) => {
-      const raw = formData.get(field);
-      return [field, typeof raw === "string" ? raw : ""];
-    }),
-  );
+  const multiple = ["states", "documents_held"] as const;
+
+  const values: IntakeValues = {};
+
+  for (const field of single) {
+    const raw = formData.get(field);
+    if (typeof raw === "string") values[field] = raw;
+  }
+
+  for (const field of multiple) {
+    values[field] = formData
+      .getAll(field)
+      .filter((entry): entry is string => typeof entry === "string");
+  }
+
+  return values;
 }
 
-export async function submitLead(
-  _prevState: LeadFormState,
-  formData: FormData,
-): Promise<LeadFormState> {
-  const values = submittedValues(formData);
-  const result = validateLead(formData);
+function stepFrom(formData: FormData): StepNumber {
+  const raw = Number(formData.get("step"));
+  if (raw === 2 || raw === 3) return raw;
+  return 1;
+}
 
-  if (!result.ok) {
-    return {
-      status: "error",
-      message: "Check the highlighted fields and send it again.",
-      errors: result.errors,
-      values,
-    };
+function idFrom(formData: FormData): string {
+  const raw = formData.get("submission_id");
+  return typeof raw === "string" ? raw : "";
+}
+
+/**
+ * One action for the whole intake, dispatching on the step and the button
+ * that submitted it.
+ *
+ * Each step is written as it is completed rather than everything at the end.
+ * That is the reason this is several round trips instead of one: an intake
+ * abandoned at step 2 still leaves a row with a name and an email on it, and
+ * that is a lead worth calling. Holding it all in the browser until the last
+ * screen would throw those away, which is the common case on a phone at a
+ * job site.
+ */
+export async function submitIntakeStep(
+  prevState: IntakeFormState,
+  formData: FormData,
+): Promise<IntakeFormState> {
+  const step = stepFrom(formData);
+  const submissionId = idFrom(formData) || prevState.submissionId;
+  const values = submittedIntakeValues(formData);
+
+  const intentRaw = formData.get("intent");
+  const intent = typeof intentRaw === "string" ? intentRaw : "next";
+
+  // Honeypot, same field and same reasoning as the contact form: hidden from
+  // people, irresistible to form-filling bots. Answered with a plain success
+  // so there is nothing to tune against, and nothing is written.
+  const honeypot = formData.get(HONEYPOT_FIELD);
+  if (typeof honeypot === "string" && honeypot.trim() !== "") {
+    console.warn("Intake honeypot tripped; submission discarded.");
+    return { status: "success", step };
+  }
+
+  const limit = rateLimit(
+    await callerKey(),
+    step === 1 && !submissionId ? INTAKE_START_LIMIT : INTAKE_STEP_LIMIT,
+  );
+
+  if (!limit.ok) {
+    return { ...prevState, status: "error", message: RATE_LIMITED, values };
   }
 
   try {
-    const supabase = getSupabaseClient();
+    // Going back re-reads the stored row rather than trusting what the
+    // browser still has, so the earlier step shows what was actually saved.
+    if (intent === "back") {
+      const previous = (step > 1 ? step - 1 : 1) as StepNumber;
+      const stored = submissionId ? await getSubmission(submissionId) : null;
 
-    // No .select() here: the anon role has INSERT but not SELECT on this
-    // table, so asking for the row back would fail the whole request.
-    const { error } = await supabase.from("leads").insert(result.value);
-
-    if (error) {
-      // Logged server-side only. The visitor gets a generic message —
-      // database errors can leak schema details.
-      console.error("Failed to insert lead:", error.message);
-      return { status: "error", message: GENERIC_FAILURE, values };
+      return {
+        status: "editing",
+        step: previous,
+        submissionId,
+        values: stored ? rowToValues(stored) : values,
+      };
     }
 
-    // Only after the row is safely stored, and deliberately awaited so the
-    // sends aren't cut short when the serverless invocation ends. This
-    // cannot throw and cannot fail the submission: a saved lead whose email
-    // bounced is still a saved lead, and showing an error would only invite
-    // a retry that duplicates the row.
-    await sendLeadEmails(result.value);
-  } catch (cause) {
-    console.error("Lead submission failed:", cause);
-    return { status: "error", message: GENERIC_FAILURE, values };
-  }
+    if (step === 1) {
+      // Step 1 is never skippable — it is the step that produces a lead.
+      const result = validateStepOne(formData);
 
-  return { status: "success" };
+      if (!result.ok) {
+        return {
+          status: "error",
+          step: 1,
+          submissionId,
+          message: "Check the highlighted fields and try again.",
+          errors: result.errors,
+          values,
+        };
+      }
+
+      // Coming back to step 1 and changing something updates the row that
+      // already exists, rather than leaving a second one behind for the same
+      // person.
+      let id = submissionId;
+      if (id) {
+        await updateSubmission(id, result.value);
+      } else {
+        id = await createSubmission(result.value);
+      }
+
+      return { status: "editing", step: 2, submissionId: id, values };
+    }
+
+    if (!submissionId) {
+      // Nothing to attach a later step to. Sending them back to step 1 is
+      // honest; silently discarding the answers is not.
+      return {
+        ...initialIntakeState,
+        status: "error",
+        message:
+          "We lost track of your answers — start again from the first step.",
+      };
+    }
+
+    if (step === 2) {
+      if (intent === "skip") {
+        await recordProgress(submissionId, 2);
+        return { status: "editing", step: 3, submissionId };
+      }
+
+      const result = validateStepTwo(formData);
+
+      if (!result.ok) {
+        return {
+          status: "error",
+          step: 2,
+          submissionId,
+          message: "Check the highlighted fields and try again.",
+          errors: result.errors,
+          values,
+        };
+      }
+
+      await saveStepTwo(submissionId, result.value);
+      return { status: "editing", step: 3, submissionId, values };
+    }
+
+    // Step 3, the last one. Skipping it still completes the intake — they
+    // have already given us enough to be worth answering.
+    if (intent === "skip") {
+      await recordProgress(submissionId, TOTAL_STEPS);
+    } else {
+      const result = validateStepThree(formData);
+
+      if (!result.ok) {
+        return {
+          status: "error",
+          step: 3,
+          submissionId,
+          message: "Check the highlighted fields and try again.",
+          errors: result.errors,
+          values,
+        };
+      }
+
+      await saveStepThree(submissionId, result.value);
+    }
+
+    // Only after the row is safely stored. Awaited so the sends aren't cut
+    // short when the invocation ends, and it cannot throw or fail the
+    // submission — see sendIntakeEmails.
+    const stored = await getSubmission(submissionId);
+    if (stored) await sendIntakeEmails(stored);
+
+    return { status: "success", step: TOTAL_STEPS, submissionId };
+  } catch (cause) {
+    // Logged server-side only: database errors can leak schema details.
+    console.error("Intake step failed:", cause);
+    return { ...prevState, status: "error", step, message: INTAKE_FAILURE, values };
+  }
 }
 
 const MESSAGE_FAILURE =

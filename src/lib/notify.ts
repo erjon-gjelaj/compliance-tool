@@ -1,10 +1,11 @@
 import nodemailer from "nodemailer";
 import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
-import type { LeadInput } from "@/lib/leads";
 import type { MessageInput } from "@/lib/messages";
+import type { SubmissionRow } from "@/lib/submissions";
 
 /**
- * Sends the two emails a gap-check request produces, over SMTP.
+ * Transactional email over SMTP: the two messages a gap-check intake
+ * produces, and the contact-form message.
  *
  * One to us, so nobody has to sit refreshing the table editor to notice a
  * lead came in. One back to whoever filled the form in, confirming it
@@ -88,28 +89,57 @@ function buildTransport(config: SmtpConfig) {
   });
 }
 
-/** A plain-text summary of what was submitted, shared by both messages. */
-function submissionSummary(lead: LeadInput): string {
-  return [
-    `Trade:          ${lead.trade}`,
-    `Hiring client:  ${lead.hiring_client}`,
-    `Crew size:      ${lead.employee_count}`,
-    `Email:          ${lead.email}`,
-  ].join("\n");
+/* -------------------------------------------------------------------------
+ * Scope B intake
+ * ---------------------------------------------------------------------- */
+
+/** The answers, laid out the same way in both intake emails. */
+function intakeSummary(row: SubmissionRow): string {
+  const lines = [
+    `Trade:          ${row.trade}`,
+    `Hiring client:  ${row.hiring_client}`,
+    `Platform:       ${row.platform}`,
+    `Deadline:       ${row.deadline ?? "not known"}`,
+    `Name:           ${row.contact_name}`,
+    `Email:          ${row.email}`,
+  ];
+
+  // Steps 2 and 3 are skippable, so anything absent is left out rather than
+  // printed as an empty line. "Skipped" and "answered blank" would look the
+  // same otherwise.
+  if (row.headcount_band) lines.push(`Crew size:      ${row.headcount_band}`);
+  if (row.states?.length) lines.push(`States:         ${row.states.join(", ")}`);
+  if (row.emr) lines.push(`EMR:            ${row.emr}`);
+  if (row.trir) lines.push(`TRIR:           ${row.trir}`);
+  if (row.previously_registered) {
+    lines.push(`Registered before: ${row.previously_registered}`);
+  }
+
+  if (row.documents_unsure) {
+    lines.push("", "Documents held: not sure");
+  } else if (row.documents_held?.length) {
+    lines.push(
+      "",
+      "Documents they say they already have:",
+      ...row.documents_held.map((entry) => `  - ${entry}`),
+    );
+  }
+
+  return lines.join("\n");
 }
 
-/** The internal heads-up, so nobody has to watch the table editor. */
-export function internalMessage(lead: LeadInput, config: SmtpConfig) {
+export function internalIntakeMessage(row: SubmissionRow, config: SmtpConfig) {
   return {
     from: config.from,
     to: config.to,
-    // Hitting reply goes to the contractor, not back to ourselves.
-    replyTo: lead.email,
-    subject: `${SITE_NAME}: gap check — ${lead.trade} — ${lead.hiring_client}`,
+    replyTo: row.email,
+    subject: `${SITE_NAME}: intake — ${row.trade} — ${row.hiring_client}`,
     text: [
-      "New gap check request.",
+      "A gap-check intake was completed.",
       "",
-      submissionSummary(lead),
+      intakeSummary(row),
+      "",
+      `Submission id: ${row.id}`,
       "",
       "Reply straight to this email to answer them — the reply-to is set to",
       "their address.",
@@ -118,38 +148,34 @@ export function internalMessage(lead: LeadInput, config: SmtpConfig) {
 }
 
 /**
- * The receipt sent back to whoever filled the form in.
+ * The receipt for a completed intake.
  *
- * Deliberately promises only what the site already promises: that a person
- * reads it, that it isn't instant, and that one email comes back. It repeats
- * their answers so they have a record, and carries the same disclaimer the
- * footer does — this is the one piece of {SITE_NAME} that arrives outside the
- * site, where none of that context is visible.
+ * This is deliberately still the modest, human-review version. The automated
+ * analysis email is task 028; until that lands, promising one here would be
+ * promising something the code does not yet do.
  */
-export function confirmationMessage(lead: LeadInput, config: SmtpConfig) {
+export function intakeConfirmationMessage(
+  row: SubmissionRow,
+  config: SmtpConfig,
+) {
   return {
     from: config.from,
-    to: lead.email,
-    // They reply to us, not to themselves.
+    to: row.email,
     replyTo: config.to,
-    subject: `${SITE_NAME}: we've got your gap check request`,
+    subject: `${SITE_NAME}: we've got your gap check`,
     text: [
-      "Thanks — your gap check request is in.",
+      `Thanks ${row.contact_name} — your gap check is in.`,
       "",
-      "Someone here reads these by hand, so this isn't instant. You'll get one",
-      "email back listing what your ISNetworld or Avetta file still looks short",
-      "on, in the order worth tackling. Nothing else: no mailing list, and no",
-      "call to book.",
-      "",
-      "We aim to come back within a few business days. If yours is going to take",
-      "longer than that, we'll tell you rather than leave you waiting.",
+      "You'll get one email back listing what your ISNetworld or Avetta file",
+      "still looks short on, in the order worth tackling. Nothing else: no",
+      "mailing list, and no call to book.",
       "",
       "Working towards a fixed date? Reply to this email and say when, and we'll",
       "tell you honestly whether we can be useful in time.",
       "",
       "Here's what you sent us:",
       "",
-      submissionSummary(lead),
+      intakeSummary(row),
       "",
       "---",
       `${SITE_NAME} is an independent service and is not affiliated with,`,
@@ -161,23 +187,18 @@ export function confirmationMessage(lead: LeadInput, config: SmtpConfig) {
 }
 
 /**
- * Sends the internal notification and the submitter's confirmation.
+ * Never throws and never reports a failure the caller has to handle. The row
+ * is already stored before this is called, so a bounced email costs a
+ * notification and not a submission — and showing an error for it would only
+ * invite a retry.
  *
- * Never throws and never returns a failure the caller has to handle. A lead
- * that is safely in the database but whose email bounced is not a failed
- * submission, and the person who filled the form in must not be shown an
- * error for it — they did nothing wrong, and retrying would only duplicate
- * the row. Failures are logged for us and swallowed for them.
- *
- * The two sends are settled independently rather than awaited in sequence,
- * so one failing can't suppress the other: a confirmation that bounces
- * because the address was mistyped must not also cost us the internal copy,
- * which is the one that tells us the lead exists at all.
+ * The two sends are settled independently rather than awaited in sequence, so
+ * one failing can't suppress the other: a confirmation bouncing off a
+ * mistyped address must not also cost the internal copy, which is the one
+ * that tells us the intake exists at all.
  */
-export async function sendLeadEmails(lead: LeadInput): Promise<void> {
+export async function sendIntakeEmails(row: SubmissionRow): Promise<void> {
   const config = readSmtpConfig();
-
-  // readSmtpConfig has already logged why, with the reason that applies.
   if (!config) return;
 
   let transport;
@@ -189,16 +210,14 @@ export async function sendLeadEmails(lead: LeadInput): Promise<void> {
   }
 
   const results = await Promise.allSettled([
-    transport.sendMail(internalMessage(lead, config)),
-    transport.sendMail(confirmationMessage(lead, config)),
+    transport.sendMail(internalIntakeMessage(row, config)),
+    transport.sendMail(intakeConfirmationMessage(row, config)),
   ]);
 
   const labels = ["internal notification", "submitter confirmation"];
   results.forEach((result, index) => {
     if (result.status === "rejected") {
-      // Logged server-side only. SMTP errors can carry the host and
-      // username, which is not something to put in front of a visitor.
-      console.error(`Lead ${labels[index]} failed:`, result.reason);
+      console.error(`Intake ${labels[index]} failed:`, result.reason);
     }
   });
 
@@ -242,7 +261,7 @@ export function contactMessage(input: MessageInput, config: SmtpConfig) {
 /**
  * Sends a contact-form message and reports whether it actually went.
  *
- * This returns a result, where sendLeadEmails deliberately swallows failures,
+ * This returns a result, where sendIntakeEmails deliberately swallows failures,
  * and the difference is the point: a gap check is safely in Supabase before
  * any mail is attempted, so a bounced email costs a notification. A contact
  * message has no database behind it — email is the only copy. If the send

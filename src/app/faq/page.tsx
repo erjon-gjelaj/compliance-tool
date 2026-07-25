@@ -95,7 +95,7 @@ const FAQS: { question: string; answer: string[] }[] = [
   {
     question: "What happens to what I put in the form?",
     answer: [
-      "Four things are stored: your trade, who asked you to register, roughly how many people you run, and your email address. They go into our own database and are used to answer you.",
+      "Whatever you fill in is stored: your trade, who asked you to register, which platform and by when, your name and email address, and — if you get that far — your crew size, the states you work in, your EMR and TRIR, and which documents you say you already have. Only the first screen is required. It all goes into our own database and is used to answer you.",
       "We do not sell them, and we do not pass them to a hiring client or to a prequalification platform.",
     ],
   },

@@ -1,45 +1,117 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
-import { ArrowRight, Wrench } from "lucide-react";
-import { SITE_NAME } from "@/lib/constants";
+import { useActionState } from "react";
+import { ArrowRight, CircleAlert, Mail } from "lucide-react";
+import { submitLead } from "@/app/actions";
+import {
+  CREW_SIZES,
+  TRADES,
+  initialLeadFormState,
+  type LeadFields,
+  type LeadFormState,
+} from "@/lib/leads";
+import { CONTACT_EMAIL } from "@/lib/constants";
 
-/* Trades taken from the audience described in business-model.md. */
-const TRADES = [
-  "Electrical",
-  "Scaffolding",
-  "Welding / fabrication",
-  "Insulation",
-  "Industrial cleaning",
-  "Other",
-];
-
-const CREW_SIZES = ["1-5", "6-10", "11-25", "26-50", "51+"];
-
-const fieldClass =
-  "mt-2 w-full border border-zinc-dust bg-paper px-3.5 py-2.5 text-[0.95rem] text-millscale placeholder:text-slate-wash/70 focus:border-verdigris focus:outline-none";
+const fieldBase =
+  "mt-2 w-full border bg-paper px-3.5 py-2.5 text-[0.95rem] text-millscale placeholder:text-slate-wash/70 focus:outline-none disabled:opacity-60";
 
 const labelClass = "block font-display text-sm font-semibold tracking-tight";
 
-export function LeadForm() {
-  // TODO (task 003): replace with a server action that writes to Supabase
-  // and returns real success / error states.
-  const [submitted, setSubmitted] = useState(false);
+function fieldClass(hasError: boolean) {
+  return `${fieldBase} ${
+    hasError
+      ? "border-rust-flag focus:border-rust-flag"
+      : "border-zinc-dust focus:border-verdigris"
+  }`;
+}
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
 
   return (
-    <form
-      className="border border-zinc-dust bg-paper p-6 md:p-8"
-      onSubmit={(event) => {
-        event.preventDefault();
-        setSubmitted(true);
-      }}
+    <p id={id} className="mt-2 text-sm text-rust-flag">
+      {message}
+    </p>
+  );
+}
+
+/** Props shared by every input so error state and echoed values stay consistent. */
+function fieldProps(state: LeadFormState, field: LeadFields) {
+  const error = state.errors?.[field];
+
+  return {
+    "aria-invalid": error ? (true as const) : undefined,
+    "aria-describedby": error ? `${field}-error` : undefined,
+    className: fieldClass(Boolean(error)),
+    defaultValue: state.values?.[field] ?? "",
+    // A changed key remounts the field so the echoed value is actually
+    // applied. React only reads defaultValue on mount, which otherwise
+    // leaves a <select> sitting back on its placeholder after a failed
+    // submission even though the choice came back from the server.
+    key: `${field}-${state.values?.[field] ?? ""}`,
+  };
+}
+
+function SuccessPanel() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="border border-verdigris bg-paper p-6 md:p-8"
     >
+      <Mail
+        aria-hidden="true"
+        strokeWidth={1.5}
+        className="h-6 w-6 text-verdigris"
+      />
+      <h3 className="mt-4 font-display text-xl font-semibold tracking-tight">
+        Got it — your gap check is in the queue
+      </h3>
+      <p className="mt-3 text-[0.95rem] leading-relaxed text-slate-wash">
+        Someone reads these by hand, so this isn&apos;t instant. You&apos;ll get
+        one email with what&apos;s missing from your file. Nothing else, and no
+        call to book.
+      </p>
+      <p className="mt-4 text-sm leading-relaxed text-slate-wash">
+        Deadline sooner than that? Reply straight to{" "}
+        <a
+          href={`mailto:${CONTACT_EMAIL}`}
+          className="text-verdigris underline underline-offset-4"
+        >
+          {CONTACT_EMAIL}
+        </a>{" "}
+        and say so.
+      </p>
+    </div>
+  );
+}
+
+export function LeadForm() {
+  const [state, formAction, isPending] = useActionState(
+    submitLead,
+    initialLeadFormState,
+  );
+
+  if (state.status === "success") {
+    return <SuccessPanel />;
+  }
+
+  const formError = state.status === "error" ? state.message : undefined;
+
+  return (
+    <form action={formAction} className="border border-zinc-dust bg-paper p-6 md:p-8">
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="sm:col-span-1">
           <label className={labelClass} htmlFor="trade">
             Your trade
           </label>
-          <select id="trade" name="trade" required className={fieldClass}>
+          <select
+            id="trade"
+            name="trade"
+            required
+            disabled={isPending}
+            {...fieldProps(state, "trade")}
+          >
             <option value="">Select a trade</option>
             {TRADES.map((trade) => (
               <option key={trade} value={trade}>
@@ -47,6 +119,7 @@ export function LeadForm() {
               </option>
             ))}
           </select>
+          <FieldError id="trade-error" message={state.errors?.trade} />
         </div>
 
         <div className="sm:col-span-1">
@@ -57,7 +130,8 @@ export function LeadForm() {
             id="employee_count"
             name="employee_count"
             required
-            className={fieldClass}
+            disabled={isPending}
+            {...fieldProps(state, "employee_count")}
           >
             <option value="">Select a range</option>
             {CREW_SIZES.map((size) => (
@@ -66,6 +140,10 @@ export function LeadForm() {
               </option>
             ))}
           </select>
+          <FieldError
+            id="employee_count-error"
+            message={state.errors?.employee_count}
+          />
         </div>
 
         <div className="sm:col-span-2">
@@ -77,9 +155,15 @@ export function LeadForm() {
             name="hiring_client"
             type="text"
             required
+            maxLength={200}
             autoComplete="organization"
             placeholder="The refinery, plant, or GC that sent you the request"
-            className={fieldClass}
+            disabled={isPending}
+            {...fieldProps(state, "hiring_client")}
+          />
+          <FieldError
+            id="hiring_client-error"
+            message={state.errors?.hiring_client}
           />
         </div>
 
@@ -92,43 +176,44 @@ export function LeadForm() {
             name="email"
             type="email"
             required
+            maxLength={254}
             autoComplete="email"
             placeholder="you@yourcompany.com"
-            className={fieldClass}
+            disabled={isPending}
+            {...fieldProps(state, "email")}
           />
+          <FieldError id="email-error" message={state.errors?.email} />
         </div>
       </div>
 
+      {formError && (
+        <div
+          role="alert"
+          className="mt-6 flex gap-3 border border-rust-flag bg-galvanise p-4"
+        >
+          <CircleAlert
+            aria-hidden="true"
+            strokeWidth={1.5}
+            className="mt-0.5 h-5 w-5 shrink-0 text-rust-flag"
+          />
+          <p className="text-sm leading-relaxed">{formError}</p>
+        </div>
+      )}
+
       <button
         type="submit"
-        className="mt-7 inline-flex w-full items-center justify-center gap-2 bg-verdigris px-6 py-3.5 font-display text-base font-semibold tracking-tight text-paper transition-colors hover:bg-verdigris-deep sm:w-auto"
+        disabled={isPending}
+        className="mt-7 inline-flex w-full items-center justify-center gap-2 bg-verdigris px-6 py-3.5 font-display text-base font-semibold tracking-tight text-paper transition-colors hover:bg-verdigris-deep disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
       >
-        Send my gap check
-        <ArrowRight aria-hidden="true" strokeWidth={2} className="h-4 w-4" />
+        {isPending ? "Sending…" : "Send my gap check"}
+        {!isPending && (
+          <ArrowRight aria-hidden="true" strokeWidth={2} className="h-4 w-4" />
+        )}
       </button>
 
       <p className="mt-4 font-mono text-xs leading-relaxed text-slate-wash">
         We use this to answer your question and nothing else. No mailing list.
       </p>
-
-      {submitted && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="mt-6 flex gap-3 border border-verdigris bg-galvanise p-4"
-        >
-          <Wrench
-            aria-hidden="true"
-            strokeWidth={1.5}
-            className="mt-0.5 h-5 w-5 shrink-0 text-verdigris"
-          />
-          <p className="text-sm leading-relaxed">
-            Lead capture isn&apos;t connected yet — nothing was sent. {SITE_NAME}{" "}
-            is still being built, and this form starts storing submissions in
-            the next step.
-          </p>
-        </div>
-      )}
     </form>
   );
 }

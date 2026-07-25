@@ -160,9 +160,14 @@ keeps it. Resolving finding 1 makes this consistent too.
 
 ## Lead notification emails
 
-Form submissions are emailed to `info@certloop.net` as well as being stored
-in Supabase. Supabase stays the record of truth; the email is so nobody has
-to watch the table editor to notice a lead arrived.
+A submission sends two emails, as well as being stored in Supabase, which
+stays the record of truth:
+
+- **To `info@certloop.net`** — so nobody has to watch the table editor to
+  notice a lead arrived. Reply-to is the contractor, so replying answers them.
+- **To the contractor** — a receipt confirming it arrived, what happens next,
+  and a copy of what they submitted. Reply-to is `info@certloop.net`, so
+  replying reaches you.
 
 Sent over plain SMTP with nodemailer, so it works with whatever mailbox
 provider hosts `info@certloop.net` — no third-party sending service, no extra
@@ -195,9 +200,8 @@ notifications are skipped. Nothing breaks; you just don't get the mail.
    SMTP password to every visitor's browser, handing out the ability to send
    mail as this domain.
 
-4. Redeploy and submit the form once. The email's reply-to is the
-   contractor's address, so replying answers them directly rather than
-   coming back to you.
+4. Redeploy and submit the form once. You should get the internal copy, and
+   the address you submitted with should get the confirmation.
 
 The same keys are in `.env.local.example`, and blank ones are already in
 `.env.local` for local testing.
@@ -219,9 +223,19 @@ The same keys are in `.env.local.example`, and blank ones are already in
   port is required to upgrade via STARTTLS before authenticating, so the
   password is never sent over a plaintext session.
 
-### Still unverified
+- **One email failing can't suppress the other.** The two sends are settled
+  independently, so a confirmation that bounces on a mistyped address still
+  leaves you with the internal copy — the one that tells you the lead exists
+  at all.
 
-Actual delivery. There are no working credentials in the development
-environment, so what's been proven is the configuration handling, the TLS
-selection, and the failure behaviour — not that your provider accepts the
-message. The first submission after you set the variables is the real test.
+### A note on the confirmation email
+
+The form is public and unauthenticated, and it now sends mail to an address
+the submitter types in. That makes it a small spam-amplification vector:
+someone could submit repeatedly with a third party's address and have this
+site mail them. The volume ceiling is whatever your SMTP provider allows.
+
+Nothing is needed today at current traffic, and rate limiting was out of
+scope here. If the site starts getting real traffic — or if you see repeat
+submissions for addresses that never reply — the fix is a rate limit on the
+server action, keyed by IP.

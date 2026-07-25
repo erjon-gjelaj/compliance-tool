@@ -108,9 +108,9 @@
     {
       "id": "016",
       "title": "Email lead submissions to the inbox (SMTP)",
-      "status": "blocked",
-      "notes": "Code is complete, but it stays dormant until the SMTP credentials are filled in — that needs a human, since the mailbox password is not available in this environment. Submissions are emailed to info@certloop.net in addition to being stored in Supabase, which remains the record of truth. Implemented in src/lib/notify.ts with nodemailer over plain SMTP, so it uses whatever provider hosts the mailbox — no third-party sending service and no API key. Configuration is SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASSWORD, plus optional LEAD_NOTIFY_FROM and LEAD_NOTIFY_TO; all are server-only and must never take a NEXT_PUBLIC_ prefix, since that would publish the password to every visitor. Three deliberate properties: the send happens only after the row is inserted and every failure is caught and logged, so a mail failure can never fail a submission or prompt a duplicate retry; config is all-or-nothing so a half-filled setup is treated as absent rather than failing on every submission; and TLS is mandatory, with 465 as implicit TLS and every other port required to STARTTLS before authenticating. Reply-to is the contractor's address. Verified all four failure paths return cleanly without throwing — nothing configured, partial config, invalid port, and fully configured against an unreachable server. Actual delivery is UNVERIFIED: no working credentials exist here, so the first submission after the variables are set is the real test. Setup is in DEPLOY.md under 'Lead notification emails'; blank keys are already in .env.local.",
-      "needs_human_review": true
+      "status": "done",
+      "notes": "Done and confirmed working in production. SMTP credentials were added and deployed, and a real submission delivered the notification. Implemented in src/lib/notify.ts with nodemailer over plain SMTP, using whatever provider hosts the mailbox — no third-party sending service and no API key. Configured with SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASSWORD plus optional LEAD_NOTIFY_FROM and LEAD_NOTIFY_TO; all server-only, none may take a NEXT_PUBLIC_ prefix. Supabase remains the record of truth. Properties: the send happens only after the row is inserted and every failure is caught, so mail can never fail a submission; config is all-or-nothing; and TLS is mandatory, with 465 implicit and every other port required to STARTTLS before authenticating.",
+      "needs_human_review": false
     },
     {
       "id": "017",
@@ -118,9 +118,16 @@
       "status": "done",
       "notes": "Done. The FAQ is now eleven native <details>/<summary> disclosures instead of a flat <dl>, so opening and closing costs no JavaScript and keyboard support comes for free. All start collapsed, and the answers stay in the DOM whether open or closed — confirmed 490 characters present in the server HTML of a collapsed answer — so the page remains fully indexable and the FAQPage JSON-LD still matches what is rendered. Questions became h3 inside the summary, which improves the heading hierarchy over the previous dt. Getting the open/closed indicator right took three attempts worth recording: Tailwind's group-open:rotate-180 sat in the class list but generated no CSS at all; an explicit CSS rotate rule also failed, and browser testing showed why — a transform on a descendant of <summary> resolves to an identity matrix, proven by the identical element rotating correctly once moved outside the summary. The working approach swaps two icons with display instead of rotating one. Verified in a production build: correct icon in each state, expands and collapses, and only ever one icon visible.",
       "needs_human_review": false
+    },
+    {
+      "id": "018",
+      "title": "Confirmation email to the submitter",
+      "status": "done",
+      "notes": "Done. A submission now sends two emails over the same SMTP transport: the internal copy to info@certloop.net with reply-to set to the contractor, and a receipt to the contractor with reply-to set to info@certloop.net. The confirmation repeats what they submitted so they have a record, and carries the ISN/Avetta disclaimer — it is the one piece of the product that arrives away from the site, where the footer's context is not visible. Copy promises only what the site already promises: a person reads it, it is not instant, one email comes back, no mailing list. The two sends are settled independently rather than awaited in sequence, so a confirmation bouncing on a mistyped address cannot also cost the internal copy, which is the one proving the lead exists. Verified by composing both messages through a nodemailer jsonTransport and reading the envelopes: recipients and reply-to are correct and not swapped, which was the real risk. Also verified against an unreachable server that both sends are attempted, both failures logged separately, and nothing throws. One thing flagged in DEPLOY.md rather than fixed: the form is public and now mails an address the submitter types, which is a small spam-amplification vector; rate limiting was out of scope and is the fix if traffic warrants it.",
+      "needs_human_review": false
     }
   ],
-  "current_task_id": "016",
+  "current_task_id": null,
   "blocked_on": {
     "task_id": "005",
     "date": "2026-07-24",

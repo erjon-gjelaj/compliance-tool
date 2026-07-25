@@ -4,7 +4,6 @@ import {
   validateLead,
   type LeadFields,
   type LeadFormState,
-  type LeadInput,
 } from "@/lib/leads";
 import {
   HONEYPOT_FIELD,
@@ -21,9 +20,10 @@ const GENERIC_FAILURE =
   "Something went wrong on our end and your request wasn't saved. " +
   "Try again in a moment, or email us and we'll pick it up by hand.";
 
-function submittedValues(formData: FormData): Partial<LeadInput> {
+function submittedValues(formData: FormData): LeadFormState["values"] {
   const fields: LeadFields[] = [
     "trade",
+    "trade_other",
     "hiring_client",
     "employee_count",
     "email",

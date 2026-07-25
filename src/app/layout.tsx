@@ -4,6 +4,7 @@ import {
   IBM_Plex_Mono,
   IBM_Plex_Sans,
 } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -66,6 +67,10 @@ export default function RootLayout({
         <SiteHeader />
         {children}
         <SiteFooter />
+        {/* Vercel Speed Insights. Reports Core Web Vitals to the Vercel
+            dashboard; it only collects anything once the site is deployed
+            there, so locally this renders nothing. */}
+        <SpeedInsights />
       </body>
     </html>
   );

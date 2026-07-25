@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { pageMetadata } from "@/lib/metadata";
 import { PageIntro } from "@/components/page-intro";
 import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
 import { GAP_CHECK_HREF } from "@/lib/nav";
@@ -11,19 +12,11 @@ const PAGE_DESCRIPTION =
   "the things we deliberately don't do — including submitting to " +
   "ISNetworld or Avetta on your behalf.";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: PAGE_TITLE,
   description: PAGE_DESCRIPTION,
-  alternates: { canonical: "/faq" },
-  openGraph: {
-    type: "article",
-    siteName: SITE_NAME,
-    title: `${PAGE_TITLE} | ${SITE_NAME}`,
-    description: PAGE_DESCRIPTION,
-    url: "/faq",
-    locale: "en_US",
-  },
-};
+  path: "/faq",
+});
 
 /*
  * Answers are plain paragraphs so the same array feeds both the rendered
@@ -153,8 +146,8 @@ export default function FaqPage() {
         title="Before you fill anything in"
       >
         <p>
-          The questions worth answering up front — including the ones where
-          the honest answer is that we are not the right people to ask.
+          The questions worth answering up front — including the ones where the
+          honest answer is that we are not the right people to ask.
         </p>
       </PageIntro>
 

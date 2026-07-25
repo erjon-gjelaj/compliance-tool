@@ -59,26 +59,26 @@
     {
       "id": "009",
       "title": "Tagline exploration",
-      "status": "pending",
-      "notes": "Draft several original tagline options grounded in business-model.md — the trigger event, the urgency, the consultant-vs-template contrast. Present the options with reasoning in the log, pick a default, and keep it swappable via lib/constants.ts. Sequenced before 010 because the OG image renders the chosen line.",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. Seven options drafted against business-model.md's trigger event, urgency, and the consultant-versus-template contrast; all seven are written up with reasoning in logs/2026-07-25.md. Rather than make one line do two incompatible jobs, the constant is split: SITE_TAGLINE keeps the literal, platform-name-carrying line because it has to work in a search result, and a new SITE_SLOGAN defaults to 'The gap between your file and the gate.' for places with no room to explain, currently the OG card. The other five options sit in a comment directly above the constant in src/lib/constants.ts so swapping is a one-line change while the name is unsettled.",
       "needs_human_review": false
     },
     {
       "id": "010",
       "title": "Dynamic OG image",
-      "status": "pending",
-      "notes": "Generate the 1200x630 OG image with next/og so it tracks the brand constants instead of going stale as a static file. Build on the tape-measure tick motif rather than centring the wordmark on an empty field. Needs the display font available to Satori, which next/font does not expose.",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. src/app/opengraph-image.tsx generates the 1200x630 card via next/og, tracking SITE_NAME and SITE_SLOGAN. The tape motif is structural rather than trim: the tick rule runs full width at the same 16px minor / 80px major pitch as the on-page rule, and a verdigris dimension line measures a span against it with its caps landing on major ticks. Satori cannot see next/font and cannot read the .woff2 it emits, so @fontsource/bricolage-grotesque and @fontsource/ibm-plex-mono were added and the .woff files are read off disk — safe because the route builds static. Found and fixed a real bug while verifying: a page declaring its own openGraph object replaces the file-convention image rather than merging, so About, FAQ and Contact were shipping with no card at all; a shared pageMetadata() helper in src/lib/metadata.ts fixes it and removes the triplicated metadata. Home page twitter:card upgraded to summary_large_image. Verified by rendering the PNG and inspecting it, and by checking the meta tags on all four pages.",
       "needs_human_review": false
     },
     {
       "id": "011",
       "title": "Vercel Speed Insights",
-      "status": "pending",
-      "notes": "Install @vercel/speed-insights and mount <SpeedInsights /> from @vercel/speed-insights/next in the root layout, per Vercel's setup instructions. No further configuration. Data only appears once the site is deployed, which is still task 005.",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. @vercel/speed-insights installed and <SpeedInsights /> mounted in the root layout per Vercel's setup instructions, with no further configuration. Confirmed in the browser console that it initialises and reports debug mode locally, sending nothing — real data only starts once the site is deployed, which is task 005.",
       "needs_human_review": false
     }
   ],
-  "current_task_id": "006",
+  "current_task_id": "005",
   "blocked_on": {
     "task_id": "005",
     "date": "2026-07-24",

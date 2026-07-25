@@ -28,7 +28,9 @@ export const metadata: Metadata = {
     locale: "en_US",
   },
   twitter: {
-    card: "summary",
+    // Upgraded from "summary" now that opengraph-image.tsx generates a real
+    // 1200x630 card — Next fills in twitter:image from the same file.
+    card: "summary_large_image",
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
   },

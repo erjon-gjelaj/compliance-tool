@@ -18,17 +18,20 @@ const bricolage = Bricolage_Grotesque({
   display: "swap",
 });
 
+// Both Plex families are only ever used at regular weight — everything
+// bold on the page is set in the display face. Loading a single weight
+// each keeps the font payload down.
 const plexSans = IBM_Plex_Sans({
   variable: "--font-plex-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400"],
   display: "swap",
 });
 
 const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400"],
   display: "swap",
 });
 

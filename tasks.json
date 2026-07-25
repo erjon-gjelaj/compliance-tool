@@ -17,15 +17,15 @@
     {
       "id": "003",
       "title": "Set up Supabase lead capture",
-      "status": "pending",
-      "notes": "Create a `leads` table (trade, hiring_client, employee_count, email, created_at). Wire the intake form to write to it via a server action or API route. Add real validation and success/error states.",
+      "status": "paused_for_review",
+      "notes": "NOT STARTED — paused here on purpose, as instructed. Tasks 001, 002, and 004 are done and pushed as branches; no PRs opened, awaiting your review. Nothing in this task has been touched: no Supabase project, no table, no credentials, no server action. The form in src/components/lead-form.tsx renders and validates in the browser but has nowhere to submit — pressing the button shows a notice saying lead capture isn't connected yet. Original scope: create a `leads` table (trade, hiring_client, employee_count, email, created_at), wire the form to it via a server action or API route, add real validation and success/error states. Needs a human first because it requires creating a Supabase project and putting live credentials in .env.local (never committed).",
       "needs_human_review": true
     },
     {
       "id": "004",
       "title": "SEO essentials",
-      "status": "pending",
-      "notes": "Add sitemap.xml, robots.txt, JSON-LD Organization schema, alt text audit, check Core Web Vitals via `next build` output. Follow the SEO requirements section in CLAUDE.md.",
+      "status": "done",
+      "notes": "Done on branch task/004-seo (branched off task/002). sitemap.ts and robots.ts via Next.js file conventions, both driven by SITE_URL. JSON-LD Organization schema on the homepage, limited to facts that hold today. Canonical URL plus Open Graph and Twitter metadata. Heading hierarchy and lang verified in the rendered DOM. Alt text audit: no raster images exist yet, and all decorative SVGs are aria-hidden. Page is fully static; trimmed unused IBM Plex weights, which cut roughly 50KB of fonts and one preload. No OG image yet — deferred until the name and domain are settled. Build and lint pass clean.",
       "needs_human_review": false
     },
     {
@@ -36,5 +36,16 @@
       "needs_human_review": true
     }
   ],
-  "current_task_id": "004"
+  "current_task_id": "003",
+  "paused": {
+    "at_task_id": "003",
+    "date": "2026-07-24",
+    "reason": "Stopped here as instructed. Tasks 001, 002 and 004 are complete, committed on their own branches and pushed to GitHub. No PRs opened — you asked to review first. Task 003 has not been started and needs you to create the Supabase project and supply credentials before it can be.",
+    "branches": [
+      "task/001-scaffold",
+      "task/002-landing-page",
+      "task/004-seo"
+    ],
+    "branch_note": "Each branch is stacked on the previous one, because main had no commits when this started. Review or merge them in order: 001, then 002, then 004."
+  }
 }

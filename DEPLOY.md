@@ -28,7 +28,7 @@ git and never should be.
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | from `.env.local` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | from `.env.local` |
-| `NEXT_PUBLIC_SITE_URL` | the deployed origin, no trailing slash |
+| `NEXT_PUBLIC_SITE_URL` | the deployed origin — set to `certloop.net` |
 
 Notes:
 
@@ -38,14 +38,17 @@ Notes:
 - `NEXT_PUBLIC_SITE_URL` drives `sitemap.xml`, `robots.txt`, the canonical
   link, the Open Graph tags, and the JSON-LD `url`. Verified: setting it
   changes all five.
-- **Set it explicitly to the `*.vercel.app` origin for the first deploy.**
-  The fallback in `src/lib/constants.ts` is now `https://certloop.net`, since
-  that domain is registered — but until it is actually attached and serving,
-  leaving the variable unset means every canonical link, the sitemap, and the
-  OG tags all point at a hostname that doesn't answer. That is worse than
-  pointing at the ugly Vercel URL.
-- Change it to `https://certloop.net` in the same edit that attaches the
-  domain (step 4), not before.
+- The value is normalised in `src/lib/constants.ts`, so `certloop.net`,
+  `https://certloop.net`, and a trailing slash all resolve to the same
+  origin. Worth knowing why: the raw value used to be passed straight to
+  `new URL()` for `metadataBase`, and a bare hostname throws there — which
+  would have failed the Vercel build outright rather than degrading.
+- **This is currently set to `certloop.net`, which is ahead of the DNS.**
+  Until the domain is attached and serving (step 4), every canonical link,
+  the sitemap, and the OG tags claim `certloop.net` while the site actually
+  answers on `*.vercel.app`. The site works; the risk is search engines being
+  pointed at a hostname that doesn't resolve yet. Either attach the domain
+  promptly, or set this to the `*.vercel.app` origin in the meantime.
 
 **Watch out:** the build succeeds even with the Supabase variables missing —
 verified locally. The page is fully static, so nothing touches Supabase until

@@ -36,14 +36,40 @@ export const SITE_TAGLINE =
 export const SITE_SLOGAN = "The gap between your file and the gate.";
 
 /**
- * Canonical origin, no trailing slash. certloop.net is the registered
- * domain, so it is the fallback; NEXT_PUBLIC_SITE_URL still overrides it
- * per-environment, and should be set to the *.vercel.app origin until the
- * domain is actually attached and serving, or the canonical URL will point
- * somewhere that doesn't answer yet.
+ * Normalises whatever NEXT_PUBLIC_SITE_URL is set to into a bare origin.
+ *
+ * This exists because the natural thing to type into a Vercel environment
+ * variable is `certloop.net`, and the raw value used to be handed straight
+ * to `new URL()` for metadataBase — which throws on a bare hostname and
+ * fails the whole build. A trailing slash was the other easy way to end up
+ * with `https://certloop.net//about` in the sitemap.
+ *
+ * So: an absent scheme gets https, and `.origin` drops any trailing slash,
+ * path, or query. Anything genuinely unparseable falls back rather than
+ * taking the build down.
  */
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://certloop.net";
+function toOrigin(value: string | undefined, fallback: string): string {
+  const raw = value?.trim();
+  if (!raw) return fallback;
+
+  const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+  try {
+    return new URL(withScheme).origin;
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Canonical origin, no trailing slash. certloop.net is the registered
+ * domain and the fallback; NEXT_PUBLIC_SITE_URL overrides it per
+ * environment.
+ */
+export const SITE_URL = toOrigin(
+  process.env.NEXT_PUBLIC_SITE_URL,
+  "https://certloop.net",
+);
 
 /**
  * Where free gap-check requests are followed up from.

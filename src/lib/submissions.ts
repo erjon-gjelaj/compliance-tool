@@ -38,6 +38,7 @@ export type SubmissionRow = {
   previously_registered: string | null;
   documents_held: string[] | null;
   documents_unsure: boolean;
+  documents_consent_at: string | null;
 };
 
 /** Creates the row for step 1 and returns its id. */
@@ -85,7 +86,27 @@ export async function saveStepTwo(id: string, value: StepTwoValue) {
 }
 
 export async function saveStepThree(id: string, value: StepThreeValue) {
-  await updateSubmission(id, { ...value, last_step: 3, status: "complete" });
+  await updateSubmission(id, { ...value, last_step: 3 });
+}
+
+/**
+ * Marks the intake finished, after step 4.
+ *
+ * Consent is stored as the moment it was given rather than as a flag, so the
+ * record says when they agreed and not merely that they did. It is only
+ * recorded when documents were actually accepted — reaching this step and
+ * sending nothing is a normal, complete submission with nothing to consent
+ * to.
+ */
+export async function completeWithDocuments(
+  id: string,
+  { consented }: { consented: boolean },
+) {
+  await updateSubmission(id, {
+    last_step: 4,
+    status: "complete",
+    ...(consented ? { documents_consent_at: new Date().toISOString() } : {}),
+  });
 }
 
 /** Records how far someone got when they skipped a step rather than filling it. */

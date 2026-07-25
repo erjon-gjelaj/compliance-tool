@@ -2,7 +2,7 @@ import Link from "next/link";
 import { TickRule } from "@/components/tick-rule";
 import { Wordmark } from "@/components/wordmark";
 import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
-import { GAP_CHECK_HREF, NAV_LINKS } from "@/lib/nav";
+import { GAP_CHECK_HREF, LEGAL_LINKS, NAV_LINKS } from "@/lib/nav";
 
 /*
  * Baked at build time, since every page here is static. That means the year
@@ -31,7 +31,7 @@ export function SiteFooter() {
             <div>
               <h2 className="tag">Pages</h2>
               <ul className="mt-4 space-y-2.5 text-sm">
-                {NAV_LINKS.map(({ href, label }) => (
+                {[...NAV_LINKS, ...LEGAL_LINKS].map(({ href, label }) => (
                   <li key={href}>
                     <Link
                       href={href}

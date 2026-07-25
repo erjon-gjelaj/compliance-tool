@@ -1,11 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useActionState } from "react";
-import { ArrowLeft, ArrowRight, Check, CircleAlert, Mail } from "lucide-react";
-import { submitIntakeStep } from "@/app/actions";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CircleAlert,
+  FileText,
+  Mail,
+  Paperclip,
+  X,
+} from "lucide-react";
+import { createUploadSlots, submitIntakeStep } from "@/app/actions";
 import { SelectField } from "@/components/select-field";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { HONEYPOT_FIELD } from "@/lib/messages";
+import {
+  ACCEPT_ATTRIBUTE,
+  MAX_FILES,
+  MAX_TOTAL_BYTES,
+  checkClaim,
+  formatBytes,
+} from "@/lib/uploads";
 import {
   DOCUMENT_CATEGORIES,
   DONT_KNOW,
@@ -20,7 +38,7 @@ import {
   type IntakeField,
   type IntakeFormState,
 } from "@/lib/intake";
-import { CONTACT_EMAIL } from "@/lib/constants";
+import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
 
 /* Shared with the lead and contact forms, so a field looks the same wherever
  * it appears. */
@@ -99,7 +117,7 @@ function useEchoedState(echo: string) {
 }
 
 function StepIndicator({ step }: { step: number }) {
-  const labels = ["Your job", "Your company", "What you have"];
+  const labels = ["Your job", "Your company", "What you have", "Documents"];
 
   return (
     <ol className="mb-7 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
@@ -228,11 +246,152 @@ export function IntakeForm() {
     echoed(state, "previously_registered"),
   );
 
+  /*
+   * Step 4's files are held here rather than left in the <input>, so the list
+   * can be shown with sizes and individual files removed. The input itself
+   * has no `name` and never posts — the bytes go straight to Supabase and
+   * only the resulting paths are submitted.
+   */
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState<string>();
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function addFiles(chosen: FileList | null) {
+    if (!chosen || chosen.length === 0) return;
+
+    const next = [...files];
+    let error: string | undefined;
+
+    for (const file of Array.from(chosen)) {
+      if (next.length >= MAX_FILES) {
+        error = `${MAX_FILES} files is the most we take at once.`;
+        break;
+      }
+
+      // Checked here only to save someone's mobile data on a file we were
+      // never going to accept. The server checks all of it again, against
+      // the bytes rather than the claim.
+      const check = checkClaim({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      });
+
+      if (!check.ok) {
+        error = `${file.name}: ${check.reason}.`;
+        continue;
+      }
+
+      if (next.some((existing) => existing.name === file.name)) continue;
+
+      next.push(file);
+    }
+
+    const total = next.reduce((sum, file) => sum + file.size, 0);
+    if (total > MAX_TOTAL_BYTES) {
+      setFileError(
+        `That's ${formatBytes(total)} altogether, over the ${formatBytes(MAX_TOTAL_BYTES)} limit.`,
+      );
+      return;
+    }
+
+    setFileError(error);
+    setFiles(next);
+
+    // Cleared so choosing the same file again after removing it still fires
+    // a change event.
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function removeFile(name: string) {
+    setFiles((current) => current.filter((file) => file.name !== name));
+    setFileError(undefined);
+  }
+
+  /**
+   * Sends the files, then submits the step.
+   *
+   * Only intercepts the last step, and only when there is something to
+   * upload — every other submit goes through the form action untouched.
+   */
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    if (state.step !== TOTAL_STEPS || files.length === 0) return;
+
+    const submitter = (event.nativeEvent as SubmitEvent)
+      .submitter as HTMLButtonElement | null;
+
+    if (submitter?.value !== "next") return;
+
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    setFileError(undefined);
+    setUploading(true);
+
+    try {
+      const claims = files.map((file) => ({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      }));
+
+      const slots = await createUploadSlots(state.submissionId ?? "", claims);
+
+      if (!slots.ok) {
+        setFileError(slots.error);
+        return;
+      }
+
+      const supabase = getSupabaseBrowserClient();
+      const uploaded: { path: string; fileName: string }[] = [];
+
+      for (const [index, slot] of slots.slots.entries()) {
+        const { error } = await supabase.storage
+          .from("submission-documents")
+          .uploadToSignedUrl(slot.path, slot.token, files[index]);
+
+        if (error) {
+          // Stops rather than pressing on. Sending a partial set while
+          // showing a success panel would tell someone their documents were
+          // received when some of them were not.
+          console.error("Upload failed:", error.message);
+          setFileError(
+            `${slot.fileName} didn't upload. Check your connection and try again, or send without attachments.`,
+          );
+          return;
+        }
+
+        uploaded.push({ path: slot.path, fileName: slot.fileName });
+      }
+
+      // The submitter's name/value isn't included by new FormData(form), so
+      // the intent is set by hand.
+      formData.set("intent", "next");
+      formData.set("uploads", JSON.stringify(uploaded));
+
+      formAction(formData);
+    } catch (cause) {
+      console.error("Upload step failed:", cause);
+      setFileError(
+        "Something went wrong sending those files. Try again, or send without attachments.",
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
   if (state.status === "success") {
     return <SuccessPanel />;
   }
 
   const { step } = state;
+
+  /* Two different waits, one disabled state: the files going to storage, and
+   * the step going to the server. */
+  const busy = isPending || uploading;
   const formError = state.status === "error" ? state.message : undefined;
   const heldDocuments = echoedList(state, "documents_held");
   const heldStates = echoedList(state, "states");
@@ -240,6 +399,7 @@ export function IntakeForm() {
   return (
     <form
       action={formAction}
+      onSubmit={handleSubmit}
       className="border border-zinc-dust bg-paper p-6 md:p-8"
     >
       <StepIndicator step={step} />
@@ -592,6 +752,118 @@ export function IntakeForm() {
         </div>
       )}
 
+      {step === 4 && (
+        <div className="grid gap-5">
+          <div>
+            <p className={labelClass}>Your documents</p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-wash">
+              If you have any of it written down already, attach it. Reading
+              what you actually have beats guessing at it — and a photo of a
+              training card taken on your phone is a perfectly good file.
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-wash">
+              PDFs, Word documents and photos. Up to {MAX_FILES} files,{" "}
+              {formatBytes(MAX_TOTAL_BYTES)} altogether.
+            </p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="documents"
+              className="inline-flex cursor-pointer items-center gap-2 border border-zinc-dust px-4 py-2.5 text-[0.95rem] hover:border-verdigris"
+            >
+              <Paperclip
+                aria-hidden="true"
+                strokeWidth={1.5}
+                className="h-4 w-4"
+              />
+              Choose files
+            </label>
+            {/*
+             * No `name`, deliberately: this input never posts. The bytes go
+             * straight from the browser to Supabase Storage with a signed
+             * upload URL, because a Vercel serverless request body caps at
+             * 4.5MB and this step takes far more than that.
+             */}
+            <input
+              ref={fileInputRef}
+              id="documents"
+              type="file"
+              multiple
+              accept={ACCEPT_ATTRIBUTE}
+              disabled={isPending || uploading}
+              onChange={(event) => addFiles(event.target.files)}
+              className="sr-only"
+            />
+          </div>
+
+          {files.length > 0 && (
+            <ul className="grid gap-2">
+              {files.map((file) => (
+                <li
+                  key={file.name}
+                  className="flex items-center gap-3 border border-zinc-dust px-3.5 py-2.5 text-sm"
+                >
+                  <FileText
+                    aria-hidden="true"
+                    strokeWidth={1.5}
+                    className="h-4 w-4 shrink-0 text-slate-wash"
+                  />
+                  <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                  <span className="shrink-0 text-slate-wash tabular-nums">
+                    {formatBytes(file.size)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(file.name)}
+                    disabled={isPending || uploading}
+                    className="shrink-0 text-slate-wash hover:text-rust-flag disabled:opacity-60"
+                  >
+                    <X aria-hidden="true" strokeWidth={2} className="h-4 w-4" />
+                    <span className="sr-only">Remove {file.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {(fileError || state.errors?.uploads) && (
+            <p className="text-sm text-rust-flag">
+              {fileError ?? state.errors?.uploads}
+            </p>
+          )}
+
+          {files.length > 0 && (
+            <div className="border-t border-zinc-dust pt-4">
+              <CheckboxRow
+                id="upload_consent"
+                name="upload_consent"
+                label={`I'm happy for ${SITE_NAME} to use these documents to prepare my review.`}
+                defaultChecked={Boolean(echoed(state, "upload_consent"))}
+                disabled={isPending || uploading}
+              />
+              <p className="mt-3 text-xs leading-relaxed text-slate-wash">
+                They&apos;re stored privately, are not shared with a hiring
+                client or a prequalification platform, and are used for nothing
+                but preparing your review. Ask us and we delete them — files and
+                record together. Full detail on the{" "}
+                <Link
+                  href="/privacy"
+                  className="text-verdigris underline underline-offset-4"
+                >
+                  privacy page
+                </Link>
+                .
+              </p>
+              <FieldError
+                id="upload_consent-error"
+                message={state.errors?.upload_consent}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/*
        * Honeypot. Positioned off-canvas by the .honeypot class rather than
        * display:none, because some bots skip hidden fields, and aria-hidden
@@ -629,15 +901,17 @@ export function IntakeForm() {
           type="submit"
           name="intent"
           value="next"
-          disabled={isPending}
+          disabled={busy}
           className="btn-primary w-full sm:w-auto"
         >
-          {isPending
-            ? "Saving…"
-            : step === TOTAL_STEPS
-              ? "Send my gap check"
-              : "Continue"}
-          {!isPending &&
+          {uploading
+            ? "Sending your files…"
+            : isPending
+              ? "Saving…"
+              : step === TOTAL_STEPS
+                ? "Send my gap check"
+                : "Continue"}
+          {!busy &&
             (step === TOTAL_STEPS ? (
               <Check aria-hidden="true" strokeWidth={2} className="h-4 w-4" />
             ) : (
@@ -659,7 +933,7 @@ export function IntakeForm() {
             type="submit"
             name="intent"
             value="skip"
-            disabled={isPending}
+            disabled={busy}
             className="text-sm text-slate-wash underline underline-offset-4 hover:text-millscale disabled:opacity-60"
           >
             {step === TOTAL_STEPS ? "Skip and send" : "Skip this step"}
@@ -672,7 +946,7 @@ export function IntakeForm() {
             name="intent"
             value="back"
             formNoValidate
-            disabled={isPending}
+            disabled={busy}
             className="flex items-center gap-1.5 text-sm text-slate-wash hover:text-millscale disabled:opacity-60"
           >
             <ArrowLeft aria-hidden="true" strokeWidth={2} className="h-4 w-4" />
@@ -684,7 +958,9 @@ export function IntakeForm() {
       <p className="mt-4 text-xs leading-relaxed text-slate-wash">
         {step === 1
           ? "We save your answers as you go, so an interruption doesn't cost you the form. We use them to answer your question and nothing else. No mailing list."
-          : "Answered enough? Skip the rest — you'll still get a reply."}
+          : step === TOTAL_STEPS
+            ? "Nothing to attach? Skip and send — plenty of people have nothing written down yet, and that's an answer in itself."
+            : "Answered enough? Skip the rest — you'll still get a reply."}
       </p>
     </form>
   );

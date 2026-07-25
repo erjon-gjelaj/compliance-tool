@@ -12,6 +12,8 @@
  * would throw all of those away.
  */
 
+import { MAX_FILES } from "@/lib/uploads";
+
 /* Trades taken from the audience described in business-model.md. Carried
  * over unchanged from the Scope A lead form, which this replaces. */
 export const TRADES = [
@@ -26,9 +28,9 @@ export const TRADES = [
 /** The trade option that asks for a written answer instead. */
 export const OTHER_TRADE = "Other";
 
-export const TOTAL_STEPS = 3;
+export const TOTAL_STEPS = 4;
 
-export type StepNumber = 1 | 2 | 3;
+export type StepNumber = 1 | 2 | 3 | 4;
 
 /** The prequalification platform they were told to register in. */
 export const PLATFORMS = [
@@ -109,7 +111,10 @@ export type IntakeField =
   | "previously_registered"
   // Step 3
   | "documents_held"
-  | "documents_unsure";
+  | "documents_unsure"
+  // Step 4
+  | "uploads"
+  | "upload_consent";
 
 export type IntakeErrors = Partial<Record<IntakeField, string>>;
 
@@ -366,4 +371,71 @@ export function validateStepThree(
   }
 
   return { ok: true, value: { documents_held: held, documents_unsure: unsure } };
+}
+
+/** What step 4 posts: files already in storage, plus the consent tick. */
+export type StepFourValue = {
+  uploads: { path: string; fileName: string }[];
+  consented: boolean;
+};
+
+/**
+ * Step 4 is unusual: the files are already in storage by the time this runs.
+ * The browser gets a signed upload URL per file, sends the bytes straight to
+ * Supabase, and posts back the paths — so what arrives here is a claim about
+ * what landed, not the files themselves. confirmUploads is what checks it.
+ *
+ * Consent is required only when there is something to consent to. Reaching
+ * this step and sending nothing is a normal, complete submission.
+ */
+export function validateStepFour(formData: FormData): StepResult<StepFourValue> {
+  const raw = formData.get("uploads");
+  const consented = isChecked(formData, "upload_consent");
+
+  let uploads: { path: string; fileName: string }[] = [];
+
+  if (typeof raw === "string" && raw.trim() !== "") {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+
+      if (!Array.isArray(parsed)) throw new Error("not an array");
+
+      uploads = parsed.slice(0, MAX_FILES).map((entry) => {
+        const record = entry as { path?: unknown; fileName?: unknown };
+
+        if (
+          typeof record.path !== "string" ||
+          typeof record.fileName !== "string"
+        ) {
+          throw new Error("bad entry");
+        }
+
+        return {
+          path: record.path,
+          // Trimmed to what the file_name column accepts, so a long name
+          // can't fail the insert after the file is already stored.
+          fileName: record.fileName.slice(0, 255),
+        };
+      });
+    } catch {
+      return {
+        ok: false,
+        errors: {
+          uploads: "Something went wrong with those files. Try attaching them again.",
+        },
+      };
+    }
+  }
+
+  if (uploads.length > 0 && !consented) {
+    return {
+      ok: false,
+      errors: {
+        upload_consent:
+          "Tick the box to confirm we can use these documents to prepare your review.",
+      },
+    };
+  }
+
+  return { ok: true, value: { uploads, consented } };
 }

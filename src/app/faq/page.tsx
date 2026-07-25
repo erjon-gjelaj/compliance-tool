@@ -96,7 +96,8 @@ const FAQS: { question: string; answer: string[] }[] = [
     question: "What happens to what I put in the form?",
     answer: [
       "Whatever you fill in is stored: your trade, who asked you to register, which platform and by when, your name and email address, and — if you get that far — your crew size, the states you work in, your EMR and TRIR, and which documents you say you already have. Only the first screen is required. It all goes into our own database and is used to answer you.",
-      "We do not sell them, and we do not pass them to a hiring client or to a prequalification platform.",
+      "The last step lets you attach the documents you already have. That is optional and skipping it does not stop you getting a reply. Anything you do attach goes into private storage with no public link to it, is used only to prepare your review, and is deleted along with the rest of your record if you ask us.",
+      "We do not sell any of it, and we do not pass it to a hiring client or to a prequalification platform. The privacy page has the full detail.",
     ],
   },
   {

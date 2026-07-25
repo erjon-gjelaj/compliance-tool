@@ -188,6 +188,21 @@ details[open] > summary .faq-icon-closed {
 }
 
 /*
+ * Honeypot wrapper on the contact form. Positioned off-canvas rather than
+ * display:none or hidden — some bots skip fields they can tell are hidden,
+ * and this reads as an ordinary field to anything parsing the markup. It is
+ * also aria-hidden and out of the tab order, so nobody using the page or a
+ * screen reader ever meets it.
+ */
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/*
  * The single primary action. Defined once because the same string was
  * repeated on the hero CTA, the form submit, and the contact page button,
  * which is exactly how three buttons end up slightly different.

@@ -35,8 +35,11 @@ git and never should be.
 | `NEXT_PUBLIC_SUPABASE_URL` | from `.env.local` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | from `.env.local` |
 | `NEXT_PUBLIC_SITE_URL` | the deployed origin — set to `certloop.net` |
-| `RESEND_API_KEY` | optional — see *Lead notification emails* |
-| `LEAD_NOTIFY_FROM` | optional — see *Lead notification emails* |
+| `SMTP_HOST` | optional — see *Lead notification emails* |
+| `SMTP_PORT` | optional — `587`, or `465` for implicit TLS |
+| `SMTP_USER` | optional — see *Lead notification emails* |
+| `SMTP_PASSWORD` | optional — see *Lead notification emails* |
+| `LEAD_NOTIFY_FROM` | optional — defaults to `SMTP_USER` |
 | `LEAD_NOTIFY_TO` | optional — defaults to `CONTACT_EMAIL` |
 
 Notes:
@@ -161,42 +164,64 @@ Form submissions are emailed to `info@certloop.net` as well as being stored
 in Supabase. Supabase stays the record of truth; the email is so nobody has
 to watch the table editor to notice a lead arrived.
 
-**This is not switched on until you add a Resend account and key.** Without
-one, submissions still save exactly as before and the server logs a warning
-saying notifications are skipped. Nothing breaks, you just don't get the mail.
+Sent over plain SMTP with nodemailer, so it works with whatever mailbox
+provider hosts `info@certloop.net` — no third-party sending service, no extra
+account, and no API key to manage.
 
-To turn it on:
+**It stays off until the SMTP variables are set.** Without them, submissions
+still save exactly as before and the server logs a warning saying
+notifications are skipped. Nothing breaks; you just don't get the mail.
 
-1. Create a Resend account and verify `certloop.net` as a sending domain
-   (this means adding the DKIM/SPF records they give you at your registrar).
-   The sending domain has to be one you control — a free-mail address won't
-   be accepted as the sender.
-2. Create an API key.
-3. Set these three in Vercel, for Production at minimum:
+### Setting it up
+
+1. Get the outgoing SMTP details from whoever hosts `info@certloop.net`.
+   You need the server hostname, the port, the username (usually the full
+   address), and the password.
+2. **Use an app-specific password if your provider offers one.** Most do.
+   It can be revoked on its own without changing the password you log in
+   with, which matters when the value is sitting in a deployment platform.
+3. Set these in Vercel, for Production at minimum:
 
    | Variable | Example |
    | --- | --- |
-   | `RESEND_API_KEY` | `re_...` |
-   | `LEAD_NOTIFY_FROM` | `CertLoop <notifications@certloop.net>` |
-   | `LEAD_NOTIFY_TO` | `info@certloop.net` (optional; defaults to `CONTACT_EMAIL`) |
+   | `SMTP_HOST` | `smtp.zoho.eu` |
+   | `SMTP_PORT` | `587` |
+   | `SMTP_USER` | `info@certloop.net` |
+   | `SMTP_PASSWORD` | the mailbox or app password |
+   | `LEAD_NOTIFY_FROM` | `CertLoop <info@certloop.net>` (optional) |
+   | `LEAD_NOTIFY_TO` | `info@certloop.net` (optional) |
 
    **None of these may take a `NEXT_PUBLIC_` prefix.** That would publish the
-   API key to every visitor's browser.
+   SMTP password to every visitor's browser, handing out the ability to send
+   mail as this domain.
 
-4. Redeploy and submit the form once. You should get an email whose reply-to
-   is the contractor's address, so replying answers them directly rather than
+4. Redeploy and submit the form once. The email's reply-to is the
+   contractor's address, so replying answers them directly rather than
    coming back to you.
 
-Two deliberate properties of the implementation, in `src/lib/notify.ts`:
+The same keys are in `.env.local.example`, and blank ones are already in
+`.env.local` for local testing.
 
-- **It can never fail a submission.** The email is attempted only after the
-  row is safely inserted, and every failure path is caught and logged rather
-  than surfaced. A lead that saved but whose notification bounced is still a
-  saved lead, and showing the visitor an error would just invite a retry that
-  duplicates the row.
-- **It's a plain `fetch` to one endpoint,** not an SDK, so there's no
-  dependency to keep current. Switching providers means rewriting one
-  function.
+### Notes on the implementation
 
-Swapping to a different provider (Postmark, SendGrid, SES) is a change to
-`notifyNewLead` alone — nothing else imports it.
+`src/lib/notify.ts`, and three properties are deliberate:
+
+- **It can never fail a submission.** The send is attempted only after the row
+  is safely inserted, and every failure path is caught and logged rather than
+  surfaced. A lead that saved but whose notification bounced is still a saved
+  lead — showing the visitor an error would just invite a retry that
+  duplicates the row. Verified by pointing it at a dead port: the submission
+  is unaffected and the error goes to the server log.
+- **Config is all-or-nothing.** A half-filled config is treated as absent
+  rather than attempted, so a missing password can't produce an auth failure
+  on every single submission.
+- **TLS is not optional.** Port 465 is treated as implicit TLS; every other
+  port is required to upgrade via STARTTLS before authenticating, so the
+  password is never sent over a plaintext session.
+
+### Still unverified
+
+Actual delivery. There are no working credentials in the development
+environment, so what's been proven is the configuration handling, the TLS
+selection, and the failure behaviour — not that your provider accepts the
+message. The first submission after you set the variables is the real test.

@@ -104,9 +104,23 @@
       "status": "done",
       "notes": "Done on branch task/006-site-expansion. The default Next.js favicon.ico is deleted and replaced by src/app/icon.svg, which draws the wordmark's tape graduation. It is a solid verdigris field with the ticks knocked out in paper rather than verdigris marks on transparency, because at 16px a hairline figure on a transparent ground disappears against dark browser chrome; strokes are also heavier than the header wordmark so they survive downscaling. Verified by rasterising it at 16, 32 and 64px and looking at the result — it reads as a tape rule at all three. Confirmed the browser now requests /icon.svg and that /favicon.ico returns 404.",
       "needs_human_review": false
+    },
+    {
+      "id": "016",
+      "title": "Email lead submissions to the inbox",
+      "status": "blocked",
+      "notes": "Code is complete and merged, but it stays dormant until a Resend account and API key exist — that needs a human. Submissions are emailed to info@certloop.net in addition to being stored in Supabase, which remains the record of truth. Implemented in src/lib/notify.ts as a single fetch to Resend's REST API rather than their SDK, so there is no dependency to track and swapping providers means rewriting one function. Two properties matter: the send is attempted only after the row is safely inserted, and every failure path is caught and logged rather than surfaced, so a notification failure can never fail a submission or prompt a retry that duplicates the row. Reply-to is set to the contractor's address so replying answers them directly. Verified both guard paths — nothing configured, and key set with LEAD_NOTIFY_FROM missing — log a clear warning and return without throwing. The actual send is UNVERIFIED because no API key exists in this environment. Setup steps are in DEPLOY.md under 'Lead notification emails'. RESEND_API_KEY, LEAD_NOTIFY_FROM and LEAD_NOTIFY_TO are server-only and must never take a NEXT_PUBLIC_ prefix.",
+      "needs_human_review": true
+    },
+    {
+      "id": "017",
+      "title": "Collapsible FAQ answers",
+      "status": "done",
+      "notes": "Done. The FAQ is now eleven native <details>/<summary> disclosures instead of a flat <dl>, so opening and closing costs no JavaScript and keyboard support comes for free. All start collapsed, and the answers stay in the DOM whether open or closed — confirmed 490 characters present in the server HTML of a collapsed answer — so the page remains fully indexable and the FAQPage JSON-LD still matches what is rendered. Questions became h3 inside the summary, which improves the heading hierarchy over the previous dt. Getting the open/closed indicator right took three attempts worth recording: Tailwind's group-open:rotate-180 sat in the class list but generated no CSS at all; an explicit CSS rotate rule also failed, and browser testing showed why — a transform on a descendant of <summary> resolves to an identity matrix, proven by the identical element rotating correctly once moved outside the summary. The working approach swaps two icons with display instead of rotating one. Verified in a production build: correct icon in each state, expands and collapses, and only ever one icon visible.",
+      "needs_human_review": false
     }
   ],
-  "current_task_id": null,
+  "current_task_id": "016",
   "blocked_on": {
     "task_id": "005",
     "date": "2026-07-24",

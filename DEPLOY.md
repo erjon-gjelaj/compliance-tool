@@ -35,6 +35,9 @@ git and never should be.
 | `NEXT_PUBLIC_SUPABASE_URL` | from `.env.local` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | from `.env.local` |
 | `NEXT_PUBLIC_SITE_URL` | the deployed origin — set to `certloop.net` |
+| `RESEND_API_KEY` | optional — see *Lead notification emails* |
+| `LEAD_NOTIFY_FROM` | optional — see *Lead notification emails* |
+| `LEAD_NOTIFY_TO` | optional — defaults to `CONTACT_EMAIL` |
 
 Notes:
 
@@ -151,3 +154,49 @@ dashboard setting, not a code change.
 One side effect worth fixing: `https://certloop.net/robots.txt` (apex) serves
 only Cloudflare's block and drops the `Sitemap:` line, while the `www` version
 keeps it. Resolving finding 1 makes this consistent too.
+
+## Lead notification emails
+
+Form submissions are emailed to `info@certloop.net` as well as being stored
+in Supabase. Supabase stays the record of truth; the email is so nobody has
+to watch the table editor to notice a lead arrived.
+
+**This is not switched on until you add a Resend account and key.** Without
+one, submissions still save exactly as before and the server logs a warning
+saying notifications are skipped. Nothing breaks, you just don't get the mail.
+
+To turn it on:
+
+1. Create a Resend account and verify `certloop.net` as a sending domain
+   (this means adding the DKIM/SPF records they give you at your registrar).
+   The sending domain has to be one you control — a free-mail address won't
+   be accepted as the sender.
+2. Create an API key.
+3. Set these three in Vercel, for Production at minimum:
+
+   | Variable | Example |
+   | --- | --- |
+   | `RESEND_API_KEY` | `re_...` |
+   | `LEAD_NOTIFY_FROM` | `CertLoop <notifications@certloop.net>` |
+   | `LEAD_NOTIFY_TO` | `info@certloop.net` (optional; defaults to `CONTACT_EMAIL`) |
+
+   **None of these may take a `NEXT_PUBLIC_` prefix.** That would publish the
+   API key to every visitor's browser.
+
+4. Redeploy and submit the form once. You should get an email whose reply-to
+   is the contractor's address, so replying answers them directly rather than
+   coming back to you.
+
+Two deliberate properties of the implementation, in `src/lib/notify.ts`:
+
+- **It can never fail a submission.** The email is attempted only after the
+  row is safely inserted, and every failure path is caught and logged rather
+  than surfaced. A lead that saved but whose notification bounced is still a
+  saved lead, and showing the visitor an error would just invite a retry that
+  duplicates the row.
+- **It's a plain `fetch` to one endpoint,** not an SDK, so there's no
+  dependency to keep current. Switching providers means rewriting one
+  function.
+
+Swapping to a different provider (Postmark, SendGrid, SES) is a change to
+`notifyNewLead` alone — nothing else imports it.

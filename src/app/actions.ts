@@ -6,6 +6,7 @@ import {
   type LeadFormState,
   type LeadInput,
 } from "@/lib/leads";
+import { notifyNewLead } from "@/lib/notify";
 import { getSupabaseClient } from "@/lib/supabase";
 
 const GENERIC_FAILURE =
@@ -57,6 +58,13 @@ export async function submitLead(
       console.error("Failed to insert lead:", error.message);
       return { status: "error", message: GENERIC_FAILURE, values };
     }
+
+    // Only after the row is safely stored, and deliberately awaited so the
+    // send isn't cut short when the serverless invocation ends. It cannot
+    // throw and cannot fail the submission: a saved lead whose notification
+    // bounced is still a saved lead, and showing an error would only invite
+    // a retry that duplicates the row.
+    await notifyNewLead(result.value);
   } catch (cause) {
     console.error("Lead submission failed:", cause);
     return { status: "error", message: GENERIC_FAILURE, values };

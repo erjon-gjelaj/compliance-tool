@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { pageMetadata } from "@/lib/metadata";
 import { PageIntro } from "@/components/page-intro";
 import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
@@ -156,20 +157,44 @@ export default function FaqPage() {
           Frequently asked questions
         </h2>
         <div className="mx-auto max-w-5xl px-6 py-14 md:py-16">
-          <dl className="grid gap-px border border-zinc-dust bg-zinc-dust">
+          {/*
+           * Native <details>, so opening and closing costs no JavaScript and
+           * works with a keyboard for free. The answers stay in the DOM
+           * whether open or closed, which matters here — this page is meant
+           * to be indexable, and collapsing behind JS would have hidden the
+           * substance from crawlers.
+           */}
+          <div className="grid gap-px border border-zinc-dust bg-zinc-dust">
             {FAQS.map(({ question, answer }) => (
-              <div key={question} className="bg-paper p-6 md:p-8">
-                <dt className="type-h3 max-w-2xl">{question}</dt>
-                <dd className="mt-3 max-w-2xl space-y-3">
+              <details key={question} className="bg-paper">
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-6 p-6 transition-colors hover:text-verdigris md:p-8 [&::-webkit-details-marker]:hidden">
+                  <h3 className="type-h3 max-w-2xl">{question}</h3>
+                  {/* Two icons swapped by display rather than one rotated:
+                      a transform on a descendant of <summary> doesn't
+                      apply. See the .faq-icon-* rules in globals.css. */}
+                  <span className="mt-0.5 shrink-0 text-verdigris">
+                    <ChevronDown
+                      aria-hidden="true"
+                      strokeWidth={1.5}
+                      className="faq-icon-closed h-5 w-5"
+                    />
+                    <ChevronUp
+                      aria-hidden="true"
+                      strokeWidth={1.5}
+                      className="faq-icon-open h-5 w-5"
+                    />
+                  </span>
+                </summary>
+                <div className="max-w-2xl space-y-3 px-6 pb-6 md:px-8 md:pb-8">
                   {answer.map((paragraph) => (
                     <p key={paragraph} className="type-body">
                       {paragraph}
                     </p>
                   ))}
-                </dd>
-              </div>
+                </div>
+              </details>
             ))}
-          </dl>
+          </div>
 
           <p className="type-body mt-10 max-w-2xl">
             Something not covered here?{" "}

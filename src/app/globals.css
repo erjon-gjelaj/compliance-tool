@@ -128,6 +128,30 @@ body {
 }
 
 /*
+ * FAQ disclosure indicator: chevron down when collapsed, up when open.
+ *
+ * Two icons swapped by `display` rather than one icon rotated, because a
+ * transform on a descendant of <summary> does not apply — verified in the
+ * browser, where the identical element rotated correctly once moved outside
+ * the <summary> and resolved to an identity matrix inside it. Tailwind's
+ * `group-open:rotate-180` was a dead end for the same reason, on top of
+ * generating no rule at all.
+ *
+ * Swapping display sidesteps the quirk entirely.
+ */
+.faq-icon-open {
+  display: none;
+}
+
+details[open] > summary .faq-icon-open {
+  display: block;
+}
+
+details[open] > summary .faq-icon-closed {
+  display: none;
+}
+
+/*
  * The single primary action. Defined once because the same string was
  * repeated on the hero CTA, the form submit, and the contact page button,
  * which is exactly how three buttons end up slightly different.

@@ -31,11 +31,20 @@
     {
       "id": "005",
       "title": "Deploy to Vercel",
-      "status": "pending",
-      "notes": "Connect repo to Vercel, set environment variables for Supabase, verify production build. Do not connect a custom domain yet — flag that as needs_human_review.",
+      "status": "blocked",
+      "notes": "Prep is done on branch task/005-vercel-deploy and the repo is deploy-ready, but the deploy itself needs a human: importing the repo requires signing in to a Vercel account and granting it GitHub access, which I cannot and should not do. No Vercel CLI, token, or session exists in this environment either. Everything not requiring that account is finished and verified: main builds and lints clean and is fully static; NEXT_PUBLIC_SITE_URL was confirmed to drive robots.txt, sitemap.xml, the canonical link, the Open Graph tags and the JSON-LD url; and a build with the Supabase variables removed was confirmed to still succeed, which is the main deploy trap. Step-by-step instructions, the env var table, and the verification checklist are in DEPLOY.md. Custom domain deliberately not attempted, as instructed.",
       "needs_human_review": true
     }
   ],
   "current_task_id": "005",
-  "blocked_on": null
+  "blocked_on": {
+    "task_id": "005",
+    "date": "2026-07-24",
+    "action_needed": "Import the repo into Vercel, set NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY and NEXT_PUBLIC_SITE_URL, then submit the live form once and confirm the row lands in Supabase. Full runbook in DEPLOY.md. Do not attach a custom domain yet.",
+    "why_a_human": "Connecting the repo means signing in to a Vercel account and authorising its GitHub access. There is no Vercel CLI, API token, or existing session in this environment, and entering account credentials is not something I should do on your behalf.",
+    "branches": [
+      "task/005-vercel-deploy"
+    ],
+    "branch_note": "Tasks 001, 002, 004 and 003 are all merged into main and pushed, in that order. task/005-vercel-deploy adds DEPLOY.md and this status update on top of main."
+  }
 }

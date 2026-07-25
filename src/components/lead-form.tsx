@@ -15,7 +15,7 @@ import { CONTACT_EMAIL } from "@/lib/constants";
 const fieldBase =
   "mt-2 w-full border bg-paper px-3.5 py-2.5 text-[0.95rem] text-millscale placeholder:text-slate-wash/70 focus:outline-none disabled:opacity-60";
 
-const labelClass = "block font-display text-sm font-semibold tracking-tight";
+const labelClass = "type-label block";
 
 function fieldClass(hasError: boolean) {
   return `${fieldBase} ${
@@ -44,12 +44,21 @@ function fieldProps(state: LeadFormState, field: LeadFields) {
     "aria-describedby": error ? `${field}-error` : undefined,
     className: fieldClass(Boolean(error)),
     defaultValue: state.values?.[field] ?? "",
-    // A changed key remounts the field so the echoed value is actually
-    // applied. React only reads defaultValue on mount, which otherwise
-    // leaves a <select> sitting back on its placeholder after a failed
-    // submission even though the choice came back from the server.
-    key: `${field}-${state.values?.[field] ?? ""}`,
   };
+}
+
+/**
+ * A key that changes with the echoed value, which remounts the field so the
+ * value is actually applied. React only reads defaultValue on mount, so
+ * without this a <select> sits back on its placeholder after a failed
+ * submission even though the choice came back from the server.
+ *
+ * This has to be passed to the element directly. It used to be returned
+ * inside fieldProps and spread in, which React ignores — it warns about a
+ * spread key and drops it, so the remount never actually happened.
+ */
+function fieldKey(state: LeadFormState, field: LeadFields) {
+  return `${field}-${state.values?.[field] ?? ""}`;
 }
 
 function SuccessPanel() {
@@ -64,10 +73,10 @@ function SuccessPanel() {
         strokeWidth={1.5}
         className="h-6 w-6 text-verdigris"
       />
-      <h3 className="mt-4 font-display text-xl font-semibold tracking-tight">
+      <h3 className="type-h3 mt-4">
         Got it — your gap check is in the queue
       </h3>
-      <p className="mt-3 text-[0.95rem] leading-relaxed text-slate-wash">
+      <p className="type-body mt-3">
         Someone reads these by hand, so this isn&apos;t instant. You&apos;ll get
         one email with what&apos;s missing from your file. Nothing else, and no
         call to book.
@@ -106,6 +115,7 @@ export function LeadForm() {
             Your trade
           </label>
           <select
+            key={fieldKey(state, "trade")}
             id="trade"
             name="trade"
             required
@@ -127,6 +137,7 @@ export function LeadForm() {
             People on the crew
           </label>
           <select
+            key={fieldKey(state, "employee_count")}
             id="employee_count"
             name="employee_count"
             required
@@ -151,6 +162,7 @@ export function LeadForm() {
             Who&apos;s asking you to register
           </label>
           <input
+            key={fieldKey(state, "hiring_client")}
             id="hiring_client"
             name="hiring_client"
             type="text"
@@ -172,6 +184,7 @@ export function LeadForm() {
             Where to send the list
           </label>
           <input
+            key={fieldKey(state, "email")}
             id="email"
             name="email"
             type="email"
@@ -203,7 +216,7 @@ export function LeadForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="mt-7 inline-flex w-full items-center justify-center gap-2 bg-verdigris px-6 py-3.5 font-display text-base font-semibold tracking-tight text-paper transition-colors hover:bg-verdigris-deep disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+        className="btn-primary mt-7 w-full sm:w-auto"
       >
         {isPending ? "Sending…" : "Send my gap check"}
         {!isPending && (

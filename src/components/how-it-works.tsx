@@ -4,7 +4,7 @@ const STEPS = [
   {
     icon: ClipboardList,
     title: "You tell us the job",
-    body: "Your trade, the hiring client asking you to register, and roughly how many people you run. That's the whole form.",
+    body: "Your trade, who's asking you to register, which platform, and when they need you approved by. Everything after that screen is optional.",
   },
   {
     icon: FileSearch,

@@ -164,15 +164,16 @@
     {
       "id": "024",
       "title": "Move documented scope from A to B",
-      "status": "in_progress",
+      "status": "done",
       "notes": "Docs-only change on branch task/024-scope-b-docs, ahead of any Scope B feature code, so the repo does not forbid in CLAUDE.md what the code is about to do. CLAUDE.md drops 'SCOPE A ONLY' and gains a Scope B section, a Regulatory output rules section covering the generated-output guardrails and the eCFR retrieval rule, and stack/secrets notes for the Anthropic API and Supabase Storage. business-model.md records Scope A as shipped, describes the Scope B flow and why uploads earn their place, and adds the indicative-band quoting rule. Source is docs/scope-b-plan.md Part 1; Parts 2 and 3 are business context and were not treated as build instructions.",
       "needs_human_review": false
     },
     {
       "id": "025",
       "title": "Expanded multi-step intake form",
-      "status": "todo",
-      "notes": "Scope B deliverable 1. Four steps, every step after the first skippable, email captured early, partial submissions persisted."
+      "status": "in_progress",
+      "notes": "Scope B deliverable 1, on branch task/025-intake-form (branched off task/024, since main has neither). Three steps: the job (trade, hiring client, platform, deadline or a 'no date given' tick, name, email), the company (crew size, states, EMR, TRIR, registered before), and a checklist of documents they say they hold. Step 4, the upload, is task 026 and slots in ahead of the send; TOTAL_STEPS is one constant in lib/intake.ts. Deviation from the plan, deliberate: name and email moved from step 4 to step 1, because the plan also requires email capture to survive abandoning later steps and both cannot hold at once. Each step is written as it is completed - step 1 inserts, later steps update - so an intake abandoned at step 2 is still a row with a name and an email on it. Skip is a real submit button so the row records how far they got, and Back re-reads the stored row rather than trusting the browser. New submissions table (migration 0002) closed to anon entirely, reached only through a new service-role client, because a multi-step write needs UPDATE and granting anon that would let anyone rewrite anyone else's intake. New in-memory fixed-window rate limiter on the submission action, plus the contact form's honeypot. Deleted the old path rather than leaving two forms: lead-form.tsx, lib/leads.ts, submitLead, the lead email builders and getSupabaseClient. The leads table keeps its history; nothing writes to it now. Stale copy fixed in the same change (hero 'Four questions', how-it-works step 1, the FAQ's list of stored fields). TWO MANUAL STEPS BEFORE THIS WORKS, at the top of DEPLOY.md: run supabase/migrations/0002_submissions.sql, and set SUPABASE_SERVICE_ROLE_KEY locally and in Vercel. There is no fallback - the old form is gone. Not tested end to end: no .env.local in this working tree, so no database to write to. Build and lint pass clean.",
+      "needs_human_review": true
     },
     {
       "id": "026",
@@ -217,6 +218,6 @@
       "notes": "Scope B deliverable 8. Retrieval not recall: every proposed citation fetched from the eCFR API, confirmed to exist and to support the claim, stripped and downgraded to unknown otherwise, sections cached. Output separates OSHA requirements from ISN/Avetta contractual ones."
     }
   ],
-  "current_task_id": "024",
+  "current_task_id": "025",
   "blocked_on": null
 }

@@ -31,9 +31,9 @@
     {
       "id": "005",
       "title": "Deploy to Vercel",
-      "status": "blocked",
-      "notes": "Prep is done on branch task/005-vercel-deploy and the repo is deploy-ready, but the deploy itself needs a human: importing the repo requires signing in to a Vercel account and granting it GitHub access, which I cannot and should not do. No Vercel CLI, token, or session exists in this environment either. Everything not requiring that account is finished and verified: main builds and lints clean and is fully static; NEXT_PUBLIC_SITE_URL was confirmed to drive robots.txt, sitemap.xml, the canonical link, the Open Graph tags and the JSON-LD url; and a build with the Supabase variables removed was confirmed to still succeed, which is the main deploy trap. Step-by-step instructions, the env var table, and the verification checklist are in DEPLOY.md. Custom domain deliberately not attempted, as instructed.",
-      "needs_human_review": true
+      "status": "done",
+      "notes": "Deployed and verified. The repo is on Vercel, the environment variables are set, certloop.net is attached, and a real form submission on production was confirmed landing in the Supabase leads table — which is the check that actually proves the env vars are right, since the page is static and a green build proves nothing about the form. Live checks: all four pages, the generated OG image, the favicon and the sitemap return 200. Two follow-ups came out of the live check and are written up in DEPLOY.md under 'Post-deploy findings': the apex 308-redirects to www while NEXT_PUBLIC_SITE_URL is the apex, so canonical URLs and the sitemap advertise a hostname that immediately redirects; and the domain is proxied through Cloudflare, whose managed robots.txt prepends a Content-Signal block that disallows a list of AI crawlers. Neither is a code change and neither blocks anything.",
+      "needs_human_review": false
     },
     {
       "id": "006",
@@ -95,8 +95,8 @@
       "id": "014",
       "title": "Point the site at certloop.net",
       "status": "done",
-      "notes": "Done on branch task/006-site-expansion, merged to main. certloop.net is registered: SITE_URL falls back to https://certloop.net and CONTACT_EMAIL is info@certloop.net, which is registered and live. NEXT_PUBLIC_SITE_URL is set to https://certloop.net on Vercel. SITE_URL is normalised via toOrigin() rather than used raw, because the value was previously passed straight to new URL() for metadataBase, where a bare hostname throws and fails the build outright; a missing scheme now gets https, trailing slashes and paths are stripped, and an unparseable value falls back instead of breaking the build. Verified against five input forms and with real builds using both the bare and full-scheme values. Attaching the domain in Vercel is still a human step — DEPLOY.md section 4 has the order, including the www-versus-apex decision. Until DNS is attached, canonical URLs and the sitemap claim certloop.net while the site answers on *.vercel.app.",
-      "needs_human_review": true
+      "notes": "Done on branch task/006-site-expansion, merged to main. certloop.net is registered: SITE_URL falls back to https://certloop.net and CONTACT_EMAIL is info@certloop.net, which is registered and live. NEXT_PUBLIC_SITE_URL is set to https://certloop.net on Vercel. SITE_URL is normalised via toOrigin() rather than used raw, because the value was previously passed straight to new URL() for metadataBase, where a bare hostname throws and fails the build outright; a missing scheme now gets https, trailing slashes and paths are stripped, and an unparseable value falls back instead of breaking the build. Verified against five input forms and with real builds using both the bare and full-scheme values. The domain is now attached and serving. One thing left unresolved by the attach: the apex 308-redirects to www.certloop.net, while NEXT_PUBLIC_SITE_URL is the apex, so every canonical, og:url and sitemap entry names a hostname that immediately redirects to a different one. Fix is one setting either way — make the apex primary in Vercel, or point the variable at www — and is written up in DEPLOY.md. CONTACT_EMAIL is info@certloop.net, registered and live.",
+      "needs_human_review": false
     },
     {
       "id": "015",
@@ -106,7 +106,7 @@
       "needs_human_review": false
     }
   ],
-  "current_task_id": "005",
+  "current_task_id": null,
   "blocked_on": {
     "task_id": "005",
     "date": "2026-07-24",

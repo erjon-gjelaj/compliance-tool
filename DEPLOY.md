@@ -1,7 +1,13 @@
 # Deploying to Vercel
 
-Task 005. The repo is verified deploy-ready; the steps below need a human
-because they require signing into a Vercel account, which an agent can't do.
+**Status: deployed and verified.** The site is live on `certloop.net`, the
+environment variables are set, and a real form submission on production was
+confirmed landing in the Supabase `leads` table. The steps below are kept as
+the runbook for redeploying or rebuilding the project from scratch.
+
+Two things the live check turned up are recorded at the bottom under
+*Post-deploy findings* — neither blocks anything, both are config rather
+than code.
 
 ## Before you start
 
@@ -43,12 +49,9 @@ Notes:
   origin. Worth knowing why: the raw value used to be passed straight to
   `new URL()` for `metadataBase`, and a bare hostname throws there — which
   would have failed the Vercel build outright rather than degrading.
-- **This is currently set to `certloop.net`, which is ahead of the DNS.**
-  Until the domain is attached and serving (step 4), every canonical link,
-  the sitemap, and the OG tags claim `certloop.net` while the site actually
-  answers on `*.vercel.app`. The site works; the risk is search engines being
-  pointed at a hostname that doesn't resolve yet. Either attach the domain
-  promptly, or set this to the `*.vercel.app` origin in the meantime.
+- It is currently `https://certloop.net`. See *Post-deploy findings* below:
+  the apex redirects to `www`, so this value and the origin that actually
+  serves disagree.
 
 **Watch out:** the build succeeds even with the Supabase variables missing —
 verified locally. The page is fully static, so nothing touches Supabase until
@@ -68,11 +71,9 @@ successful build as proof the form works; do step 3.
 
 ## 4. Custom domain — certloop.net
 
-`certloop.net` is registered. The code now defaults to it, but nothing has
-been attached — that is a Vercel dashboard action needing your account.
-
-Order matters, because each step is only correct once the previous one has
-taken effect:
+**Done — attached and serving.** Kept for reference if the domain is ever
+moved or rebuilt. Order matters, because each step is only correct once the
+previous one has taken effect:
 
 1. Vercel → Project → Settings → Domains → add `certloop.net`.
 2. Add the DNS records Vercel gives you at your registrar. Decide whether
@@ -97,3 +98,56 @@ taken effect:
 - `npm audit` reports advisories in Next.js transitive dependencies
   (postcss, sharp). Noted in task 001; no fix available that doesn't
   downgrade Next.js.
+
+## Post-deploy findings
+
+Both found by checking the live site rather than the build. Neither is a code
+change; both are settings.
+
+### 1. The apex redirects to `www`, but the canonical says apex
+
+`https://certloop.net` returns a 308 to `https://www.certloop.net`, which is
+what actually serves. Meanwhile `NEXT_PUBLIC_SITE_URL` is set to the apex, so
+every page's canonical link, every `og:url`, and all four sitemap entries name
+`certloop.net` — a hostname that immediately redirects somewhere else.
+
+It isn't fatal. Google generally follows the redirect and settles on the
+target. But you are telling crawlers the authoritative copy lives at a URL
+that doesn't serve it, which is the kind of thing that gets a canonical
+ignored, and it means your sitemap and your served origin disagree.
+
+Pick one and make everything agree:
+
+- **Apex canonical** (matches `SITE_URL` and the brand as registered): in
+  Vercel → Domains, make `certloop.net` the primary and set `www` to redirect
+  to it. No redeploy needed, nothing in the repo changes.
+- **`www` canonical**: leave the redirect as it is and change
+  `NEXT_PUBLIC_SITE_URL` to `https://www.certloop.net`, then redeploy so the
+  canonical, OG tags and sitemap regenerate.
+
+Either is fine. Doing neither leaves the disagreement in place.
+
+### 2. Cloudflare is in front of Vercel and is rewriting `robots.txt`
+
+The domain is proxied through Cloudflare (`server: cloudflare` on every
+response). Cloudflare's managed `robots.txt` feature is prepending a
+`Content-Signal` block to what `src/app/robots.ts` generates, and that block
+disallows a list of AI crawlers outright:
+
+`Amazonbot`, `Applebot-Extended`, `Bytespider`, `CCBot`, `ClaudeBot`,
+`Google-Extended`, `GPTBot`, `meta-externalagent`, and Cloudflare's own
+rendering crawler.
+
+Worth knowing because **it is not coming from this repo** — nothing in
+`src/app/robots.ts` blocks anyone, so reading the source would tell you the
+opposite of what crawlers actually see. It is a Cloudflare default, not a
+decision anyone here made.
+
+Ordinary search is unaffected: the managed block sets `search=yes` and
+`Allow: /`, so Googlebot and Bingbot index normally. If you *want* to be
+included in AI training and AI-answer surfaces, that is a Cloudflare
+dashboard setting, not a code change.
+
+One side effect worth fixing: `https://certloop.net/robots.txt` (apex) serves
+only Cloudflare's block and drops the `Sitemap:` line, while the `www` version
+keeps it. Resolving finding 1 makes this consistent too.

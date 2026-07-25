@@ -84,7 +84,7 @@ export default function AboutPage() {
               className="mt-[0.7em] h-px w-4 shrink-0 bg-verdigris"
             />
             <span>
-              <strong className="font-display font-semibold text-millscale">
+              <strong className="font-semibold text-millscale">
                 Not affiliated with ISNetworld or Avetta.
               </strong>{" "}
               No partnership, no endorsement, no relationship of any kind. Those
@@ -98,7 +98,7 @@ export default function AboutPage() {
               className="mt-[0.7em] h-px w-4 shrink-0 bg-verdigris"
             />
             <span>
-              <strong className="font-display font-semibold text-millscale">
+              <strong className="font-semibold text-millscale">
                 Not a consultant.
               </strong>{" "}
               We do not write your programs, gather your records, or submit
@@ -112,7 +112,7 @@ export default function AboutPage() {
               className="mt-[0.7em] h-px w-4 shrink-0 bg-verdigris"
             />
             <span>
-              <strong className="font-display font-semibold text-millscale">
+              <strong className="font-semibold text-millscale">
                 Not a compliance determination.
               </strong>{" "}
               A gap check helps you prepare your own submission. It is not legal

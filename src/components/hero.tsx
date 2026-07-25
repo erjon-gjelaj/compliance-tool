@@ -80,7 +80,7 @@ export function Hero() {
               >
                 Get your free gap check
               </a>
-              <span className="font-mono text-xs text-slate-wash">
+              <span className="text-xs text-slate-wash">
                 Four questions. No account, no card.
               </span>
             </div>

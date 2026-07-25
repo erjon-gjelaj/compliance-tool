@@ -14,8 +14,9 @@ import { SITE_NAME, SITE_SLOGAN } from "@/lib/constants";
  * against those ticks — which is what the slogan is describing. The wordmark
  * glyph at the top is the same tape graduation used in the site header.
  *
- * Satori (behind ImageResponse) has no access to next/font, so the two faces
- * are read off disk as .woff — it can't read the .woff2 that next/font emits.
+ * Type matches the site: one family, Bricolage Grotesque, at two weights.
+ * Satori (behind ImageResponse) has no access to next/font and can't read
+ * the .woff2 it emits, so the weights are read off disk as .woff.
  */
 
 export const alt = `${SITE_NAME} — ${SITE_SLOGAN}`;
@@ -40,7 +41,7 @@ function fontFile(pkg: string, file: string) {
 }
 
 export default async function OpengraphImage() {
-  const [display, mono] = await Promise.all([
+  const [bold, regular] = await Promise.all([
     readFile(
       fontFile(
         "@fontsource/bricolage-grotesque",
@@ -49,8 +50,8 @@ export default async function OpengraphImage() {
     ),
     readFile(
       fontFile(
-        "@fontsource/ibm-plex-mono",
-        "ibm-plex-mono-latin-400-normal.woff",
+        "@fontsource/bricolage-grotesque",
+        "bricolage-grotesque-latin-400-normal.woff",
       ),
     ),
   ]);
@@ -115,7 +116,8 @@ export default async function OpengraphImage() {
         </div>
         <div
           style={{
-            fontFamily: "Display",
+            fontFamily: "Brand",
+            fontWeight: 700,
             fontSize: 40,
             letterSpacing: "-0.03em",
             color: COLOR.millscale,
@@ -132,7 +134,8 @@ export default async function OpengraphImage() {
         <div
           style={{
             display: "flex",
-            fontFamily: "Display",
+            fontFamily: "Brand",
+            fontWeight: 700,
             fontSize: 82,
             lineHeight: 1.05,
             letterSpacing: "-0.035em",
@@ -146,7 +149,10 @@ export default async function OpengraphImage() {
           style={{
             display: "flex",
             marginTop: 28,
-            fontFamily: "Mono",
+            fontFamily: "Brand",
+            // Regular weight plus wide tracking carries the technical
+            // annotation feel that the mono face used to provide.
+            fontWeight: 400,
             fontSize: 21,
             letterSpacing: "0.14em",
             textTransform: "uppercase",
@@ -233,8 +239,8 @@ export default async function OpengraphImage() {
     {
       ...size,
       fonts: [
-        { name: "Display", data: display, style: "normal", weight: 700 },
-        { name: "Mono", data: mono, style: "normal", weight: 400 },
+        { name: "Brand", data: bold, style: "normal", weight: 700 },
+        { name: "Brand", data: regular, style: "normal", weight: 400 },
       ],
     },
   );

@@ -22,9 +22,17 @@
   /* Used only to flag a problem — oxide red, the one warm note on the page. */
   --color-rust-flag: #8c3a2e;
 
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  /*
+   * One family, everywhere. There is deliberately no separate display or
+   * mono face — headings, body copy, labels and the mono-style tags are all
+   * Bricolage Grotesque, differentiated by weight, size and letter-spacing
+   * instead of by typeface.
+   *
+   * --font-display and --font-mono are gone rather than aliased to the same
+   * value, so a stray `font-mono` or `font-display` utility fails loudly in
+   * review instead of silently falling back to a system stack.
+   */
+  --font-sans: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
 }
 
 /*
@@ -60,14 +68,14 @@ body {
  *
  * Defined once here rather than as ad-hoc utility strings on each heading,
  * so a page added later can't quietly invent a fourth heading size or fall
- * back to the system font. Four steps is all this site needs: page title,
- * section title, card title, and the mono label.
+ * back to a system font. Everything below is the one family — the steps
+ * differ by weight, size and letter-spacing, never by typeface.
  *
  * The two large steps are fluid via clamp, which replaces the old
  * text-4xl/sm:text-5xl/md:[3.4rem] ladder with a single definition.
  */
 .type-h1 {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: clamp(2.25rem, 1.55rem + 2.8vw, 3.4rem);
   line-height: 1.08;
@@ -76,7 +84,7 @@ body {
 }
 
 .type-h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: clamp(1.875rem, 1.62rem + 1.05vw, 2.25rem);
   line-height: 1.15;
@@ -85,7 +93,7 @@ body {
 }
 
 .type-h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: 1.25rem;
   line-height: 1.3;
@@ -93,12 +101,12 @@ body {
 }
 
 /*
- * Display-face label: form field labels and the small titles inside cards.
- * Unifies two sizes that had drifted apart (0.95rem in the hero card,
- * 0.875rem on the form labels) into one step.
+ * Small bold label: form field labels and the titles inside cards. Unifies
+ * two sizes that had drifted apart (0.95rem in the hero card, 0.875rem on
+ * the form labels) into one step.
  */
 .type-label {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: 0.9375rem;
   line-height: 1.4;
@@ -130,7 +138,7 @@ body {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem 1.5rem;
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: 1rem;
   letter-spacing: -0.025em;
@@ -148,9 +156,13 @@ body {
   opacity: 0.7;
 }
 
-/* Small mono label used for section tags and field hints. */
+/*
+ * Small uppercase label for section tags and field hints. This used to be
+ * set in IBM Plex Mono; the wide letter-spacing and uppercase now carry the
+ * same "technical annotation" role without a second typeface.
+ */
 .tag {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;

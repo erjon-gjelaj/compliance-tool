@@ -76,6 +76,34 @@
       "status": "done",
       "notes": "Done on branch task/006-site-expansion. @vercel/speed-insights installed and <SpeedInsights /> mounted in the root layout per Vercel's setup instructions, with no further configuration. Confirmed in the browser console that it initialises and reports debug mode locally, sending nothing — real data only starts once the site is deployed, which is task 005.",
       "needs_human_review": false
+    },
+    {
+      "id": "012",
+      "title": "Collapse the site to a single typeface",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. The three-family setup (Bricolage Grotesque display over IBM Plex Sans body and IBM Plex Mono labels) is gone; everything is Bricolage Grotesque, differentiated by weight, size and letter-spacing rather than by typeface. --font-display and --font-mono were deleted rather than aliased to the same value, so a stray font-mono or font-display utility fails visibly in review instead of silently falling back to a system stack; all such utilities were removed from the components. The OG image was switched too — it now loads Bricolage at 400 and 700 instead of Bricolage plus Plex Mono, with explicit font weights, since registering two weights under one family made Satori default to 400 and would otherwise have rendered the headline in regular. IBM Plex Sans and Plex Mono dropped entirely: the built home page now references one font file instead of three. Verified in the browser that every text-bearing element on all four pages computes Bricolage Grotesque, with no system fallback anywhere. Note this overrides the CLAUDE.md guidance to pair a display face with a separate body face.",
+      "needs_human_review": false
+    },
+    {
+      "id": "013",
+      "title": "Vercel Web Analytics",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. @vercel/analytics installed and <Analytics /> from @vercel/analytics/next mounted in the root layout alongside <SpeedInsights />, per Vercel's setup instructions, with no further configuration. Confirmed present in the rendered HTML. Like Speed Insights it only reports once the site is deployed to Vercel, which is still task 005. Also re-confirmed @vercel/speed-insights is installed at ^2.0.0 and mounted — that was already in place from task 011.",
+      "needs_human_review": false
+    },
+    {
+      "id": "014",
+      "title": "Point the site at certloop.net",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. certloop.net is registered, so SITE_URL now falls back to https://certloop.net and CONTACT_EMAIL is hello@certloop.net. Attaching the domain in Vercel is still a human step and is written up as step 4 of DEPLOY.md, including the ordering trap: NEXT_PUBLIC_SITE_URL must stay on the *.vercel.app origin until the domain actually resolves, because the fallback would otherwise publish canonical URLs, a sitemap and OG tags pointing at a hostname that does not answer. The hello@certloop.net mailbox does not exist yet and now matters more than before, since the Contact page, the FAQ, and the form's success panel all direct people to it.",
+      "needs_human_review": true
+    },
+    {
+      "id": "015",
+      "title": "Favicon from the logo mark",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. The default Next.js favicon.ico is deleted and replaced by src/app/icon.svg, which draws the wordmark's tape graduation. It is a solid verdigris field with the ticks knocked out in paper rather than verdigris marks on transparency, because at 16px a hairline figure on a transparent ground disappears against dark browser chrome; strokes are also heavier than the header wordmark so they survive downscaling. Verified by rasterising it at 16, 32 and 64px and looking at the result — it reads as a tape rule at all three. Confirmed the browser now requests /icon.svg and that /favicon.ico returns 404.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": "005",

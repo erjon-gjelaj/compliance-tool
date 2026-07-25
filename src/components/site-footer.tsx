@@ -71,7 +71,7 @@ export function SiteFooter() {
 
         <TickRule id="tick-footer" className="mt-12" />
 
-        <p className="mt-5 font-mono text-xs text-slate-wash">
+        <p className="mt-5 text-xs text-slate-wash">
           &copy; {YEAR} {SITE_NAME}. All rights reserved.
         </p>
       </div>

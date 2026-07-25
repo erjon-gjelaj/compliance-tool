@@ -36,11 +36,20 @@ export const SITE_TAGLINE =
 export const SITE_SLOGAN = "The gap between your file and the gate.";
 
 /**
- * Canonical origin, no trailing slash. Overridden per-environment via
- * NEXT_PUBLIC_SITE_URL once the production domain is chosen (task 005).
+ * Canonical origin, no trailing slash. certloop.net is the registered
+ * domain, so it is the fallback; NEXT_PUBLIC_SITE_URL still overrides it
+ * per-environment, and should be set to the *.vercel.app origin until the
+ * domain is actually attached and serving, or the canonical URL will point
+ * somewhere that doesn't answer yet.
  */
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://certloop.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://certloop.net";
 
-/** Where free gap-check requests are followed up from. */
-export const CONTACT_EMAIL = "hello@certloop.com";
+/**
+ * Where free gap-check requests are followed up from.
+ *
+ * On certloop.net, which is registered — but the mailbox still has to exist
+ * before this address goes anywhere. The Contact page is built around it
+ * working.
+ */
+export const CONTACT_EMAIL = "hello@certloop.net";

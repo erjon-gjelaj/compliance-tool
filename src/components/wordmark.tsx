@@ -26,7 +26,7 @@ export function Wordmark() {
         <line x1="15" y1="8" x2="15" y2="13" />
         <line x1="21" y1="8" x2="21" y2="17" />
       </svg>
-      <span className="font-display text-xl font-semibold tracking-tight">
+      <span className="text-xl font-semibold tracking-tight">
         {SITE_NAME}
       </span>
     </span>

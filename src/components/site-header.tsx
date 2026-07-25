@@ -33,7 +33,7 @@ export function SiteHeader() {
                 <Link
                   href={href}
                   aria-current={isCurrent ? "page" : undefined}
-                  className={`font-mono text-xs tracking-[0.12em] uppercase underline-offset-[6px] transition-colors hover:text-verdigris hover:underline hover:decoration-verdigris ${
+                  className={`text-xs tracking-[0.12em] uppercase underline-offset-[6px] transition-colors hover:text-verdigris hover:underline hover:decoration-verdigris ${
                     isCurrent
                       ? "text-verdigris underline decoration-verdigris"
                       : "text-slate-wash"

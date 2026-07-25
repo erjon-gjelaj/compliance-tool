@@ -224,7 +224,7 @@ export function LeadForm() {
         )}
       </button>
 
-      <p className="mt-4 font-mono text-xs leading-relaxed text-slate-wash">
+      <p className="mt-4 text-xs leading-relaxed text-slate-wash">
         We use this to answer your question and nothing else. No mailing list.
       </p>
     </form>

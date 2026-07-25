@@ -239,3 +239,30 @@ Nothing is needed today at current traffic, and rate limiting was out of
 scope here. If the site starts getting real traffic — or if you see repeat
 submissions for addresses that never reply — the fix is a rate limit on the
 server action, keyed by IP.
+
+### The contact form
+
+The contact page has its own form, separate from the gap check, and it works
+differently in one way that matters operationally: **there is no database
+behind it.** A gap check is written to Supabase before any mail is attempted,
+so a failed send costs you a notification, not the lead. A contact message
+exists only as an email.
+
+That drives two deliberate choices:
+
+- **A failed send is reported to the visitor**, rather than swallowed the way
+  a gap-check notification failure is. If SMTP is misconfigured or down, the
+  form says so and hands them the mailto link instead of showing a success
+  panel for a message that went nowhere. Watch for this after any SMTP
+  credential change — a broken mailer is now visible on the contact page
+  rather than silent.
+- **No auto-reply to the sender.** The message goes to your inbox only, with
+  reply-to set to whoever wrote it. Sending a receipt would extend the
+  spam-amplification vector described above to a second form, and unlike the
+  gap check there is no stored record for the receipt to confirm.
+
+A hidden honeypot field catches the ordinary form-filling bots: anything
+arriving with it completed is discarded server-side and shown a normal
+success panel, so there is nothing to tune against. That is not rate
+limiting, and the note above still applies — the fix, if real traffic
+arrives, is a rate limit on the server action keyed by IP.

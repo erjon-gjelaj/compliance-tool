@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
 import type { LeadInput } from "@/lib/leads";
+import type { MessageInput } from "@/lib/messages";
 
 /**
  * Sends the two emails a gap-check request produces, over SMTP.
@@ -50,8 +51,8 @@ function readSmtpConfig(): SmtpConfig | null {
     // rather than an error: the lead itself saved, which is the part that
     // matters.
     console.warn(
-      "Lead notification skipped: set SMTP_HOST, SMTP_PORT, SMTP_USER and " +
-        "SMTP_PASSWORD to have submissions emailed.",
+      "Email skipped: set SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASSWORD " +
+        "to have gap checks and contact messages emailed.",
     );
     return null;
   }
@@ -61,8 +62,8 @@ function readSmtpConfig(): SmtpConfig | null {
     // Distinct from the message above on purpose: this one is configured but
     // wrong, which is worth fixing rather than an expected local state.
     console.error(
-      `Lead notification skipped: SMTP_PORT is "${port}", which is not a ` +
-        "valid port number.",
+      `Email skipped: SMTP_PORT is "${port}", which is not a valid port ` +
+        "number.",
     );
     return null;
   }
@@ -202,4 +203,87 @@ export async function sendLeadEmails(lead: LeadInput): Promise<void> {
   });
 
   transport.close();
+}
+
+/**
+ * The contact-form message, sent to our own inbox.
+ *
+ * Reply-to is the sender, so answering goes to them. Their address is never
+ * put in `from` — that would be forging our domain's mail as them, which is
+ * what SPF and DMARC exist to reject.
+ *
+ * Exported for the same reason the gap-check builders are: the envelope can
+ * be composed and inspected through a nodemailer jsonTransport without
+ * opening a connection.
+ */
+export function contactMessage(input: MessageInput, config: SmtpConfig) {
+  return {
+    from: config.from,
+    to: config.to,
+    replyTo: input.email,
+    subject: `${SITE_NAME}: message from ${input.name}`,
+    text: [
+      "Someone sent a message through the contact form.",
+      "",
+      `Name:   ${input.name}`,
+      `Email:  ${input.email}`,
+      "",
+      "Message:",
+      "",
+      input.message,
+      "",
+      "---",
+      "Reply straight to this email to answer them — the reply-to is set to",
+      "their address.",
+    ].join("\n"),
+  };
+}
+
+/**
+ * Sends a contact-form message and reports whether it actually went.
+ *
+ * This returns a result, where sendLeadEmails deliberately swallows failures,
+ * and the difference is the point: a gap check is safely in Supabase before
+ * any mail is attempted, so a bounced email costs a notification. A contact
+ * message has no database behind it — email is the only copy. If the send
+ * fails and we showed a success panel anyway, the message would be gone and
+ * the person would be waiting for a reply that can never come.
+ *
+ * So a failure here is the visitor's problem to know about, and the form
+ * hands them the mailto fallback instead.
+ *
+ * Only one email is sent, to our own inbox. There is deliberately no
+ * auto-reply to the sender: the form is public and unauthenticated, and
+ * mailing an address a stranger typed is the spam-amplification vector
+ * already noted in DEPLOY.md. Worth it for a gap check, which is the actual
+ * product and where the receipt is the record. Not worth it here.
+ */
+export async function sendContactMessage(
+  input: MessageInput,
+): Promise<boolean> {
+  const config = readSmtpConfig();
+
+  // readSmtpConfig has already logged why, with the reason that applies.
+  // Reported as a failure rather than a silent no-op: nothing was stored, so
+  // an unconfigured mailer means the message went nowhere at all.
+  if (!config) return false;
+
+  let transport;
+  try {
+    transport = buildTransport(config);
+  } catch (cause) {
+    console.error("Could not create the mail transport:", cause);
+    return false;
+  }
+
+  try {
+    await transport.sendMail(contactMessage(input, config));
+    return true;
+  } catch (cause) {
+    // Logged server-side only. SMTP errors can carry the host and username.
+    console.error("Contact message failed to send:", cause);
+    return false;
+  } finally {
+    transport.close();
+  }
 }

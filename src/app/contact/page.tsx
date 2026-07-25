@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Mail } from "lucide-react";
 import { pageMetadata } from "@/lib/metadata";
 import { PageIntro, PageSection } from "@/components/page-intro";
+import { MessageForm } from "@/components/message-form";
 import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
 import { GAP_CHECK_HREF } from "@/lib/nav";
 
@@ -10,8 +11,8 @@ const PAGE_TITLE = "Contact";
 
 const PAGE_DESCRIPTION =
   `How to reach ${SITE_NAME}: the gap-check form for a prequalification ` +
-  "review, and one email address for everything else. What to include so " +
-  "the first reply is actually useful.";
+  "review, a message form for everything else, and the email address itself " +
+  "if you would rather use your own client.";
 
 export const metadata: Metadata = pageMetadata({
   title: PAGE_TITLE,
@@ -19,7 +20,7 @@ export const metadata: Metadata = pageMetadata({
   path: "/contact",
 });
 
-const INCLUDE_IN_EMAIL = [
+const INCLUDE_IN_MESSAGE = [
   "Your trade, and what the crew actually does on site",
   "Who is asking you to register, and whether it is ISNetworld, Avetta, or something else",
   "Roughly how many people you run",
@@ -31,8 +32,8 @@ export default function ContactPage() {
     <main className="flex-1">
       <PageIntro tag="Contact" tickId="tick-contact" title="Getting hold of us">
         <p>
-          One form and one email address. No ticket portal, no phone tree, no
-          contact form that disappears into a queue.
+          Two forms and one email address, all landing in the same inbox and
+          read by the same person. No ticket portal, no phone tree, no queue.
         </p>
       </PageIntro>
 
@@ -55,16 +56,7 @@ export default function ContactPage() {
         </p>
       </PageSection>
 
-      <PageSection heading="For anything else, email" headingId="email">
-        <p>
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
-            className="type-h3 inline-flex items-center gap-2.5 text-verdigris underline decoration-zinc-dust underline-offset-[6px] transition-colors hover:decoration-verdigris"
-          >
-            <Mail aria-hidden="true" strokeWidth={1.5} className="h-5 w-5" />
-            {CONTACT_EMAIL}
-          </a>
-        </p>
+      <PageSection heading="For anything else, send a message" headingId="message">
         <p className="type-body">
           Questions about the process, a deadline that is tighter than usual, a
           hiring client asking for something you have not seen before, or a
@@ -74,7 +66,7 @@ export default function ContactPage() {
           Four things make the first reply worth more than an acknowledgement:
         </p>
         <ul className="space-y-3">
-          {INCLUDE_IN_EMAIL.map((item) => (
+          {INCLUDE_IN_MESSAGE.map((item) => (
             <li key={item} className="type-body flex gap-3">
               <span
                 aria-hidden="true"
@@ -84,6 +76,27 @@ export default function ContactPage() {
             </li>
           ))}
         </ul>
+
+        <div className="pt-4">
+          <MessageForm />
+        </div>
+
+        <p className="type-body">
+          Or write to us from your own email client, if that is easier or you
+          need to attach something —{" "}
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            className="inline-flex items-baseline gap-1.5 text-verdigris underline decoration-zinc-dust underline-offset-4 transition-colors hover:decoration-verdigris"
+          >
+            <Mail
+              aria-hidden="true"
+              strokeWidth={1.5}
+              className="h-4 w-4 self-center"
+            />
+            {CONTACT_EMAIL}
+          </a>
+          . The form does not take attachments.
+        </p>
       </PageSection>
 
       <PageSection heading="What we can't help with" headingId="limits">

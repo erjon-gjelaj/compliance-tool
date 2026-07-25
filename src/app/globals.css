@@ -19,6 +19,12 @@
   --color-millscale: #151d1a;
   --color-verdigris: #2b6b5d;
   --color-verdigris-deep: #1e4d43;
+  /*
+   * The same copper green lifted for use on millscale. Verdigris at full
+   * strength only reaches about 2.5:1 against that background, so the dark
+   * chrome (header and footer) needs its own step rather than the accent.
+   */
+  --color-verdigris-pale: #7fc9b5;
   /* Used only to flag a problem — oxide red, the one warm note on the page. */
   --color-rust-flag: #8c3a2e;
 
@@ -46,6 +52,14 @@
   }
 }
 
+/*
+ * The header is sticky, so an in-page jump would otherwise land its target
+ * underneath it. Roughly the header's height plus a little air.
+ */
+html {
+  scroll-padding-top: 5.5rem;
+}
+
 body {
   background-color: var(--color-galvanise);
   color: var(--color-millscale);
@@ -61,6 +75,28 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-verdigris);
   outline-offset: 2px;
+}
+
+/*
+ * Dark chrome. The header and footer sit on millscale so the page's content
+ * is bounded by an actual change of surface rather than a hairline — the
+ * previous border-only separation was invisible at a glance.
+ *
+ * Defined once here because both bands need the same three corrections:
+ * the lifted accent, a readable label colour, and a focus ring that is
+ * still visible against a near-black background.
+ */
+.surface-dark {
+  background-color: var(--color-millscale);
+  color: var(--color-galvanise);
+}
+
+.surface-dark .tag {
+  color: var(--color-zinc-dust);
+}
+
+.surface-dark :focus-visible {
+  outline-color: var(--color-verdigris-pale);
 }
 
 /*

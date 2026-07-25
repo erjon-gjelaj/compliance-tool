@@ -34,9 +34,51 @@
       "status": "blocked",
       "notes": "Prep is done on branch task/005-vercel-deploy and the repo is deploy-ready, but the deploy itself needs a human: importing the repo requires signing in to a Vercel account and granting it GitHub access, which I cannot and should not do. No Vercel CLI, token, or session exists in this environment either. Everything not requiring that account is finished and verified: main builds and lints clean and is fully static; NEXT_PUBLIC_SITE_URL was confirmed to drive robots.txt, sitemap.xml, the canonical link, the Open Graph tags and the JSON-LD url; and a build with the Supabase variables removed was confirmed to still succeed, which is the main deploy trap. Step-by-step instructions, the env var table, and the verification checklist are in DEPLOY.md. Custom domain deliberately not attempted, as instructed.",
       "needs_human_review": true
+    },
+    {
+      "id": "006",
+      "title": "Navbar, smooth scroll, and footer rework",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. Nav is a flat row of About/FAQ/Contact that stays visible at every width — no hamburger. 'Free gap check' is gone from the nav as asked; it survives as a footer link. Link list lives in src/lib/nav.ts so the header, footer and sitemap share one source. Header and footer moved from page.tsx into the root layout so every page gets the same chrome. Smooth scroll is CSS scroll-behavior on html, wrapped in prefers-reduced-motion so it costs no JS and respects the OS setting. Footer now carries the wordmark, the ISN/Avetta disclaimer, a page list, contact details, a tick rule, and a copyright line with the build year.",
+      "needs_human_review": false
+    },
+    {
+      "id": "007",
+      "title": "About, FAQ and Contact pages",
+      "status": "pending",
+      "notes": "Three new pages, copy grounded in business-model.md and honest about being early stage. No invented founding story, team bios, or generic SaaS FAQ filler. Must match the existing palette, type scale, and tick-rule motif. Per-page Metadata API entries and sitemap updates.",
+      "needs_human_review": false
+    },
+    {
+      "id": "008",
+      "title": "Typography consistency audit",
+      "status": "pending",
+      "notes": "Audit every page, old and new, for a consistent type scale and correct font usage — display face for headings, Plex Sans for body, Plex Mono for the small uppercase labels. Catch any default/system font creeping in on the new pages. Runs after 007 so there is something to audit.",
+      "needs_human_review": false
+    },
+    {
+      "id": "009",
+      "title": "Tagline exploration",
+      "status": "pending",
+      "notes": "Draft several original tagline options grounded in business-model.md — the trigger event, the urgency, the consultant-vs-template contrast. Present the options with reasoning in the log, pick a default, and keep it swappable via lib/constants.ts. Sequenced before 010 because the OG image renders the chosen line.",
+      "needs_human_review": false
+    },
+    {
+      "id": "010",
+      "title": "Dynamic OG image",
+      "status": "pending",
+      "notes": "Generate the 1200x630 OG image with next/og so it tracks the brand constants instead of going stale as a static file. Build on the tape-measure tick motif rather than centring the wordmark on an empty field. Needs the display font available to Satori, which next/font does not expose.",
+      "needs_human_review": false
+    },
+    {
+      "id": "011",
+      "title": "Vercel Speed Insights",
+      "status": "pending",
+      "notes": "Install @vercel/speed-insights and mount <SpeedInsights /> from @vercel/speed-insights/next in the root layout, per Vercel's setup instructions. No further configuration. Data only appears once the site is deployed, which is still task 005.",
+      "needs_human_review": false
     }
   ],
-  "current_task_id": "005",
+  "current_task_id": "006",
   "blocked_on": {
     "task_id": "005",
     "date": "2026-07-24",

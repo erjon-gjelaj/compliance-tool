@@ -27,6 +27,17 @@
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
+/*
+ * Smooth-scrolls the in-page jumps to the intake form. Done in CSS rather
+ * than JS so it costs nothing and still works on a plain anchor. Anyone who
+ * has asked their OS for less motion keeps the instant jump.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 body {
   background-color: var(--color-galvanise);
   color: var(--color-millscale);

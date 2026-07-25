@@ -45,15 +45,15 @@
     {
       "id": "007",
       "title": "About, FAQ and Contact pages",
-      "status": "pending",
-      "notes": "Three new pages, copy grounded in business-model.md and honest about being early stage. No invented founding story, team bios, or generic SaaS FAQ filler. Must match the existing palette, type scale, and tick-rule motif. Per-page Metadata API entries and sitemap updates.",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. Three pages, all statically prerendered, each with its own Metadata API entry, canonical, and Open Graph tags, and all three added to the sitemap via NAV_LINKS. Copy is written against business-model.md's trigger event and audience: no founding story, no team bios, and the FAQ says plainly that there is no team page because inventing one would be the first dishonest thing on the site. About covers the situation, what you get today, what we are not, why it is free, and where it goes. FAQ is eleven real questions including the ones where the honest answer is that we are the wrong people to ask; answers are a single array feeding both the page and FAQPage JSON-LD so the two cannot drift. Contact is the form, one email address, what to include, and an explicit list of what we cannot help with. Shared PageIntro/PageSection components keep the rhythm identical to the home page. No specific regulatory claims anywhere — a TODO-VERIFY note in the FAQ source guards against adding any.",
       "needs_human_review": false
     },
     {
       "id": "008",
       "title": "Typography consistency audit",
-      "status": "pending",
-      "notes": "Audit every page, old and new, for a consistent type scale and correct font usage — display face for headings, Plex Sans for body, Plex Mono for the small uppercase labels. Catch any default/system font creeping in on the new pages. Runs after 007 so there is something to audit.",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. Moved the type scale into globals.css as .type-h1/.type-h2/.type-h3/.type-label/.type-lede/.type-body alongside the existing .tag, and refactored the home page components onto it, so heading sizes are defined once instead of as ad-hoc utility strings per heading. The two large steps are fluid via clamp, replacing the old text-4xl/sm:text-5xl/md:[3.4rem] ladder. Found and merged two near-duplicate label sizes (0.95rem in the hero card, 0.875rem on form labels) into one .type-label step, and consolidated three copies of the primary button style into .btn-primary. Verified in the browser across all four pages: only Bricolage Grotesque, IBM Plex Sans and IBM Plex Mono are computed anywhere, with no system font fallback, and h1 renders identically at 54.4px and h2 at 36px on every page.",
       "needs_human_review": false
     },
     {

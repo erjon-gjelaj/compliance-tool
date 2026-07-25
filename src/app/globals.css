@@ -55,6 +55,99 @@ body {
   outline-offset: 2px;
 }
 
+/*
+ * Type scale.
+ *
+ * Defined once here rather than as ad-hoc utility strings on each heading,
+ * so a page added later can't quietly invent a fourth heading size or fall
+ * back to the system font. Four steps is all this site needs: page title,
+ * section title, card title, and the mono label.
+ *
+ * The two large steps are fluid via clamp, which replaces the old
+ * text-4xl/sm:text-5xl/md:[3.4rem] ladder with a single definition.
+ */
+.type-h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.25rem, 1.55rem + 2.8vw, 3.4rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.type-h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.875rem, 1.62rem + 1.05vw, 2.25rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.type-h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+
+/*
+ * Display-face label: form field labels and the small titles inside cards.
+ * Unifies two sizes that had drifted apart (0.95rem in the hero card,
+ * 0.875rem on the form labels) into one step.
+ */
+.type-label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+}
+
+/* Opening paragraph under a page title. */
+.type-lede {
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--color-slate-wash);
+}
+
+/* Ordinary running text. */
+.type-body {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--color-slate-wash);
+}
+
+/*
+ * The single primary action. Defined once because the same string was
+ * repeated on the hero CTA, the form submit, and the contact page button,
+ * which is exactly how three buttons end up slightly different.
+ */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.025em;
+  background-color: var(--color-verdigris);
+  color: var(--color-paper);
+  transition: background-color 150ms;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-verdigris-deep);
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 /* Small mono label used for section tags and field hints. */
 .tag {
   font-family: var(--font-mono);

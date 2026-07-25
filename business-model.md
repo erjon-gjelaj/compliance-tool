@@ -32,22 +32,58 @@ deadline from a client. Trigger event: "register in ISNetworld/Avetta
 or you don't get the work." Urgent, externally imposed, tied directly
 to revenue — this is the reason they'd act now rather than "someday."
 
-## What we're building right now (Scope A only)
-NOT the actual compliance-checking tool yet. Just a landing page that:
-1. States the problem in language this exact buyer would recognize
-2. Offers a free "tell us your trade and hiring client, we'll show you
-   what you're missing" intake form
-3. Captures the lead (email + trade + hiring client + company size)
-No automated gap-analysis logic exists yet — leads collected here will
-be followed up with manually (see "how we validate" below).
+## What we built first (Scope A — done)
+A landing page that states the problem in language this exact buyer would
+recognize, offers a free "tell us your trade and hiring client, we'll show
+you what you're missing" intake, and captures the lead. Deployed on
+certloop.net with leads landing in Supabase. Follow-up was manual.
+
+## What we're building now (Scope B)
+The intake becomes the product. A submitted intake produces an automated,
+emailed preliminary gap analysis, and captures enough to quote a price.
+1. A multi-step intake (trade, hiring client, platform, deadline; then
+   company profile; then a checklist of documents they already have; then
+   optional document uploads plus contact details). Steps after the first
+   are skippable and partials are persisted — a partial submission with an
+   email address is still a lead worth calling.
+2. Uploaded documents are read server-side and diffed against a reference
+   list of known requirements by trade and platform.
+3. An emailed preliminary review goes back automatically, plus a full copy
+   to us.
+
+Why uploads. Uploading your safety documents is a high-trust action and the
+best qualifying signal available — someone who uploads six PDFs is a real
+buyer, someone who types an email is a browser. It also flips the accuracy
+problem: with documents in hand, much of the job is reading what's there and
+diffing it against a list, rather than recalling requirements from memory.
+Note the asymmetry — "you have a written LOTO program, here it is" is
+verifiable from the upload; "you need one" is not. Output leans on what the
+documents prove and what the client told us, and keeps everything else as
+questions.
+
+The friction tradeoff is accepted deliberately. A four-step form converts
+worse than a four-field form, and that is fine right now: we cannot service
+hundreds of leads by hand, and a longer form filters for urgency.
+
+The failure mode has moved. Manual follow-up was slow; automated output can
+be wrong instantly, at scale. The mitigations are confidence labelling,
+questions rather than assertions, honest framing as preliminary, retrieved
+rather than recalled citations, and logging every model output so we can
+audit what actually went out. Read the first ~30 closely.
 
 ## Draft pricing model (for later — do not build billing yet)
-- Free: intake + general gap overview
+- Free: intake + automated preliminary gap review
 - ~$299 one-time: get "submission ready" (human-assisted in this phase)
 - ~$39/month: ongoing renewal/deadline tracking
 TODO-VERIFY: pricing is a first guess from early research, not tested.
 Do not present this as fixed/final in copy — frame as indicative if
 shown at all (and per CLAUDE.md, don't build a pricing section yet).
+
+Quoting in the automated email: never a fixed number. Quote a band tied to
+observable inputs — number of missing document categories, headcount, number
+of platforms, deadline urgency — marked explicitly non-binding and confirmed
+after a short call. A firm number generated from an unverified analysis is a
+commitment we may not want to honour, and a band converts nearly as well.
 
 ## Regulatory content rules (important)
 Any specific claim about what programs/certifications/deadlines are
@@ -58,11 +94,25 @@ small business owners about real compliance risk. When in doubt, keep
 copy about *the process and value* (we help you find gaps fast, cheap,
 without a consultant) rather than specific regulatory claims.
 
+Under Scope B this extends to generated output. Two rules matter most, and
+both are spelled out in CLAUDE.md under "Regulatory output rules":
+- OSHA citations are retrieved from the eCFR API at generation time and
+  confirmed to support the claim, never recalled from the model. A wrong CFR
+  cite is worse than none — it looks authoritative and anyone in the industry
+  can check it in a minute.
+- OSHA and ISNetworld are not the same thing. ISN and Avetta requirements are
+  contractual, set by the platform and the hiring client. Much of what ISN
+  asks for — written program formats, EMR thresholds, insurance limits,
+  client-specific questionnaires — has no OSHA basis at all. Never imply a
+  citation proves an ISN requirement, or that satisfying ISN means OSHA
+  compliance.
+
 ## How we're validating this (for context, not a build task)
 Plan is to drive real people to this landing page (targeted search ads,
 relevant LinkedIn/Facebook groups for EHS and contractors, direct
-outreach) and watch for: form completions, manual safety-document
-uploads (a high-trust action), and eventually actual paid signups.
+outreach) and watch for: form completions, document uploads (a high-trust
+action, and now a built-in step rather than a manual one), replies to the
+automated review, and eventually actual paid signups.
 Kill criteria if signal is weak: revisit whether this niche is worth
 pursuing before building further.
 

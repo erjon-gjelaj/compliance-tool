@@ -17,9 +17,9 @@
     {
       "id": "003",
       "title": "Set up Supabase lead capture",
-      "status": "blocked",
-      "notes": "Code is complete on branch task/003-supabase-lead-capture, but ONE MANUAL STEP IS OUTSTANDING: the `leads` table does not exist yet. Run supabase/migrations/0001_leads.sql in the Supabase SQL editor (Dashboard > SQL Editor > New query, paste, run). Until then every submission fails to the generic error message. I could not run it myself: the publishable key only reaches PostgREST, which cannot execute DDL, and there is no service-role key, database password, or CLI token available. Everything else is done and verified against the live project: server action with server-side validation, allow-list checks on both dropdowns, field-level and form-level errors, values echoed back on failure, pending state, and a real success panel replacing the old 'not wired up yet' placeholder. Verified in the browser: validation rejects whitespace-only and malformed input, the database failure path shows a generic message while the real error goes to the server log only, and the success panel renders. The one thing NOT verified end to end is a real row landing in the table — that needs the SQL run first.",
-      "needs_human_review": true
+      "status": "done",
+      "notes": "Done on branch task/003-supabase-lead-capture. The outstanding manual step is complete: the human ran supabase/migrations/0001_leads.sql in the Supabase SQL editor and confirmed a real form submission landed as a row in the leads table, which closes the one gap that was left unproven. Everything else was already done and verified against the live project: server action with server-side validation, allow-list checks on both dropdowns, field-level and form-level errors, values echoed back on failure, pending state, and a real success panel replacing the old 'not wired up yet' placeholder. Verified in the browser: validation rejects whitespace-only and malformed input, the database failure path shows a generic message while the real error goes to the server log only, and the success panel renders.",
+      "needs_human_review": false
     },
     {
       "id": "004",
@@ -36,18 +36,6 @@
       "needs_human_review": true
     }
   ],
-  "current_task_id": "003",
-  "blocked_on": {
-    "task_id": "003",
-    "date": "2026-07-24",
-    "action_needed": "Run supabase/migrations/0001_leads.sql in the Supabase SQL editor. It creates the leads table, enables and forces row level security, and adds a single INSERT-only policy for anon and authenticated. After running it, submit the form once to confirm a row lands.",
-    "why_a_human": "Creating a table is DDL. The publishable key in .env.local only reaches PostgREST, which cannot run DDL, and no service-role key, database password, or Supabase CLI token is available in this environment.",
-    "branches": [
-      "task/001-scaffold",
-      "task/002-landing-page",
-      "task/004-seo",
-      "task/003-supabase-lead-capture"
-    ],
-    "branch_note": "Branches are stacked, because main had no commits when this started. Merge order: 001, then 002, then 004, then 003. task/003 already merged task/002 into itself, so it carries the wordmark fix that task/004 is missing. No PRs opened — awaiting review."
-  }
+  "current_task_id": "005",
+  "blocked_on": null
 }

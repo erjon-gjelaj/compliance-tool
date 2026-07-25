@@ -10,8 +10,8 @@
     {
       "id": "002",
       "title": "Build the landing page from scratch",
-      "status": "pending",
-      "notes": "Read business-model.md for the product, audience, and positioning. Design and build an original landing page (app/page.tsx) from that context — do not reference or reuse any prior mockup, there isn't one to follow. Follow the Visual identity and Icons sections in CLAUDE.md. Add proper Metadata API title/description.",
+      "status": "done",
+      "notes": "Done on branch task/002-landing-page (branched off task/001, since main has no scaffold yet). Header, hero, how-it-works, gap-check form, footer. Original palette (galvanise/paper/zinc-dust/millscale/slate-wash/verdigris) and type pairing (Bricolage Grotesque over IBM Plex Sans/Mono); signature detail is a tape-measure tick rule in SVG. Icons are lucide-react, no emoji. Copy grounded in business-model.md with TODO-VERIFY comments guarding the unverified consultant figures and the compliance categories. Form renders but is not wired — submitting shows an honest 'not connected yet' notice for task 003 to replace. Build and lint pass clean.",
       "needs_human_review": false
     },
     {
@@ -36,5 +36,5 @@
       "needs_human_review": true
     }
   ],
-  "current_task_id": "002"
+  "current_task_id": "004"
 }

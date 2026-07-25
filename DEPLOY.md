@@ -22,6 +22,21 @@ than code.
 >    bypasses row level security, so it must never take a `NEXT_PUBLIC_`
 >    prefix and must never be committed.
 >
+> If a submission fails with `permission denied for table submissions`, that
+> is a table-privilege error rather than an RLS one, and it means one of two
+> things. Check which with:
+>
+> ```sql
+> select
+>   has_table_privilege('service_role', 'public.submissions', 'INSERT') as service_role_ok,
+>   has_table_privilege('anon',         'public.submissions', 'INSERT') as anon_ok;
+> ```
+>
+> `service_role_ok` false means the grant is missing — re-run migration 0002,
+> which is safe to run again. `service_role_ok` true means the configured key
+> is not the service-role key; the publishable key produces exactly this
+> message, because the migration revokes everything from `anon`.
+>
 > Until both are done, submitting the form shows the generic "something went
 > wrong" panel — the failure is caught and logged rather than crashing, but
 > nothing is saved. The old `leads` table is untouched and keeps its history;

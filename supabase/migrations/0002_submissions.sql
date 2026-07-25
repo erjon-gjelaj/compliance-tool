@@ -80,6 +80,16 @@ alter table public.submissions force row level security;
 
 revoke all on public.submissions from anon, authenticated;
 
+-- And granted explicitly to the service role rather than left to Supabase's
+-- default privileges. Those normally cover it, but they depend on which role
+-- created the table, and a missing grant here fails with "permission denied
+-- for table submissions" — a privilege error, not an RLS one, which is easy
+-- to misread as the wrong key being configured.
+--
+-- Note that service_role bypassing RLS does NOT mean it bypasses grants.
+-- Those are separate mechanisms and the table privilege still has to exist.
+grant all on public.submissions to service_role;
+
 -- ---------------------------------------------------------------------
 -- updated_at
 -- ---------------------------------------------------------------------

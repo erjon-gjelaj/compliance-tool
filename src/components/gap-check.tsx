@@ -14,11 +14,11 @@ export function GapCheck() {
             <p className="tag">Free gap check</p>
             <h2
               id="gap-check-heading"
-              className="mt-4 font-display text-3xl leading-tight font-semibold tracking-tight text-balance md:text-4xl"
+              className="type-h2 mt-4"
             >
               Tell us the job, we&apos;ll tell you what&apos;s missing
             </h2>
-            <p className="mt-5 text-[0.95rem] leading-relaxed text-slate-wash">
+            <p className="type-body mt-5">
               Most of the owners and office managers we hear from are doing
               this between running jobs, with a deadline already on the
               calendar. Four questions is all we need to start.

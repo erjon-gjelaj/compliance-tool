@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>CertLoop</title>
+  <!--
+    The wordmark's tape graduation, as the site icon.
+
+    Solid verdigris field with the ticks knocked out in paper rather than
+    verdigris marks on transparency: at 16px in a browser tab a hairline
+    figure on a see-through ground disappears, especially against dark
+    browser chrome. The filled square keeps it legible at favicon size.
+
+    Proportions are heavier than the header wordmark on purpose — 3px
+    strokes survive downscaling to 16px where 2px strokes go muddy.
+  -->
+  <rect width="32" height="32" fill="#2b6b5d" />
+  <!-- Baseline, then two major ticks outside and two minor ones between. -->
+  <rect x="5" y="10" width="22" height="3" fill="#f8f9f7" />
+  <rect x="5" y="10" width="3" height="14" fill="#f8f9f7" />
+  <rect x="11.5" y="10" width="3" height="8" fill="#f8f9f7" />
+  <rect x="18" y="10" width="3" height="8" fill="#f8f9f7" />
+  <rect x="24" y="10" width="3" height="14" fill="#f8f9f7" />
+</svg>

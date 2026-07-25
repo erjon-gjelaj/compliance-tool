@@ -28,7 +28,7 @@ export function HowItWorks() {
         <p className="tag">How it works</p>
         <h2
           id="how-it-works-heading"
-          className="mt-4 max-w-2xl font-display text-3xl leading-tight font-semibold tracking-tight text-balance md:text-4xl"
+          className="type-h2 mt-4 max-w-2xl"
         >
           Three steps, and the slow one is on us
         </h2>
@@ -44,10 +44,10 @@ export function HowItWorks() {
                 />
                 <span className="tag">Step {index + 1}</span>
               </div>
-              <h3 className="mt-5 font-display text-xl font-semibold tracking-tight">
+              <h3 className="type-h3 mt-5">
                 {title}
               </h3>
-              <p className="mt-2.5 text-[0.95rem] leading-relaxed text-slate-wash">
+              <p className="type-body mt-2.5">
                 {body}
               </p>
             </li>

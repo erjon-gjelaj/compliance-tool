@@ -3,8 +3,6 @@ import { GapCheck } from "@/components/gap-check";
 import { Hero } from "@/components/hero";
 import { HowItWorks } from "@/components/how-it-works";
 import { OrganizationSchema } from "@/components/organization-schema";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { SITE_NAME } from "@/lib/constants";
 
 const PAGE_TITLE = `${SITE_NAME} — ISNetworld and Avetta prequalification gap check`;
@@ -30,7 +28,9 @@ export const metadata: Metadata = {
     locale: "en_US",
   },
   twitter: {
-    card: "summary",
+    // Upgraded from "summary" now that opengraph-image.tsx generates a real
+    // 1200x630 card — Next fills in twitter:image from the same file.
+    card: "summary_large_image",
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
   },
@@ -40,13 +40,11 @@ export default function Home() {
   return (
     <>
       <OrganizationSchema />
-      <SiteHeader />
       <main className="flex-1">
         <Hero />
         <HowItWorks />
         <GapCheck />
       </main>
-      <SiteFooter />
     </>
   );
 }

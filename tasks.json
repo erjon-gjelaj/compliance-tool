@@ -34,6 +34,76 @@
       "status": "blocked",
       "notes": "Prep is done on branch task/005-vercel-deploy and the repo is deploy-ready, but the deploy itself needs a human: importing the repo requires signing in to a Vercel account and granting it GitHub access, which I cannot and should not do. No Vercel CLI, token, or session exists in this environment either. Everything not requiring that account is finished and verified: main builds and lints clean and is fully static; NEXT_PUBLIC_SITE_URL was confirmed to drive robots.txt, sitemap.xml, the canonical link, the Open Graph tags and the JSON-LD url; and a build with the Supabase variables removed was confirmed to still succeed, which is the main deploy trap. Step-by-step instructions, the env var table, and the verification checklist are in DEPLOY.md. Custom domain deliberately not attempted, as instructed.",
       "needs_human_review": true
+    },
+    {
+      "id": "006",
+      "title": "Navbar, smooth scroll, and footer rework",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. Nav is a flat row of About/FAQ/Contact that stays visible at every width — no hamburger. 'Free gap check' is gone from the nav as asked; it survives as a footer link. Link list lives in src/lib/nav.ts so the header, footer and sitemap share one source. Header and footer moved from page.tsx into the root layout so every page gets the same chrome. Smooth scroll is CSS scroll-behavior on html, wrapped in prefers-reduced-motion so it costs no JS and respects the OS setting. Footer now carries the wordmark, the ISN/Avetta disclaimer, a page list, contact details, a tick rule, and a copyright line with the build year.",
+      "needs_human_review": false
+    },
+    {
+      "id": "007",
+      "title": "About, FAQ and Contact pages",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. Three pages, all statically prerendered, each with its own Metadata API entry, canonical, and Open Graph tags, and all three added to the sitemap via NAV_LINKS. Copy is written against business-model.md's trigger event and audience: no founding story, no team bios, and the FAQ says plainly that there is no team page because inventing one would be the first dishonest thing on the site. About covers the situation, what you get today, what we are not, why it is free, and where it goes. FAQ is eleven real questions including the ones where the honest answer is that we are the wrong people to ask; answers are a single array feeding both the page and FAQPage JSON-LD so the two cannot drift. Contact is the form, one email address, what to include, and an explicit list of what we cannot help with. Shared PageIntro/PageSection components keep the rhythm identical to the home page. No specific regulatory claims anywhere — a TODO-VERIFY note in the FAQ source guards against adding any.",
+      "needs_human_review": false
+    },
+    {
+      "id": "008",
+      "title": "Typography consistency audit",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. Moved the type scale into globals.css as .type-h1/.type-h2/.type-h3/.type-label/.type-lede/.type-body alongside the existing .tag, and refactored the home page components onto it, so heading sizes are defined once instead of as ad-hoc utility strings per heading. The two large steps are fluid via clamp, replacing the old text-4xl/sm:text-5xl/md:[3.4rem] ladder. Found and merged two near-duplicate label sizes (0.95rem in the hero card, 0.875rem on form labels) into one .type-label step, and consolidated three copies of the primary button style into .btn-primary. Verified in the browser across all four pages: only Bricolage Grotesque, IBM Plex Sans and IBM Plex Mono are computed anywhere, with no system font fallback, and h1 renders identically at 54.4px and h2 at 36px on every page.",
+      "needs_human_review": false
+    },
+    {
+      "id": "009",
+      "title": "Tagline exploration",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. Seven options drafted against business-model.md's trigger event, urgency, and the consultant-versus-template contrast; all seven are written up with reasoning in logs/2026-07-25.md. Rather than make one line do two incompatible jobs, the constant is split: SITE_TAGLINE keeps the literal, platform-name-carrying line because it has to work in a search result, and a new SITE_SLOGAN defaults to 'The gap between your file and the gate.' for places with no room to explain, currently the OG card. The other five options sit in a comment directly above the constant in src/lib/constants.ts so swapping is a one-line change while the name is unsettled.",
+      "needs_human_review": false
+    },
+    {
+      "id": "010",
+      "title": "Dynamic OG image",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. src/app/opengraph-image.tsx generates the 1200x630 card via next/og, tracking SITE_NAME and SITE_SLOGAN. The tape motif is structural rather than trim: the tick rule runs full width at the same 16px minor / 80px major pitch as the on-page rule, and a verdigris dimension line measures a span against it with its caps landing on major ticks. Satori cannot see next/font and cannot read the .woff2 it emits, so @fontsource/bricolage-grotesque and @fontsource/ibm-plex-mono were added and the .woff files are read off disk — safe because the route builds static. Found and fixed a real bug while verifying: a page declaring its own openGraph object replaces the file-convention image rather than merging, so About, FAQ and Contact were shipping with no card at all; a shared pageMetadata() helper in src/lib/metadata.ts fixes it and removes the triplicated metadata. Home page twitter:card upgraded to summary_large_image. Verified by rendering the PNG and inspecting it, and by checking the meta tags on all four pages.",
+      "needs_human_review": false
+    },
+    {
+      "id": "011",
+      "title": "Vercel Speed Insights",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. @vercel/speed-insights installed and <SpeedInsights /> mounted in the root layout per Vercel's setup instructions, with no further configuration. Confirmed in the browser console that it initialises and reports debug mode locally, sending nothing — real data only starts once the site is deployed, which is task 005.",
+      "needs_human_review": false
+    },
+    {
+      "id": "012",
+      "title": "Collapse the site to a single typeface",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. The three-family setup (Bricolage Grotesque display over IBM Plex Sans body and IBM Plex Mono labels) is gone; everything is Bricolage Grotesque, differentiated by weight, size and letter-spacing rather than by typeface. --font-display and --font-mono were deleted rather than aliased to the same value, so a stray font-mono or font-display utility fails visibly in review instead of silently falling back to a system stack; all such utilities were removed from the components. The OG image was switched too — it now loads Bricolage at 400 and 700 instead of Bricolage plus Plex Mono, with explicit font weights, since registering two weights under one family made Satori default to 400 and would otherwise have rendered the headline in regular. IBM Plex Sans and Plex Mono dropped entirely: the built home page now references one font file instead of three. Verified in the browser that every text-bearing element on all four pages computes Bricolage Grotesque, with no system fallback anywhere. Note this overrides the CLAUDE.md guidance to pair a display face with a separate body face.",
+      "needs_human_review": false
+    },
+    {
+      "id": "013",
+      "title": "Vercel Web Analytics",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. @vercel/analytics installed and <Analytics /> from @vercel/analytics/next mounted in the root layout alongside <SpeedInsights />, per Vercel's setup instructions, with no further configuration. Confirmed present in the rendered HTML. Like Speed Insights it only reports once the site is deployed to Vercel, which is still task 005. Also re-confirmed @vercel/speed-insights is installed at ^2.0.0 and mounted — that was already in place from task 011.",
+      "needs_human_review": false
+    },
+    {
+      "id": "014",
+      "title": "Point the site at certloop.net",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. certloop.net is registered, so SITE_URL now falls back to https://certloop.net and CONTACT_EMAIL is hello@certloop.net. Attaching the domain in Vercel is still a human step and is written up as step 4 of DEPLOY.md, including the ordering trap: NEXT_PUBLIC_SITE_URL must stay on the *.vercel.app origin until the domain actually resolves, because the fallback would otherwise publish canonical URLs, a sitemap and OG tags pointing at a hostname that does not answer. The hello@certloop.net mailbox does not exist yet and now matters more than before, since the Contact page, the FAQ, and the form's success panel all direct people to it.",
+      "needs_human_review": true
+    },
+    {
+      "id": "015",
+      "title": "Favicon from the logo mark",
+      "status": "done",
+      "notes": "Done on branch task/006-site-expansion. The default Next.js favicon.ico is deleted and replaced by src/app/icon.svg, which draws the wordmark's tape graduation. It is a solid verdigris field with the ticks knocked out in paper rather than verdigris marks on transparency, because at 16px a hairline figure on a transparent ground disappears against dark browser chrome; strokes are also heavier than the header wordmark so they survive downscaling. Verified by rasterising it at 16, 32 and 64px and looking at the result — it reads as a tape rule at all three. Confirmed the browser now requests /icon.svg and that /favicon.ico returns 404.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": "005",

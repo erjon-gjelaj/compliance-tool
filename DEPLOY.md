@@ -28,7 +28,7 @@ git and never should be.
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | from `.env.local` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | from `.env.local` |
-| `NEXT_PUBLIC_SITE_URL` | the deployed origin, no trailing slash |
+| `NEXT_PUBLIC_SITE_URL` | the deployed origin — set to `certloop.net` |
 
 Notes:
 
@@ -37,12 +37,18 @@ Notes:
   back out. There is no service-role key in this project and nothing needs one.
 - `NEXT_PUBLIC_SITE_URL` drives `sitemap.xml`, `robots.txt`, the canonical
   link, the Open Graph tags, and the JSON-LD `url`. Verified: setting it
-  changes all five. If you leave it unset the code falls back to
-  `https://certloop.vercel.app` (see `src/lib/constants.ts`), which is right
-  only if that happens to be the assigned domain — set it explicitly.
-- Set it to the Vercel-assigned `*.vercel.app` origin for now. It has to be
-  updated again when a custom domain is attached, because a canonical URL
-  pointing at the wrong origin is worse for SEO than none.
+  changes all five.
+- The value is normalised in `src/lib/constants.ts`, so `certloop.net`,
+  `https://certloop.net`, and a trailing slash all resolve to the same
+  origin. Worth knowing why: the raw value used to be passed straight to
+  `new URL()` for `metadataBase`, and a bare hostname throws there — which
+  would have failed the Vercel build outright rather than degrading.
+- **This is currently set to `certloop.net`, which is ahead of the DNS.**
+  Until the domain is attached and serving (step 4), every canonical link,
+  the sitemap, and the OG tags claim `certloop.net` while the site actually
+  answers on `*.vercel.app`. The site works; the risk is search engines being
+  pointed at a hostname that doesn't resolve yet. Either attach the domain
+  promptly, or set this to the `*.vercel.app` origin in the meantime.
 
 **Watch out:** the build succeeds even with the Supabase variables missing —
 verified locally. The page is fully static, so nothing touches Supabase until
@@ -60,22 +66,36 @@ successful build as proof the form works; do step 3.
    `localhost` and not the fallback.
 4. View source and confirm the canonical link matches the deployed origin.
 
-## 4. Custom domain — STOP
+## 4. Custom domain — certloop.net
 
-Do not attach a custom domain yet. The working name "CertLoop" is not final
-(see `CLAUDE.md`), and the domain choice depends on it. Attaching one now
-means redoing the canonical URL, the sitemap, `SITE_URL`, and the JSON-LD.
+`certloop.net` is registered. The code now defaults to it, but nothing has
+been attached — that is a Vercel dashboard action needing your account.
 
-When a name is settled, the order is: register the domain → attach it in
-Vercel → update `NEXT_PUBLIC_SITE_URL` → redeploy → re-run step 3.
+Order matters, because each step is only correct once the previous one has
+taken effect:
+
+1. Vercel → Project → Settings → Domains → add `certloop.net`.
+2. Add the DNS records Vercel gives you at your registrar. Decide whether
+   `www` redirects to the apex or the other way round, and set the other as a
+   redirect rather than serving both — two hostnames serving identical pages
+   splits your search signals.
+3. Wait for the certificate to issue and confirm `https://certloop.net`
+   actually loads the site.
+4. **Only then** change `NEXT_PUBLIC_SITE_URL` to `https://certloop.net` and
+   redeploy. Doing this before step 3 publishes canonical URLs and a sitemap
+   pointing at a hostname that doesn't resolve.
+5. Re-run the step 3 checks against the new origin, and resubmit the form
+   once — the Supabase call is same-origin from a server action, so it should
+   be unaffected, but it costs one submission to know rather than assume.
 
 ## Still open, unrelated to deploying
 
-- No Open Graph image. Deferred in task 004 because it would bake the
-  working name into an image. Worth doing once the name is final.
-- `CONTACT_EMAIL` in `src/lib/constants.ts` is `hello@certloop.com`, a domain
-  nobody owns yet. The footer links to it. Needs to become a real mailbox
-  before the page gets meaningful traffic.
+- **`hello@certloop.net` has to become a real mailbox.** The domain is now
+  registered, so this is possible where it wasn't before. It matters more
+  than it looks: the Contact page and the FAQ are both built around that
+  address reaching a person, and the form's success panel tells people to
+  reply to it if their deadline is tight. Set up the mailbox or forwarding
+  before driving any traffic here.
 - `npm audit` reports advisories in Next.js transitive dependencies
   (postcss, sharp). Noted in task 001; no fix available that doesn't
   downgrade Next.js.

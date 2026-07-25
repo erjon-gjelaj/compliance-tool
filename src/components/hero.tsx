@@ -34,10 +34,10 @@ export function Hero() {
         <div className="grid gap-12 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:gap-16">
           <div>
             <p className="tag">For industrial subcontractors</p>
-            <h1 className="mt-5 font-display text-4xl leading-[1.08] font-semibold tracking-tight text-balance sm:text-5xl md:text-[3.4rem]">
+            <h1 className="type-h1 mt-5">
               Find out what your ISNetworld or Avetta file is missing
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-wash">
+            <p className="type-lede mt-6 max-w-xl">
               A plant told your crew to get prequalified before the next
               shutdown. Tell us your trade and who&apos;s asking, and we&apos;ll
               come back with a plain list of the paperwork you still need to
@@ -50,8 +50,8 @@ export function Hero() {
              * early research, so the copy stays qualitative until someone
              * confirms current market rates.
              */}
-            <ul className="mt-8 space-y-3 text-[0.95rem] text-slate-wash">
-              <li className="flex gap-3">
+            <ul className="mt-8 space-y-3">
+              <li className="type-body flex gap-3">
                 <span
                   aria-hidden="true"
                   className="mt-[0.6em] h-px w-4 shrink-0 bg-verdigris"
@@ -61,7 +61,7 @@ export function Hero() {
                   timeline that doesn&apos;t fit a shutdown window.
                 </span>
               </li>
-              <li className="flex gap-3">
+              <li className="type-body flex gap-3">
                 <span
                   aria-hidden="true"
                   className="mt-[0.6em] h-px w-4 shrink-0 bg-verdigris"
@@ -76,11 +76,11 @@ export function Hero() {
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
               <a
                 href="#gap-check"
-                className="inline-flex items-center bg-verdigris px-6 py-3.5 font-display text-base font-semibold tracking-tight text-paper transition-colors hover:bg-verdigris-deep"
+                className="btn-primary"
               >
                 Get your free gap check
               </a>
-              <span className="font-mono text-xs text-slate-wash">
+              <span className="text-xs text-slate-wash">
                 Four questions. No account, no card.
               </span>
             </div>
@@ -100,7 +100,7 @@ export function Hero() {
                       className="mt-0.5 h-5 w-5 shrink-0 text-verdigris"
                     />
                     <div>
-                      <p className="font-display text-[0.95rem] font-semibold tracking-tight">
+                      <p className="type-label">
                         {label}
                       </p>
                       <p className="mt-1 text-sm leading-relaxed text-slate-wash">

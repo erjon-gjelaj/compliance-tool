@@ -22,9 +22,28 @@
   /* Used only to flag a problem — oxide red, the one warm note on the page. */
   --color-rust-flag: #8c3a2e;
 
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  /*
+   * One family, everywhere. There is deliberately no separate display or
+   * mono face — headings, body copy, labels and the mono-style tags are all
+   * Bricolage Grotesque, differentiated by weight, size and letter-spacing
+   * instead of by typeface.
+   *
+   * --font-display and --font-mono are gone rather than aliased to the same
+   * value, so a stray `font-mono` or `font-display` utility fails loudly in
+   * review instead of silently falling back to a system stack.
+   */
+  --font-sans: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
+ * Smooth-scrolls the in-page jumps to the intake form. Done in CSS rather
+ * than JS so it costs nothing and still works on a plain anchor. Anyone who
+ * has asked their OS for less motion keeps the instant jump.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -44,9 +63,106 @@ body {
   outline-offset: 2px;
 }
 
-/* Small mono label used for section tags and field hints. */
+/*
+ * Type scale.
+ *
+ * Defined once here rather than as ad-hoc utility strings on each heading,
+ * so a page added later can't quietly invent a fourth heading size or fall
+ * back to a system font. Everything below is the one family — the steps
+ * differ by weight, size and letter-spacing, never by typeface.
+ *
+ * The two large steps are fluid via clamp, which replaces the old
+ * text-4xl/sm:text-5xl/md:[3.4rem] ladder with a single definition.
+ */
+.type-h1 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: clamp(2.25rem, 1.55rem + 2.8vw, 3.4rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.type-h2 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: clamp(1.875rem, 1.62rem + 1.05vw, 2.25rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.type-h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+
+/*
+ * Small bold label: form field labels and the titles inside cards. Unifies
+ * two sizes that had drifted apart (0.95rem in the hero card, 0.875rem on
+ * the form labels) into one step.
+ */
+.type-label {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+}
+
+/* Opening paragraph under a page title. */
+.type-lede {
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--color-slate-wash);
+}
+
+/* Ordinary running text. */
+.type-body {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--color-slate-wash);
+}
+
+/*
+ * The single primary action. Defined once because the same string was
+ * repeated on the hero CTA, the form submit, and the contact page button,
+ * which is exactly how three buttons end up slightly different.
+ */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.025em;
+  background-color: var(--color-verdigris);
+  color: var(--color-paper);
+  transition: background-color 150ms;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-verdigris-deep);
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/*
+ * Small uppercase label for section tags and field hints. This used to be
+ * set in IBM Plex Mono; the wide letter-spacing and uppercase now carry the
+ * same "technical annotation" role without a second typeface.
+ */
 .tag {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;

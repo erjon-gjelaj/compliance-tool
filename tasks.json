@@ -3,8 +3,8 @@
     {
       "id": "001",
       "title": "Scaffold Next.js project",
-      "status": "pending",
-      "notes": "Create Next.js App Router project with TypeScript. Set up ESLint, .gitignore, basic folder structure. Confirm npm run build works before marking done.",
+      "status": "done",
+      "notes": "Done on branch task/001-scaffold. Next.js 16 App Router + TypeScript + Tailwind v4 + ESLint, src/ layout. Brand strings centralised in src/lib/constants.ts (SITE_NAME). .env.local.example added; .gitignore already covers .env*. Build and lint pass clean. Repo had no commits, so main was created from the existing docs as a base for task branches.",
       "needs_human_review": false
     },
     {
@@ -36,5 +36,5 @@
       "needs_human_review": true
     }
   ],
-  "current_task_id": "001"
+  "current_task_id": "002"
 }

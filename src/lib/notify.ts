@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
 import type { MessageInput } from "@/lib/messages";
 import type { SubmissionRow } from "@/lib/submissions";
+import type { Analysis, AnalysisItem } from "@/lib/analysis/schema";
 
 /**
  * Transactional email over SMTP: the two messages a gap-check intake
@@ -240,6 +241,354 @@ export async function sendIntakeEmails(
   });
 
   transport.close();
+}
+
+/* -------------------------------------------------------------------------
+ * Scope B analysis
+ * ---------------------------------------------------------------------- */
+
+/**
+ * The header every automated review carries, before anything else.
+ *
+ * It says three things, all load-bearing: that a machine wrote this, that it
+ * is not an audit, and that their hiring client is the authority. Someone
+ * reading this on a phone between jobs needs that in the first paragraph, not
+ * in a footer they will never reach.
+ */
+const PRELIMINARY_HEADER = [
+  "This is a preliminary automated review, not a certified audit.",
+  "",
+  "It was produced by software reading what you sent us. It has not been",
+  "checked by a person, it is not a compliance determination, and it is not",
+  "legal advice. Confirm anything here with your hiring client before acting",
+  "on it - they set the requirements, and they are the ones who decide.",
+].join("\n");
+
+const PRICE_BAND_COPY: Record<string, string> = {
+  low: "Toward the lower end - there doesn't look like a great deal to assemble.",
+  medium: "Somewhere in the middle - a normal amount of work.",
+  high: "Toward the higher end - there looks like a lot to put together.",
+  unknown: "We don't have enough to estimate this yet.",
+};
+
+function renderItems(items: Analysis["items"]): string[] {
+  if (items.length === 0) return [];
+
+  const lines: string[] = [];
+
+  const label: Record<AnalysisItem["source"], string> = {
+    osha: "Required by OSHA",
+    platform: "Commonly requested by ISNetworld/Avetta (our understanding, not law)",
+    hiring_client: "Specific to your hiring client - please confirm",
+  };
+
+  // Grouped by confidence, because that is what changes how a line should be
+  // read. High-confidence findings are statements; low-confidence ones are
+  // rendered as questions further down, never as assertions.
+  const confident = items.filter((item) => item.confidence === "high");
+  const probable = items.filter((item) => item.confidence === "medium");
+  const uncertain = items.filter((item) => item.confidence === "low");
+
+  const section = (heading: string, group: AnalysisItem[], asQuestion: boolean) => {
+    if (group.length === 0) return;
+
+    lines.push("", heading, "");
+
+    for (const item of group) {
+      lines.push(
+        asQuestion
+          ? `- Confirm whether ${item.requirement} applies to you.`
+          : `- ${item.requirement}${item.status === "present" ? " - looks present" : item.status === "likely_missing" ? " - looks missing" : " - not established"}`,
+      );
+      lines.push(`  ${label[item.source]}`);
+      lines.push(`  Based on: ${item.basis}`);
+      if (item.action) lines.push(`  Next: ${item.action}`);
+
+      // Only verified citations are rendered. An unverified one is stripped
+      // upstream — see the schema validator.
+      for (const citation of item.citations) {
+        lines.push(`  ${citation.cfr} - ${citation.title}`);
+      }
+
+      lines.push("");
+    }
+  };
+
+  section("WHAT WE'RE REASONABLY SURE OF", confident, false);
+  section("WHAT LOOKS LIKELY, BUT WORTH CHECKING", probable, false);
+  section("THINGS WE COULDN'T ESTABLISH - CHECK THESE YOURSELF", uncertain, true);
+
+  return lines;
+}
+
+function renderAnalysis(
+  row: SubmissionRow,
+  analysis: Analysis,
+  unreadable: string[],
+): string {
+  const lines = [
+    `${row.contact_name},`,
+    "",
+    PRELIMINARY_HEADER,
+    "",
+    "---",
+    "",
+    analysis.summary,
+    ...renderItems(analysis.items),
+  ];
+
+  if (analysis.questionsForClient.length > 0) {
+    lines.push(
+      "",
+      "QUESTIONS FOR YOU",
+      "",
+      "We couldn't answer these from what we had:",
+      "",
+      ...analysis.questionsForClient.map((question) => `- ${question}`),
+    );
+  }
+
+  // Never omitted when there is something in it. Someone who attached six
+  // files and sees five discussed will assume the sixth was fine.
+  if (unreadable.length > 0) {
+    lines.push(
+      "",
+      "FILES WE COULDN'T READ",
+      "",
+      "These were NOT assessed. Nothing above takes them into account:",
+      "",
+      ...unreadable.map((name) => `- ${name}`),
+      "",
+      "Scans and photos without a text layer are the usual reason. Sending",
+      "the original file, or a PDF you can select text in, usually fixes it.",
+    );
+  }
+
+  lines.push(
+    "",
+    "WHAT THIS WOULD COST",
+    "",
+    PRICE_BAND_COPY[analysis.priceBand] ?? PRICE_BAND_COPY.unknown,
+    "This is an indicative band and not a quote. It is not binding, and we'd",
+    "confirm a real number on a short call once we understand your file.",
+    "",
+    "---",
+    "",
+    "WANT US TO TAKE IT FURTHER?",
+    "",
+    `Reply to this email and say so. One person reads these - ${CONTACT_EMAIL}.`,
+    "",
+    "---",
+    `${SITE_NAME} is an independent service and is not affiliated with,`,
+    "endorsed by, or acting on behalf of ISNetworld, Avetta, or any hiring",
+    "client.",
+  );
+
+  return lines.join("\n");
+}
+
+export function analysisMessage(
+  row: SubmissionRow,
+  analysis: Analysis,
+  unreadable: string[],
+  config: SmtpConfig,
+) {
+  return {
+    from: config.from,
+    to: row.email,
+    replyTo: config.to,
+    subject: `${SITE_NAME}: your preliminary gap review`,
+    text: renderAnalysis(row, analysis, unreadable),
+  };
+}
+
+/** The internal copy. Same content, plus what it took to produce it. */
+export function internalAnalysisMessage(
+  row: SubmissionRow,
+  analysis: Analysis,
+  unreadable: string[],
+  config: SmtpConfig,
+) {
+  return {
+    from: config.from,
+    to: config.to,
+    replyTo: row.email,
+    subject: `${SITE_NAME}: analysis sent - ${row.trade} - ${row.hiring_client}`,
+    text: [
+      "An automated review was sent to a contractor.",
+      "",
+      `Submission id: ${row.id}`,
+      `Items: ${analysis.items.length}, questions: ${analysis.questionsForClient.length}, unreadable: ${unreadable.length}`,
+      `Price band: ${analysis.priceBand}`,
+      "",
+      "Their answers:",
+      "",
+      intakeSummary(row, []),
+      "",
+      "=== What they received ===",
+      "",
+      renderAnalysis(row, analysis, unreadable),
+    ].join("\n"),
+  };
+}
+
+/**
+ * The safe generic explainer, sent when there is no analysis to send.
+ *
+ * It promises nothing it cannot deliver and does not pretend a review
+ * happened. Sending this is always available; unsaying a confident wrong
+ * answer is not, which is why every failure path in the pipeline lands here.
+ */
+export function explainerMessage(
+  row: SubmissionRow,
+  unreadable: string[],
+  config: SmtpConfig,
+) {
+  const lines = [
+    `${row.contact_name},`,
+    "",
+    "A quick follow-up on the gap check you just sent.",
+    "",
+    "Our automated review didn't produce a result it was safe to send you",
+    "this time, so a person is going to look at it instead. That is slower,",
+    "and it is the right way round: we would rather say nothing than send you",
+    "a list that might be wrong about your own paperwork.",
+    "",
+    "You'll get one email back with what your ISNetworld or Avetta file still",
+    "looks short on. No mailing list, and no call to book.",
+  ];
+
+  if (unreadable.length > 0) {
+    lines.push(
+      "",
+      "One thing that would help. We couldn't read these files:",
+      "",
+      ...unreadable.map((name) => `- ${name}`),
+      "",
+      "Scans and photos without a text layer are the usual reason. If you can",
+      "reply with the original file, or a PDF you can select text in, that",
+      "saves a round trip.",
+    );
+  }
+
+  lines.push(
+    "",
+    "Working to a fixed date? Reply and say when, and we'll tell you honestly",
+    "whether we can be useful in time.",
+    "",
+    "---",
+    `${SITE_NAME} is an independent service and is not affiliated with,`,
+    "endorsed by, or acting on behalf of ISNetworld, Avetta, or any hiring",
+    "client. A gap check is guidance to help you prepare your own submission,",
+    "not a compliance determination.",
+  );
+
+  return {
+    from: config.from,
+    to: row.email,
+    replyTo: config.to,
+    subject: `${SITE_NAME}: we've got your gap check`,
+    text: lines.join("\n"),
+  };
+}
+
+export function internalExplainerMessage(
+  row: SubmissionRow,
+  unreadable: string[],
+  config: SmtpConfig,
+) {
+  return {
+    from: config.from,
+    to: config.to,
+    replyTo: row.email,
+    subject: `${SITE_NAME}: NEEDS A HUMAN - ${row.trade} - ${row.hiring_client}`,
+    text: [
+      "An automated review did not produce a usable result, so the contractor",
+      "was sent the generic explainer and told a person would look at it.",
+      "Somebody now has to.",
+      "",
+      `Submission id: ${row.id}`,
+      "The reason is in the analyses table against this submission.",
+      "",
+      intakeSummary(row, []),
+      ...(unreadable.length > 0
+        ? ["", "Files that could not be read:", ...unreadable.map((n) => `  - ${n}`)]
+        : []),
+    ].join("\n"),
+  };
+}
+
+type ExtractedDocument = { document: { file_name: string }; status: string };
+
+function unreadableNames(documents: ExtractedDocument[]): string[] {
+  return documents
+    .filter((entry) => entry.status !== "ok" && entry.status !== "ocr")
+    .map((entry) => entry.document.file_name);
+}
+
+/** Same never-throws contract as the other senders. */
+async function sendPair(
+  build: (config: SmtpConfig) => [unknown, unknown],
+  labels: [string, string],
+): Promise<void> {
+  const config = readSmtpConfig();
+  if (!config) return;
+
+  let transport;
+  try {
+    transport = buildTransport(config);
+  } catch (cause) {
+    console.error("Could not create the mail transport:", cause);
+    return;
+  }
+
+  const [first, second] = build(config);
+
+  const results = await Promise.allSettled([
+    transport.sendMail(first as nodemailer.SendMailOptions),
+    transport.sendMail(second as nodemailer.SendMailOptions),
+  ]);
+
+  results.forEach((result, index) => {
+    if (result.status === "rejected") {
+      console.error(`${labels[index]} failed:`, result.reason);
+    }
+  });
+
+  transport.close();
+}
+
+export async function sendAnalysisEmails(
+  row: SubmissionRow,
+  analysis: Analysis,
+  documents: ExtractedDocument[],
+): Promise<void> {
+  // The model is asked for this too, but the extractor is the one that knows
+  // — a file it could not read is a fact, not a judgement call.
+  const unreadable = unreadableNames(documents);
+
+  await sendPair(
+    (config) => [
+      internalAnalysisMessage(row, analysis, unreadable, config),
+      analysisMessage(row, analysis, unreadable, config),
+    ],
+    ["Internal analysis copy", "Analysis email"],
+  );
+}
+
+export async function sendExplainerEmails(
+  row: SubmissionRow,
+  documents: ExtractedDocument[],
+): Promise<void> {
+  const unreadable = unreadableNames(documents);
+
+  await sendPair(
+    (config) => [
+      internalExplainerMessage(row, unreadable, config),
+      explainerMessage(row, unreadable, config),
+    ],
+    ["Internal explainer copy", "Explainer email"],
+  );
 }
 
 /**

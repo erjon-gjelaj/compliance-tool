@@ -185,8 +185,9 @@
     {
       "id": "027",
       "title": "Analysis pipeline",
-      "status": "todo",
-      "notes": "Scope B deliverable 3. Server-side text extraction from PDF and DOCX, Anthropic API call, schema-validated structured JSON, fallback to the generic explainer email on validation failure."
+      "status": "in_progress",
+      "notes": "Scope B deliverable 3, on branch task/027-analysis-pipeline (on top of task/026, since neither is merged). Extraction is libraries and not a model, at the human's explicit instruction and for good reason: it is a mechanical job with a right answer, and a model does it slower, non-deterministically, per-page-priced, and can invent text that is not in the file. unpdf for PDF (serverless pdf.js, no native binary - the thing that rules most PDF tooling out on Vercel), mammoth for docx, word-extractor for legacy doc. tesseract.js OCR is a capped fallback only: three images per submission, 6MB each, language data cached in /tmp, output marked 'ocr' so the prompt treats it as an indication and never as proof. HEIC has no decoder and says so. The load-bearing distinction is that unreadable is not empty - a scan with no text layer and an empty document extract identically, and collapsing them is how silence starts implying 'reviewed and fine'. text_status keeps them apart and the extractor, not the model, is the authority on the unreadable list. The schema is sent to the API as a structured-output format so generation is constrained, then validated again on the way back. The validator enforces what a schema cannot: every item carries a basis, an unknown cannot be high confidence, hiring-client requirements must be unknown, and a citation is rejected unless it is on an OSHA item and confirmed to support the claim. Every failure path - no key, model error, refusal, bad JSON, rule violation - sends the same honest explainer, with the internal copy subject-lined NEEDS A HUMAN. Runs via after() so the form returns immediately. The analyses table logs system prompt, user prompt, raw output, result, error, tokens and duration, written before the email so an output that breaks the sender is still on record. Deliberately thin for now: lib/requirements/ is a near-empty placeholder telling the model it has no verified basis to assert anything (task 030 does the real data), and the email is plain text (task 028 renders it). MANUAL STEPS: run migration 0004, and set ANTHROPIC_API_KEY (optional ANTHROPIC_MODEL, defaults to claude-opus-5). Without the key, submissions still save and the explainer goes out. Not tested: no .env.local and no API key here, so nothing has been extracted and no model call made. Build and lint clean.",
+      "needs_human_review": true
     },
     {
       "id": "028",
@@ -219,6 +220,6 @@
       "notes": "Scope B deliverable 8. Retrieval not recall: every proposed citation fetched from the eCFR API, confirmed to exist and to support the claim, stripped and downgraded to unknown otherwise, sections cached. Output separates OSHA requirements from ISN/Avetta contractual ones."
     }
   ],
-  "current_task_id": "026",
+  "current_task_id": "027",
   "blocked_on": null
 }

@@ -25,7 +25,15 @@ than code.
 >    under Dashboard > Project Settings > API, labelled `service_role`. It
 >    bypasses row level security, so it must never take a `NEXT_PUBLIC_`
 >    prefix and must never be committed.
-> 3. Set `ADMIN_SECRET` to a long random string, locally and in Vercel. It
+> 3. Run `0004_analyses.sql`. It adds the extracted-text columns, the
+>    `analyses` log table, and the analysis state on submissions.
+> 4. Set `ANTHROPIC_API_KEY` in Vercel to switch the automated review on.
+>    **Every completed submission that reaches this step spends money.**
+>    Optional `ANTHROPIC_MODEL` overrides the default (`claude-opus-5`).
+>    Leave the key unset and submissions still save and still get an email —
+>    the generic explainer goes out instead of a review. That is a safe
+>    default to deploy with while you watch the first submissions arrive.
+> 5. Set `ADMIN_SECRET` to a long random string, locally and in Vercel. It
 >    guards the submission hard-delete endpoint — without it, a deletion
 >    request cannot be honoured. Generate one with
 >    `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
@@ -55,10 +63,17 @@ than code.
 > is not the service-role key; the publishable key produces exactly this
 > message, because the migration revokes everything from `anon`.
 >
-> Until both are done, submitting the form shows the generic "something went
-> wrong" panel — the failure is caught and logged rather than crashing, but
-> nothing is saved. The old `leads` table is untouched and keeps its history;
-> nothing writes to it any more.
+> Until the migrations are run, submitting the form shows the generic
+> "something went wrong" panel — the failure is caught and logged rather than
+> crashing, but nothing is saved. The old `leads` table is untouched and keeps
+> its history; nothing writes to it any more.
+>
+> **Reading what the model actually said.** Every run is in the `analyses`
+> table with its prompts, raw output, validated result, error, token counts
+> and duration, written before the email goes out. `status = 'ok'` means a
+> review was sent; anything else means the contractor got the explainer and
+> somebody needs to look. Read the first thirty closely — that is where you
+> find out whether the guardrails hold, and it costs nothing to look.
 
 ## Before you start
 

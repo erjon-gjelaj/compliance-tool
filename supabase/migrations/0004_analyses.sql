@@ -43,16 +43,19 @@ comment on column public.submission_documents.text_status is
   'be listed as such in the response - never let silence imply it was fine.';
 
 -- ---------------------------------------------------------------------
--- Model runs
+-- Analysis runs
 -- ---------------------------------------------------------------------
 
--- Every model input and output, kept whether it succeeded or not.
+-- Every review produced, whether it was sent or not.
 --
 -- This is the audit trail. The failure mode of an automated review is being
--- wrong instantly, at scale, and the only way to find out whether the
--- guardrails hold is to read what actually went out. A row here is written
--- before the email is sent, not after, so an output that broke the sender is
--- still on record.
+-- wrong instantly, at scale, and the only way to find out whether the rules
+-- hold is to read what actually went out. A row is written before the email
+-- is sent, not after, so an output that broke the sender is still on record.
+--
+-- reference_version records which edition of lib/requirements produced the
+-- review. A finding is only interpretable next to the list it was matched
+-- against, and that list is expected to change as it gets researched.
 create table if not exists public.analyses (
   id uuid primary key default gen_random_uuid(),
   submission_id uuid not null
@@ -60,35 +63,26 @@ create table if not exists public.analyses (
   created_at timestamptz not null default now(),
 
   status text not null,
-  model text not null,
+  reference_version text not null,
 
-  -- Verbatim, both directions. The prompt is stored per run rather than
-  -- referenced by version, because the prompt is the thing under review and
-  -- a run has to be readable without checking out the code that produced it.
-  system_prompt text,
-  user_prompt text,
-  raw_output text,
-
-  -- The validated object, or null when validation failed.
+  -- The review itself, exactly as rendered into the email.
   result jsonb,
 
   error text,
-  input_tokens integer,
-  output_tokens integer,
+  documents_read integer not null default 0,
+  documents_unreadable integer not null default 0,
   duration_ms integer,
 
   constraint analyses_status check (status in (
-    'ok',              -- valid output, email sent from it
-    'invalid_output',  -- model replied but the JSON failed the schema
-    'model_error',     -- the API call itself failed
-    'skipped'          -- not attempted (no API key configured)
+    'ok',             -- valid review, email sent from it
+    'invalid_output', -- the review failed its own checks; explainer sent
+    'error'           -- the run threw; explainer sent
   ))
 );
 
 comment on table public.analyses is
-  'One row per model run against a submission, successful or not. This is '
-  'the record of what the model was asked and what it said - read the first '
-  'thirty closely.';
+  'One row per review produced for a submission, sent or not. Read the first '
+  'thirty closely - that is where you find out whether the rules hold.';
 
 create index if not exists analyses_submission_id_idx
   on public.analyses (submission_id, created_at desc);

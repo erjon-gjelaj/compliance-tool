@@ -46,8 +46,10 @@ emailed preliminary gap analysis, and captures enough to quote a price.
    optional document uploads plus contact details). Steps after the first
    are skippable and partials are persisted — a partial submission with an
    email address is still a lead worth calling.
-2. Uploaded documents are read server-side and diffed against a reference
-   list of known requirements by trade and platform.
+2. Uploaded documents are read server-side — with ordinary libraries, not a
+   language model — and diffed against a reference list of known requirements
+   by trade and platform. The same submission produces the same answer every
+   time, and every finding names the file and the phrase it came from.
 3. An emailed preliminary review goes back automatically, plus a full copy
    to us.
 
@@ -66,10 +68,12 @@ worse than a four-field form, and that is fine right now: we cannot service
 hundreds of leads by hand, and a longer form filters for urgency.
 
 The failure mode has moved. Manual follow-up was slow; automated output can
-be wrong instantly, at scale. The mitigations are confidence labelling,
-questions rather than assertions, honest framing as preliminary, retrieved
-rather than recalled citations, and logging every model output so we can
-audit what actually went out. Read the first ~30 closely.
+be wrong instantly, at scale. The mitigations are that the review is
+deterministic and reproducible rather than generated, that every finding
+names the file and phrase behind it, confidence labelling, questions rather
+than assertions, honest framing as preliminary, retrieved rather than
+hand-written citations, and logging every review so we can audit what
+actually went out. Read the first ~30 closely.
 
 ## Draft pricing model (for later — do not build billing yet)
 - Free: intake + automated preliminary gap review
@@ -97,7 +101,7 @@ without a consultant) rather than specific regulatory claims.
 Under Scope B this extends to generated output. Two rules matter most, and
 both are spelled out in CLAUDE.md under "Regulatory output rules":
 - OSHA citations are retrieved from the eCFR API at generation time and
-  confirmed to support the claim, never recalled from the model. A wrong CFR
+  confirmed to support the claim, never written from memory. A wrong CFR
   cite is worse than none — it looks authoritative and anyone in the industry
   can check it in a minute.
 - OSHA and ISNetworld are not the same thing. ISN and Avetta requirements are

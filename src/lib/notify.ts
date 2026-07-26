@@ -3,6 +3,7 @@ import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
 import type { MessageInput } from "@/lib/messages";
 import type { SubmissionRow } from "@/lib/submissions";
 import type { Analysis, AnalysisItem } from "@/lib/analysis/schema";
+import { isReadable, type ExtractedDocument } from "@/lib/analysis/documents";
 
 /**
  * Transactional email over SMTP: the two messages a gap-check intake
@@ -518,11 +519,9 @@ export function internalExplainerMessage(
   };
 }
 
-type ExtractedDocument = { document: { file_name: string }; status: string };
-
 function unreadableNames(documents: ExtractedDocument[]): string[] {
   return documents
-    .filter((entry) => entry.status !== "ok" && entry.status !== "ocr")
+    .filter((entry) => !isReadable(entry))
     .map((entry) => entry.document.file_name);
 }
 
@@ -563,8 +562,8 @@ export async function sendAnalysisEmails(
   analysis: Analysis,
   documents: ExtractedDocument[],
 ): Promise<void> {
-  // The model is asked for this too, but the extractor is the one that knows
-  // — a file it could not read is a fact, not a judgement call.
+  // The extractor owns this list. A file it could not read is a fact rather
+  // than a judgement, so it is not something to re-derive downstream.
   const unreadable = unreadableNames(documents);
 
   await sendPair(

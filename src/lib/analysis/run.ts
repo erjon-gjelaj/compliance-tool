@@ -1,47 +1,41 @@
 import "server-only";
 
-import { ANALYSIS_MODEL, getAnthropicClient } from "@/lib/anthropic";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { listDocuments, readDocument } from "@/lib/documents";
 import { extractDocument, ocrBudget } from "@/lib/extract";
 import { getSubmission, updateSubmission } from "@/lib/submissions";
-import { requirementsFor } from "@/lib/requirements";
+import { REQUIREMENTS_VERSION } from "@/lib/requirements";
 import { sendAnalysisEmails, sendExplainerEmails } from "@/lib/notify";
-import {
-  ANALYSIS_JSON_SCHEMA,
-  validateAnalysis,
-  type Analysis,
-} from "@/lib/analysis/schema";
-import {
-  SYSTEM_PROMPT,
-  buildUserPrompt,
-  type PromptDocument,
-} from "@/lib/analysis/prompt";
+import { buildAnalysis } from "@/lib/analysis/match";
+import { validateAnalysis, type Analysis } from "@/lib/analysis/schema";
+import type { ExtractedDocument } from "@/lib/analysis/documents";
 
 /**
- * The analysis pipeline: extract, ask, validate, send.
+ * The analysis pipeline: extract, diff, validate, send.
  *
- * Runs after the response has gone out (see the `after` call in the intake
- * action) rather than inside the submission. Reading several PDFs and making
- * a model call takes far longer than anyone will hold a form open for, and
- * the person tapping "Send my gap check" must not be the one waiting for it.
+ * There is no model anywhere in here. Text comes out of the documents with
+ * libraries, and the review is a text search against lib/requirements —
+ * so the same submission produces the same answer every time, every claim
+ * points at a file and a phrase, and nothing can be invented.
+ *
+ * It runs after the response has gone out (see the `after` call in the intake
+ * action) rather than inside the submission. Reading several PDFs and running
+ * OCR over a photo takes longer than anyone will hold a form open for.
  *
  * Every exit path sends an email. The one thing this must never do is leave
- * someone who filled in four screens hearing nothing at all — so a missing
- * API key, a model error, and output that fails validation all fall through
- * to the same honest explainer.
+ * someone who filled in four screens hearing nothing at all.
  */
 
 type RunOutcome = "ok" | "fallback";
 
 /** Pulls the text out of every uploaded document, recording how each went. */
-async function extractAll(submissionId: string): Promise<PromptDocument[]> {
+async function extractAll(submissionId: string): Promise<ExtractedDocument[]> {
   const documents = await listDocuments(submissionId);
   if (documents.length === 0) return [];
 
   const supabase = getSupabaseAdminClient();
   const budget = ocrBudget();
-  const results: PromptDocument[] = [];
+  const results: ExtractedDocument[] = [];
 
   for (const document of documents) {
     const bytes = await readDocument(document.storage_path);
@@ -60,13 +54,12 @@ async function extractAll(submissionId: string): Promise<PromptDocument[]> {
     const extraction = await extractDocument(
       { bytes, mimeType: document.mime_type, fileName: document.file_name },
       // The budget is only spent on files that would actually use it, so an
-      // image arriving after three others isn't refused because two PDFs
-      // went past first.
+      // image arriving after two PDFs isn't refused because they went first.
       { allowOcr: isImage ? budget.spend() : false },
     );
 
-    // Stored so a human can see what the model was actually given. Reading
-    // the extraction is usually how you find out why an analysis was odd.
+    // Stored so a human can see what was actually searched. Reading the
+    // extracted text is usually how you find out why a review looked odd.
     const { error } = await supabase
       .from("submission_documents")
       .update({
@@ -86,93 +79,13 @@ async function extractAll(submissionId: string): Promise<PromptDocument[]> {
   return results;
 }
 
-type ModelResult =
-  | { ok: true; value: Analysis; raw: string; usage: Usage }
-  | { ok: false; status: "invalid_output" | "model_error"; error: string; raw?: string; usage?: Usage };
-
-type Usage = { input: number; output: number };
-
-async function askModel(
-  systemPrompt: string,
-  userPrompt: string,
-): Promise<ModelResult> {
-  const client = getAnthropicClient();
-
-  if (!client) {
-    return { ok: false, status: "model_error", error: "no API key configured" };
-  }
-
-  let raw = "";
-  let usage: Usage | undefined;
-
-  try {
-    const response = await client.messages.create({
-      model: ANALYSIS_MODEL,
-      max_tokens: 16000,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
-      // Constrains generation to the schema rather than only checking the
-      // answer afterwards. It is still validated on the way back.
-      output_config: {
-        format: {
-          type: "json_schema",
-          schema: ANALYSIS_JSON_SCHEMA,
-        },
-      },
-    });
-
-    usage = {
-      input: response.usage.input_tokens,
-      output: response.usage.output_tokens,
-    };
-
-    // Safety classifiers can decline a request; the response is a normal 200
-    // with an empty or partial body, so this has to be checked before
-    // reading content.
-    if (response.stop_reason === "refusal") {
-      return {
-        ok: false,
-        status: "model_error",
-        error: "the model declined this request",
-        usage,
-      };
-    }
-
-    raw = response.content
-      .filter((block) => block.type === "text")
-      .map((block) => block.text)
-      .join("");
-
-    if (!raw.trim()) {
-      return { ok: false, status: "invalid_output", error: "empty response", usage };
-    }
-
-    const parsed: unknown = JSON.parse(raw);
-    const validated = validateAnalysis(parsed);
-
-    if (!validated.ok) {
-      return { ok: false, status: "invalid_output", error: validated.error, raw, usage };
-    }
-
-    return { ok: true, value: validated.value, raw, usage };
-  } catch (cause) {
-    const error = cause instanceof Error ? cause.message : "unknown error";
-
-    // A parse failure is bad output; anything else is the call itself.
-    const status = raw ? "invalid_output" : "model_error";
-    return { ok: false, status, error, raw: raw || undefined, usage };
-  }
-}
-
 type LogInput = {
   submissionId: string;
-  status: "ok" | "invalid_output" | "model_error" | "skipped";
-  systemPrompt?: string;
-  userPrompt?: string;
-  raw?: string;
+  status: "ok" | "invalid_output" | "error";
   result?: Analysis;
   error?: string;
-  usage?: Usage;
+  documentsRead: number;
+  documentsUnreadable: number;
   durationMs: number;
 };
 
@@ -180,8 +93,10 @@ type LogInput = {
  * Records the run, whatever happened.
  *
  * Written before the email is sent, not after, so an output that breaks the
- * sender is still on record. This table is how anyone finds out what the
- * model actually says — the first thirty of these are worth reading closely.
+ * sender is still on record. This is how anyone finds out what actually goes
+ * out — read the first thirty closely. `reference_version` is on the row
+ * because a review is only interpretable next to the edition of the
+ * requirements list that produced it.
  */
 async function logRun(input: LogInput): Promise<void> {
   try {
@@ -190,14 +105,11 @@ async function logRun(input: LogInput): Promise<void> {
     const { error } = await supabase.from("analyses").insert({
       submission_id: input.submissionId,
       status: input.status,
-      model: ANALYSIS_MODEL,
-      system_prompt: input.systemPrompt ?? null,
-      user_prompt: input.userPrompt ?? null,
-      raw_output: input.raw ?? null,
+      reference_version: REQUIREMENTS_VERSION,
       result: input.result ?? null,
       error: input.error ?? null,
-      input_tokens: input.usage?.input ?? null,
-      output_tokens: input.usage?.output ?? null,
+      documents_read: input.documentsRead,
+      documents_unreadable: input.documentsUnreadable,
       duration_ms: input.durationMs,
     });
 
@@ -209,11 +121,18 @@ async function logRun(input: LogInput): Promise<void> {
   }
 }
 
-/**
- * Runs the whole thing for one submission. Never throws.
- */
+function countDocuments(documents: ExtractedDocument[]) {
+  const read = documents.filter(
+    (entry) => entry.status === "ok" || entry.status === "ocr",
+  ).length;
+
+  return { read, unreadable: documents.length - read };
+}
+
+/** Runs the whole thing for one submission. Never throws. */
 export async function runAnalysis(submissionId: string): Promise<RunOutcome> {
   const startedAt = Date.now();
+  let documents: ExtractedDocument[] = [];
 
   try {
     const submission = await getSubmission(submissionId);
@@ -225,38 +144,30 @@ export async function runAnalysis(submissionId: string): Promise<RunOutcome> {
 
     await updateSubmission(submissionId, { analysis_status: "pending" });
 
-    const documents = await extractAll(submissionId);
+    documents = await extractAll(submissionId);
+    const counts = countDocuments(documents);
 
-    const userPrompt = buildUserPrompt({
-      submission,
-      documents,
-      requirements: requirementsFor({
-        trade: submission.trade,
-        platform: submission.platform,
-      }),
-    });
+    const analysis = buildAnalysis({ submission, documents });
 
-    const result = await askModel(SYSTEM_PROMPT, userPrompt);
-    const durationMs = Date.now() - startedAt;
+    // Validated even though we built it ourselves. These are the promises the
+    // email makes, and a change to the matcher that quietly breaks one should
+    // fail here rather than in somebody's inbox.
+    const validated = validateAnalysis(analysis);
 
-    if (!result.ok) {
+    if (!validated.ok) {
       await logRun({
         submissionId,
-        status: result.status,
-        systemPrompt: SYSTEM_PROMPT,
-        userPrompt,
-        raw: result.raw,
-        error: result.error,
-        usage: result.usage,
-        durationMs,
+        status: "invalid_output",
+        error: validated.error,
+        documentsRead: counts.read,
+        documentsUnreadable: counts.unreadable,
+        durationMs: Date.now() - startedAt,
       });
 
       console.error(
-        `Analysis for ${submissionId} fell back (${result.status}): ${result.error}`,
+        `Analysis for ${submissionId} failed its own checks: ${validated.error}`,
       );
 
-      // The safe generic explainer. Sending nothing is not an option and
-      // sending malformed output is worse than sending neither.
       await updateSubmission(submissionId, {
         analysis_status: "fallback",
         analysed_at: new Date().toISOString(),
@@ -268,12 +179,10 @@ export async function runAnalysis(submissionId: string): Promise<RunOutcome> {
     await logRun({
       submissionId,
       status: "ok",
-      systemPrompt: SYSTEM_PROMPT,
-      userPrompt,
-      raw: result.raw,
-      result: result.value,
-      usage: result.usage,
-      durationMs,
+      result: validated.value,
+      documentsRead: counts.read,
+      documentsUnreadable: counts.unreadable,
+      durationMs: Date.now() - startedAt,
     });
 
     await updateSubmission(submissionId, {
@@ -281,15 +190,18 @@ export async function runAnalysis(submissionId: string): Promise<RunOutcome> {
       analysed_at: new Date().toISOString(),
     });
 
-    await sendAnalysisEmails(submission, result.value, documents);
+    await sendAnalysisEmails(submission, validated.value, documents);
     return "ok";
   } catch (cause) {
     console.error(`Analysis for ${submissionId} failed outright:`, cause);
 
+    const counts = countDocuments(documents);
     await logRun({
       submissionId,
-      status: "model_error",
+      status: "error",
       error: cause instanceof Error ? cause.message : "unknown error",
+      documentsRead: counts.read,
+      documentsUnreadable: counts.unreadable,
       durationMs: Date.now() - startedAt,
     });
 
@@ -301,7 +213,7 @@ export async function runAnalysis(submissionId: string): Promise<RunOutcome> {
           analysis_status: "fallback",
           analysed_at: new Date().toISOString(),
         });
-        await sendExplainerEmails(submission, []);
+        await sendExplainerEmails(submission, documents);
       }
     } catch (sendFailure) {
       console.error("Could not send the fallback email either:", sendFailure);

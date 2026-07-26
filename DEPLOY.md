@@ -27,13 +27,7 @@ than code.
 >    prefix and must never be committed.
 > 3. Run `0004_analyses.sql`. It adds the extracted-text columns, the
 >    `analyses` log table, and the analysis state on submissions.
-> 4. Set `ANTHROPIC_API_KEY` in Vercel to switch the automated review on.
->    **Every completed submission that reaches this step spends money.**
->    Optional `ANTHROPIC_MODEL` overrides the default (`claude-opus-5`).
->    Leave the key unset and submissions still save and still get an email —
->    the generic explainer goes out instead of a review. That is a safe
->    default to deploy with while you watch the first submissions arrive.
-> 5. Set `ADMIN_SECRET` to a long random string, locally and in Vercel. It
+> 4. Set `ADMIN_SECRET` to a long random string, locally and in Vercel. It
 >    guards the submission hard-delete endpoint — without it, a deletion
 >    request cannot be honoured. Generate one with
 >    `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
@@ -68,12 +62,18 @@ than code.
 > crashing, but nothing is saved. The old `leads` table is untouched and keeps
 > its history; nothing writes to it any more.
 >
-> **Reading what the model actually said.** Every run is in the `analyses`
-> table with its prompts, raw output, validated result, error, token counts
-> and duration, written before the email goes out. `status = 'ok'` means a
-> review was sent; anything else means the contractor got the explainer and
-> somebody needs to look. Read the first thirty closely — that is where you
-> find out whether the guardrails hold, and it costs nothing to look.
+> **Reading what actually went out.** Every review is in the `analyses` table
+> with its result, error, document counts, duration, and the version of
+> `lib/requirements` that produced it, written before the email goes out.
+> `status = 'ok'` means a review was sent; anything else means the contractor
+> got the generic explainer and somebody needs to look. Read the first thirty
+> closely — that is where you find out whether the rules hold, and it costs
+> nothing to look.
+>
+> There is no model and no API key. The review is a text search over the
+> extracted documents against `src/lib/requirements/index.ts`, so the same
+> submission produces the same answer every time and every finding names the
+> file and phrase it came from.
 
 ## Before you start
 

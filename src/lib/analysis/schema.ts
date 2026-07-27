@@ -130,15 +130,20 @@ export function validateAnalysis(raw: unknown): ValidationOutcome {
       );
     }
 
-    // A citation only belongs on an OSHA item, and only once it has been
-    // retrieved from eCFR and confirmed to support the claim (task 032).
-    // Anything else is unverified, which is worse than no citation at all —
-    // it looks authoritative and anyone in this industry can check it in a
-    // minute.
+    // Every citation must have been retrieved and confirmed (task 032). An
+    // unverified one is worse than none at all: it looks authoritative, and
+    // anyone in this industry can check it in a minute.
+    //
+    // Deliberately NOT restricted to source === "osha" any more. That rule
+    // conflated two different things. A retrieved citation says "here is the
+    // OSHA standard on this subject"; `source` says "here is who is asking
+    // for this document". Hazard communication is both — ISNetworld asks for
+    // the programme, and 1910.1200 exists — and forcing a choice between them
+    // meant either dropping a real reference or restating a contractual ask
+    // as a legal requirement. The second is the mistake lib/requirements
+    // warns about most loudly, so the items keep source "platform" and carry
+    // the standard alongside, labelled as a reference.
     for (const citation of item.citations) {
-      if (item.source !== "osha") {
-        problems.push(`${where}: citation on a non-OSHA item`);
-      }
       if (!citation.supportsClaim) {
         problems.push(`${where}: citation not confirmed to support the claim`);
       }

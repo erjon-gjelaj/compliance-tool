@@ -5,8 +5,10 @@ import {
   type ExtractedDocument,
 } from "@/lib/analysis/documents";
 import {
+  CITATIONS_SOURCE_DATE,
   REQUIREMENTS_VERSION,
   anyVerified,
+  citationsFor,
   requirementsFor,
   type Requirement,
 } from "@/lib/requirements";
@@ -111,7 +113,22 @@ function itemFor(
   const base = {
     requirement: requirement.label,
     source: requirement.source,
-    citations: [],
+    // Retrieved from eCFR by scripts/verify-citations.mts, not recalled here.
+    // Present on the item whatever its status: the standard on a subject does
+    // not depend on whether this contractor's file mentions it.
+    citations: citationsFor(requirement.id).map((citation) => ({
+      cfr: citation.cfr,
+      // Subpart first, because plenty of section headings are useless alone:
+      // 1910.132 and 1926.1203 are both published as "General requirements",
+      // and only the subpart says one is about protective equipment and the
+      // other about confined spaces in construction. Both strings came back
+      // from eCFR; joining them is the only editorial act here.
+      title: citation.subpart
+        ? `${citation.subpart} — ${citation.title}`
+        : citation.title,
+      verifiedAt: CITATIONS_SOURCE_DATE,
+      supportsClaim: true,
+    })),
     action: requirement.action,
   };
 

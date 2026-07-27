@@ -30,5 +30,9 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "_comment: scripts/ are standalone dev tools run through tsx, which resolves .ts imports directly. They are not part of the app build and typecheck under different rules.",
+    "scripts"
+  ]
 }

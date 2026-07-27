@@ -124,12 +124,20 @@ function itemBlock(item: AnalysisItem, asQuestion: boolean): string {
     ? ""
     : `<span style="display:inline-block;padding:3px 9px;border-radius:3px;background-color:${style.bg};color:${style.fg};font-family:${BODY_FONT};font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;">${style.text}</span>`;
 
-  const citations = item.citations
-    .map(
-      (c) =>
-        `<div style="font-family:${MONO_FONT};font-size:12px;color:${SLATE_WASH};padding-top:4px;">${esc(c.cfr)} &ndash; ${esc(c.title)}</div>`,
-    )
-    .join("");
+  // A reference, not a duty. The standard exists; whether it applies to this
+  // contractor turns on their work and their site, which we cannot determine.
+  const citations =
+    item.citations.length === 0
+      ? ""
+      : `<div style="padding-top:7px;">
+      <div style="font-family:${BODY_FONT};font-size:12px;font-weight:600;color:${MILLSCALE};">OSHA standards on this subject</div>
+      ${item.citations
+        .map(
+          (c) =>
+            `<div style="font-family:${MONO_FONT};font-size:12px;line-height:1.5;color:${SLATE_WASH};padding-top:2px;">${esc(c.cfr)} &ndash; ${esc(c.title)}</div>`,
+        )
+        .join("")}
+    </div>`;
 
   return `<tr><td style="padding:0 32px 14px 32px;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border-left:3px solid ${style.bg};">

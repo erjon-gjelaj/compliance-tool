@@ -16,6 +16,8 @@ export type ExtractedDocument = {
   text: string;
   /** Why it could not be read, for the log and the email. */
   detail?: string;
+  /** Shown to the contractor when the file was only read in part. */
+  notice?: string;
 };
 
 export function isReadable(entry: ExtractedDocument): boolean {

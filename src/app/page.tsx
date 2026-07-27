@@ -13,6 +13,19 @@ const PAGE_DESCRIPTION =
   "file is still missing. Tell us your trade and hiring client, get a " +
   "free list back.";
 
+/**
+ * The gap-check server action runs here, and the analysis runs inside it via
+ * after() — which counts towards this function's wall clock, not a separate
+ * one. OCR of a scanned PDF is the slow part, so the default is not enough.
+ *
+ * 60 is the ceiling on Vercel's Hobby plan; Pro allows far more. PDF_OCR_BUDGET_MS
+ * in extract.ts is set below this on purpose, leaving room for the analysis to
+ * finish and the email to go out. Raise the two together, never one alone —
+ * OCR overrunning this limit kills the invocation and loses the email as well
+ * as the review.
+ */
+export const maxDuration = 60;
+
 export const metadata: Metadata = {
   title: PAGE_TITLE,
   description: PAGE_DESCRIPTION,

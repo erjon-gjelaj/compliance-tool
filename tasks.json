@@ -199,20 +199,22 @@
     {
       "id": "029",
       "title": "Model prompt guardrails",
-      "status": "todo",
-      "notes": "Scope B deliverable 5. No invented regulations or client requirements, no compliance verdicts, omission over speculation, every item cites its basis."
+      "status": "superseded",
+      "notes": "SUPERSEDED by task 027, not implemented. This asked for guardrails on a model prompt. There is no model and no prompt anymore - 027 removed the SDK, the client, the prompt module and the API key at the human instruction, and CLAUDE.md carries a No language models section. Everything 029 wanted is now structural rather than instructional: match.ts can only report a phrase found in a file they sent or an answer they gave, so no regulation can be invented, no compliance verdict can be reached, and every item names its basis by construction. Guardrails you cannot violate beat guardrails you ask a model to respect. Flagged for human review rather than silently deleted.",
+      "needs_human_review": true
     },
     {
       "id": "030",
       "title": "Reference data seam",
-      "status": "todo",
-      "notes": "Scope B deliverable 6. lib/requirements/ as typed versioned data by trade x platform, near-empty with TODO-VERIFY markers, hand-editable by a non-developer, preferred by the prompt over model knowledge."
+      "status": "done",
+      "notes": "Effectively delivered by task 027 rather than as its own piece of work. lib/requirements is typed (Requirement), versioned (REQUIREMENTS_VERSION), keyed by trade x platform (requirementsFor), documented for a non-developer to edit, and every entry is verified:false under a TODO-VERIFY header. It stopped being a placeholder because the matcher needs it to function. The one clause that cannot apply is preferred by the prompt over model knowledge - there is no prompt and no model knowledge, the data IS the logic. Flagged so a human confirms this counts as done rather than it being closed on my say-so.",
+      "needs_human_review": true
     },
     {
       "id": "031",
       "title": "Internal ops",
-      "status": "todo",
-      "notes": "Scope B deliverable 7. Submission notification, internal-only submissions page behind a shared env secret, model input/output logged to the DB."
+      "status": "in_progress",
+      "notes": "Scope B deliverable 7, on branch task/031-internal-ops. Two of the three parts already existed: submission notification (task 025) and analysis logging to the analyses table (task 027). The missing piece was the internal submissions page, which is what this branch adds - /internal/submissions behind ADMIN_SECRET. NOT PUSHED, awaiting human review."
     },
     {
       "id": "032",

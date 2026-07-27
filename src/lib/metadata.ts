@@ -22,15 +22,24 @@ export function pageMetadata({
   title,
   description,
   path,
+  robots,
 }: {
   title: string;
   description: string;
   path: string;
+  /**
+   * Optional, and only ever used to keep a page OUT of the index. The signed-in
+   * pages are behind a cookie, so a crawler could never render them anyway —
+   * but a URL that appears in a search result is one a person can be phished
+   * with, and there is nothing to gain from listing an account door.
+   */
+  robots?: Metadata["robots"];
 }): Metadata {
   return {
     title,
     description,
     alternates: { canonical: path },
+    ...(robots ? { robots } : {}),
     openGraph: {
       type: "article",
       siteName: SITE_NAME,

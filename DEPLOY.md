@@ -31,6 +31,27 @@ than code.
 >    guards the submission hard-delete endpoint — without it, a deletion
 >    request cannot be honoured. Generate one with
 >    `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+> 5. Set `AUTH_JWT_SECRET`, locally and in Vercel, to at least 32 characters
+>    from `openssl rand -base64 48`. It signs the client sign-in links and the
+>    7-day session cookie behind `/dashboard`. No schema change goes with it —
+>    the dashboard reads tables that already exist, and no session is stored.
+>
+>    Two things worth knowing before it goes out. Sign-in also needs the SMTP
+>    settings from task 016: the only way in is a link we email, so an
+>    environment with no mailer has no working sign-in. And rotating this value
+>    signs every client out immediately — which is also the *only* way to
+>    revoke a session before its 7 days expire, since there is nothing in the
+>    database to delete.
+>
+> Also outstanding for the dashboard: the apex/www split under "Post-deploy
+> findings" below now costs more than a canonical URL. The session cookie is
+> set on whichever host the sign-in link lands on, and the two hostnames are
+> separate cookie jars, so a client who reaches one and is redirected to the
+> other arrives signed out. The verify route resolves its redirect against the
+> incoming host rather than `SITE_URL` so it cannot cause this itself, but the
+> sign-in link in the email is built from `NEXT_PUBLIC_SITE_URL` — so that
+> variable should name the hostname that actually serves the site, not the one
+> that redirects to it.
 >
 > To delete a submission and its uploaded files:
 >

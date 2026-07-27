@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
+import { CONTACT_EMAIL, SITE_NAME, SITE_URL } from "@/lib/constants";
 import type { MessageInput } from "@/lib/messages";
 import type { SubmissionRow } from "@/lib/submissions";
 import type { Analysis, AnalysisItem } from "@/lib/analysis/schema";
@@ -190,6 +190,13 @@ export function intakeConfirmationMessage(
       "",
       "Working towards a fixed date? Reply to this email and say when, and we'll",
       "tell you honestly whether we can be useful in time.",
+      "",
+      // No link with a token in it. The dashboard is reached by asking for a
+      // sign-in link from the site, so a forwarded confirmation email never
+      // hands anyone else the file.
+      "Everything you sent, and the review once it's ready, stays available at",
+      `${SITE_URL}/sign-in — enter this address and we'll email you a way in.`,
+      "There's no password to set.",
       "",
       "Here's what you sent us:",
       "",
@@ -443,6 +450,11 @@ function renderAnalysis(
     "",
     `Reply to this email and say so. One person reads these - ${CONTACT_EMAIL}.`,
     "",
+    "This review, and the files you sent, stay available at",
+    `${SITE_URL}/sign-in — enter your email address and we'll send you a way`,
+    "in. No password to set, and nothing in this email will let anyone else",
+    "read it.",
+    "",
     "---",
     `${SITE_NAME} is an independent service and is not affiliated with,`,
     "endorsed by, or acting on behalf of ISNetworld, Avetta, or any hiring",
@@ -661,6 +673,103 @@ export async function sendExplainerEmails(
     ],
     ["Internal explainer copy", "Explainer email"],
   );
+}
+
+/* -------------------------------------------------------------------------
+ * Client sign-in
+ * ---------------------------------------------------------------------- */
+
+/**
+ * The sign-in link email.
+ *
+ * Exported so the envelope can be composed and inspected without opening a
+ * connection, same as the others — and here that matters more than usual,
+ * because the body carries a credential and the one thing this must never do
+ * is address it to anyone but the account holder.
+ *
+ * No HTML part, deliberately, and no marketing around it. A plain-text
+ * message with one URL is the format least likely to be mangled by a link
+ * rewriter or a scanner that follows every link in an email — the latter
+ * would burn the link before the person ever saw it. It is also the format
+ * that looks least like the phishing mail it structurally resembles, which is
+ * why the body says plainly what to do if they did not ask for it.
+ */
+export function signInMessage(
+  email: string,
+  url: string,
+  minutes: number,
+  config: SmtpConfig,
+) {
+  return {
+    from: config.from,
+    to: email,
+    subject: `Your ${SITE_NAME} sign-in link`,
+    text: [
+      `Here is your link to open your ${SITE_NAME} dashboard, where you can`,
+      "read the documents you sent us and the review we produced from them.",
+      "",
+      url,
+      "",
+      `The link works once you open it and stops working after ${minutes} minutes.`,
+      "Signing in keeps you signed in on this device for 7 days.",
+      "",
+      "If you did not ask for this link, you can ignore this email — nothing",
+      "has been opened and nothing has changed. Nobody can reach your",
+      "documents without a link sent to this address.",
+      "",
+      "---",
+      `${SITE_NAME} — ${SITE_URL}`,
+      `Questions: ${CONTACT_EMAIL}`,
+    ].join("\n"),
+  };
+}
+
+/**
+ * Whether the mailer is set up at all.
+ *
+ * Distinct from a send failing. This one is a deployment fault, identical for
+ * every address, and safe to show — which is exactly why sign-in uses it and
+ * does not show individual send failures. See the sign-in action.
+ */
+export function smtpConfigured(): boolean {
+  return readSmtpConfig() !== null;
+}
+
+/**
+ * Sends the sign-in link, reporting whether it went.
+ *
+ * Reports a result rather than swallowing failures, like the contact form and
+ * unlike the intake mails: there is no database row standing behind this one.
+ * If the send fails and the page claims a link is on its way, the person
+ * waits for something that is never arriving.
+ */
+export async function sendSignInLink(
+  email: string,
+  url: string,
+  minutes: number,
+): Promise<boolean> {
+  const config = readSmtpConfig();
+  if (!config) return false;
+
+  let transport;
+  try {
+    transport = buildTransport(config);
+  } catch (cause) {
+    console.error("Could not create the mail transport:", cause);
+    return false;
+  }
+
+  try {
+    await transport.sendMail(signInMessage(email, url, minutes, config));
+    return true;
+  } catch (cause) {
+    // Server-side only: SMTP errors can carry the host and username, and this
+    // one would also carry the address that asked.
+    console.error("Sign-in link failed to send:", cause);
+    return false;
+  } finally {
+    transport.close();
+  }
 }
 
 /**

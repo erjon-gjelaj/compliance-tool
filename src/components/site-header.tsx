@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wordmark } from "@/components/wordmark";
-import { NAV_LINKS } from "@/lib/nav";
+import { NAV_LINKS, SIGN_IN_LINK } from "@/lib/nav";
 
 /**
  * Four pages total, so the nav is a flat row that stays visible at every
@@ -48,6 +48,25 @@ export function SiteHeader() {
               </li>
             );
           })}
+
+          {/*
+            Set apart by a rule rather than sitting as a fourth peer: the
+            three above are for someone deciding, this one is for someone who
+            already sent us their paperwork and wants it back.
+          */}
+          <li className="border-l border-slate-wash/40 pl-5 sm:pl-7">
+            <Link
+              href={SIGN_IN_LINK.href}
+              aria-current={pathname === SIGN_IN_LINK.href ? "page" : undefined}
+              className={`text-xs tracking-[0.12em] uppercase underline-offset-[6px] transition-colors hover:text-verdigris-pale hover:underline hover:decoration-verdigris-pale ${
+                pathname === SIGN_IN_LINK.href
+                  ? "text-verdigris-pale underline decoration-verdigris-pale"
+                  : "text-zinc-dust"
+              }`}
+            >
+              {SIGN_IN_LINK.label}
+            </Link>
+          </li>
         </ul>
       </nav>
     </header>

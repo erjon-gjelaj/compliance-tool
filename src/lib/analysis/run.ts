@@ -2,7 +2,7 @@ import "server-only";
 
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { listDocuments, readDocument } from "@/lib/documents";
-import { extractDocument, ocrBudget } from "@/lib/extract";
+import { extractDocument } from "@/lib/extract";
 import { getSubmission, updateSubmission } from "@/lib/submissions";
 import { REQUIREMENTS_VERSION } from "@/lib/requirements";
 import { sendAnalysisEmails, sendExplainerEmails } from "@/lib/notify";
@@ -34,7 +34,6 @@ async function extractAll(submissionId: string): Promise<ExtractedDocument[]> {
   if (documents.length === 0) return [];
 
   const supabase = getSupabaseAdminClient();
-  const budget = ocrBudget();
   const results: ExtractedDocument[] = [];
 
   for (const document of documents) {
@@ -50,13 +49,11 @@ async function extractAll(submissionId: string): Promise<ExtractedDocument[]> {
       continue;
     }
 
-    const extraction = await extractDocument(
-      { bytes, mimeType: document.mime_type, fileName: document.file_name },
-      // Passed rather than pre-decided: only extraction knows whether a PDF
-      // turns out to be a scan, and a text-layer PDF should not burn a slot
-      // the file that actually needs OCR is waiting for.
-      { budget },
-    );
+    const extraction = await extractDocument({
+      bytes,
+      mimeType: document.mime_type,
+      fileName: document.file_name,
+    });
 
     // Stored so a human can see what was actually searched. Reading the
     // extracted text is usually how you find out why a review looked odd.

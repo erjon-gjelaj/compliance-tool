@@ -168,7 +168,11 @@ function shell(inner: string, preheader: string, kicker = "Preliminary gap revie
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(preheader)}</div>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:${GALVANISE};">
 <tr><td align="center" style="padding:24px 12px;">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;max-width:100%;background-color:${PAPER};border:1px solid ${ZINC_DUST};border-collapse:collapse;">
+<!-- 680 rather than the usual 600. That convention dates from preview panes
+     far narrower than anything current, and at 600 this read as a thin ribbon
+     in a maximised window. Still well inside what Outlook and Gmail handle,
+     and max-width keeps it fluid on a phone. -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="680" style="width:680px;max-width:100%;background-color:${PAPER};border:1px solid ${ZINC_DUST};border-collapse:collapse;">
 
 <tr><td style="background-color:${MILLSCALE};padding:20px 32px 16px 32px;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">

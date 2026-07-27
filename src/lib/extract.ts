@@ -67,18 +67,72 @@ const OCR_MAX_BYTES = 6 * 1024 * 1024;
 /*
  * Scanned PDFs get their own budget, in pages and in seconds.
  *
- * Ten pages is a judgement about what a prequalification file looks like:
+ * Six pages is a judgement about what a prequalification file looks like:
  * the front matter, contents and opening sections of a safety manual are
  * where the subjects we search for are named. It is not a claim to have read
  * the document, and the email says which pages the answer covers.
  *
  * The clock exists because the page cap alone does not bound the work — a
- * full-bleed scan takes far longer than a page of text. maxDuration on the
- * route is 60s, so this leaves room for the rest of the pipeline to finish
- * and the email to go out. Raise both together, never one alone.
+ * full-bleed scan takes far longer than a page of text.
+ *
+ * Both numbers are sized for the 60s ceiling of Vercel's Hobby plan, which is
+ * what maxDuration on the route is set to. 22s of OCR leaves the analysis,
+ * the email and a cold start room to finish inside it — the first production
+ * attempt used 38s and the invocation died before the email went out, which
+ * is the worst outcome available: the contractor hears nothing at all. On a
+ * plan allowing a longer maxDuration, raise that first and these after.
  */
-const PDF_OCR_MAX_PAGES = 10;
-const PDF_OCR_BUDGET_MS = 38_000;
+const PDF_OCR_MAX_PAGES = 6;
+const PDF_OCR_BUDGET_MS = 22_000;
+
+/**
+ * A single OCR call may not exceed this, whatever it thinks it is doing.
+ *
+ * Not belt and braces on top of the budget — a different failure. The budget
+ * assumes work finishes and asks whether there is time for more. This assumes
+ * nothing: tesseract.js runs OCR in a child process, and a child that dies
+ * badly leaves a promise that never settles either way, which no deadline
+ * check placed between pages can ever reach.
+ *
+ * That is not hypothetical. On Vercel the worker fails to boot at all —
+ * `Cannot find module '..'`, its own package root, unresolvable under the
+ * platform's module loader — and the first production scan hung until the
+ * function was killed at 60 seconds, taking the email with it.
+ */
+const OCR_CALL_TIMEOUT_MS = 12_000;
+
+/**
+ * Bounds a promise that may never settle.
+ *
+ * Returns null rather than throwing, because every caller's answer to "OCR
+ * did not happen" is the same: treat the file as unread and carry on. The
+ * timer is unref'd so a stray one cannot hold the process open.
+ */
+async function withTimeout<T>(
+  work: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T | null> {
+  let timer: NodeJS.Timeout | undefined;
+
+  const expiry = new Promise<null>((resolve) => {
+    timer = setTimeout(() => {
+      console.error(`${label} exceeded ${ms}ms and was abandoned`);
+      resolve(null);
+    }, ms);
+    timer.unref?.();
+  });
+
+  try {
+    return await Promise.race([work, expiry]);
+  } catch (cause) {
+    // A rejection here is the same outcome as a timeout: no text.
+    console.error(`${label} failed:`, cause);
+    return null;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 /*
  * The accurate LSTM models rather than the speed-tuned ones tesseract.js
@@ -173,10 +227,17 @@ async function extractDoc(bytes: Uint8Array): Promise<Extraction> {
 async function ocrWorker() {
   const { createWorker, PSM } = await import("tesseract.js");
 
-  const worker = await createWorker("eng", 1, {
-    cachePath: "/tmp",
-    langPath: TESSDATA_BEST,
-  });
+  // Bounded, because this is where it fails on Vercel: the worker is a child
+  // process, and a child that cannot resolve its own entry point never
+  // reports back. Null here means OCR is unavailable, which every caller
+  // handles as "the file could not be read" rather than as a crash.
+  const worker = await withTimeout(
+    createWorker("eng", 1, { cachePath: "/tmp", langPath: TESSDATA_BEST }),
+    OCR_CALL_TIMEOUT_MS,
+    "OCR worker startup",
+  );
+
+  if (!worker) return null;
 
   await worker.setParameters({
     tessedit_pageseg_mode: PSM.AUTO,
@@ -205,6 +266,15 @@ async function extractScannedPdf(
   deadline: number,
 ): Promise<Extraction> {
   const worker = await ocrWorker();
+
+  if (!worker) {
+    return {
+      status: "unreadable",
+      text: "",
+      detail: "no text layer, and OCR is unavailable in this environment",
+    };
+  }
+
   const parts: string[] = [];
   let read = 0;
   let totalPages = 0;
@@ -219,8 +289,17 @@ async function extractScannedPdf(
       async (page) => {
         if (Date.now() > deadline) return;
 
-        const { data } = await worker.recognize(page.bmp);
-        const text = tidy(data.text);
+        const result = await withTimeout(
+          worker.recognize(page.bmp),
+          OCR_CALL_TIMEOUT_MS,
+          `OCR of page ${page.pageNumber}`,
+        );
+
+        // A page that timed out or threw is not counted as read, so the page
+        // total reported to the contractor stays honest.
+        if (!result) return;
+
+        const text = tidy(result.data.text);
         read += 1;
         if (text) parts.push(text);
       },
@@ -292,9 +371,26 @@ async function extractByOcr(
 
   const worker = await ocrWorker();
 
+  if (!worker) {
+    return {
+      status: "unreadable",
+      text: "",
+      detail: "OCR is unavailable in this environment",
+    };
+  }
+
   try {
-    const { data } = await worker.recognize(Buffer.from(bytes));
-    const text = tidy(data.text);
+    const result = await withTimeout(
+      worker.recognize(Buffer.from(bytes)),
+      OCR_CALL_TIMEOUT_MS,
+      "OCR of image",
+    );
+
+    if (!result) {
+      return { status: "unreadable", text: "", detail: "OCR did not complete" };
+    }
+
+    const text = tidy(result.data.text);
 
     if (text.length < MIN_MEANINGFUL_CHARS) {
       return {

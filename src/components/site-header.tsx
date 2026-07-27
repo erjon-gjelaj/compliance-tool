@@ -25,6 +25,9 @@ import { SubmitButton } from "@/components/submit-button";
  * Shared by the sign in link and the sign out button so a <button> and an <a>
  * sitting side by side in the same row cannot drift apart.
  */
+/** The rule that separates the account links from the three content pages. */
+const DIVIDER_CLASS = "border-l border-slate-wash/40 pl-5 sm:pl-7";
+
 const LINK_CLASS =
   "cursor-pointer text-xs tracking-[0.12em] uppercase text-zinc-dust underline-offset-[6px] transition-colors hover:text-verdigris-pale hover:underline hover:decoration-verdigris-pale";
 
@@ -79,7 +82,15 @@ export function SiteHeader() {
           <Wordmark tone="invert" />
         </Link>
 
-        <ul className="flex items-center gap-5 sm:gap-7">
+        {/*
+          Wraps, and has to. With three content pages plus a sign-in link the
+          row fit on a 375px phone by luck; adding Dashboard and Sign out
+          makes five items, and without flex-wrap the list ran 29px past the
+          nav's own padding with "Sign out" pinned against the screen edge.
+          justify-end keeps the overflow row aligned with the row above it
+          rather than drifting left.
+        */}
+        <ul className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 sm:gap-x-7">
           {NAV_LINKS.map(({ href, label }) => {
             const isCurrent = pathname === href;
             return (
@@ -100,19 +111,40 @@ export function SiteHeader() {
           })}
 
           {/*
-            Set apart by a rule rather than sitting as a fourth peer: the
-            three above are for someone deciding, this one is for someone who
+            Set apart by a rule rather than sitting as further peers: the
+            three above are for someone deciding, these are for someone who
             already sent us their paperwork and wants it back.
+
+            Separate <li>s rather than one holding both, so the list says what
+            it is — these are two nav destinations, not one item containing a
+            link and a form. The <ul>'s own gap spaces them.
           */}
-          {onDashboard ? null : (
-            <li className="border-l border-slate-wash/40 pl-5 sm:pl-7">
-              {signedIn ? (
-                /*
-                  A form and not a link, because signing out changes state and
-                  a GET that mutates is something a prefetcher or a scanner can
-                  trigger by looking at the page. The button is styled to match
-                  the links beside it rather than looking like a control.
-                */
+          {onDashboard ? null : signedIn ? (
+            <>
+              {/*
+                The way back. Without it, someone who wandered off to the FAQ
+                mid-prequalification has to know the URL or go round through
+                sign-in — which would just bounce them to the dashboard, a
+                confusing way to discover you were never signed out.
+
+                prefetch={false} because /dashboard is dynamic and behind a
+                session: prefetching would run the JWT check and a Supabase
+                query for every signed-in visitor who merely hovered the nav
+                on a marketing page.
+              */}
+              <li className={DIVIDER_CLASS}>
+                <Link href="/dashboard" prefetch={false} className={LINK_CLASS}>
+                  Dashboard
+                </Link>
+              </li>
+
+              {/*
+                A form and not a link, because signing out changes state and a
+                GET that mutates is something a prefetcher or a scanner can
+                trigger by looking at the page. The button is styled to match
+                the links beside it rather than looking like a control.
+              */}
+              <li>
                 <form action={signOut}>
                   <SubmitButton
                     pendingLabel="Signing out…"
@@ -121,21 +153,23 @@ export function SiteHeader() {
                     Sign out
                   </SubmitButton>
                 </form>
-              ) : (
-                <Link
-                  href={SIGN_IN_LINK.href}
-                  aria-current={
-                    pathname === SIGN_IN_LINK.href ? "page" : undefined
-                  }
-                  className={
-                    pathname === SIGN_IN_LINK.href
-                      ? `${LINK_CLASS} text-verdigris-pale underline decoration-verdigris-pale`
-                      : LINK_CLASS
-                  }
-                >
-                  {SIGN_IN_LINK.label}
-                </Link>
-              )}
+              </li>
+            </>
+          ) : (
+            <li className={DIVIDER_CLASS}>
+              <Link
+                href={SIGN_IN_LINK.href}
+                aria-current={
+                  pathname === SIGN_IN_LINK.href ? "page" : undefined
+                }
+                className={
+                  pathname === SIGN_IN_LINK.href
+                    ? `${LINK_CLASS} text-verdigris-pale underline decoration-verdigris-pale`
+                    : LINK_CLASS
+                }
+              >
+                {SIGN_IN_LINK.label}
+              </Link>
             </li>
           )}
         </ul>

@@ -222,6 +222,13 @@
       "title": "OSHA citation verification via eCFR",
       "status": "todo",
       "notes": "Scope B deliverable 8. Retrieval not recall: every proposed citation fetched from the eCFR API, confirmed to exist and to support the claim, stripped and downgraded to unknown otherwise, sections cached. Output separates OSHA requirements from ISN/Avetta contractual ones."
+    },
+    {
+      "id": "035",
+      "title": "Read scanned PDFs (rasterise + OCR)",
+      "status": "in_progress",
+      "needs_human_review": true,
+      "notes": "On branch task/035-scanned-pdf-ocr. A PDF with no text layer used to return unreadable; it now gets rendered and OCR-read. That is the commonest shape a contractor safety manual arrives in, so giving up on it was giving up on most of them. PDFium via @hyzyla/pdfium, pure WASM, keeping the no-native-binary rule that made unpdf the choice. Pages render at 300 DPI, flatten to greyscale, threshold by Otsu, and go to Tesseract as BMP - resolution is the biggest lever in the pipeline and BMP encodes in a header plus a memcpy where a pure-JS PNG encoder would spend seconds per page. Tesseract now uses tessdata_best rather than the speed models, PSM.AUTO, and is told the DPI explicitly because it was estimating 422 for a 300 DPI render. Pages are rendered and read one at a time so peak memory is one 8MB page rather than ten. Capped at 10 pages AND a 38s submission-wide clock; the OCR budget is now claimed lazily by the extractor rather than guessed by the caller, since only extraction knows whether a PDF is a scan. maxDuration 60 set on the homepage where the action runs. A partial read is reported to the contractor by name and page count, and cannot produce a missing verdict - it comes back as ocr status, which fix/034 already excludes from absence reasoning. VERIFIED locally: rasterise 2 pages in 0.2s, OCR ~4.4s/page at 94-95pc confidence, all 6 target phrases read correctly, page cap and expired deadline both honoured, text-layer PDFs unaffected at 0.1s. NOT VERIFIED: anything on Vercel. Serverless CPU is slower than local, so pages-per-budget will be lower there, and the cold-start cost of fetching tessdata_best is unmeasured. Deskew is not implemented."
     }
   ],
   "current_task_id": "027",

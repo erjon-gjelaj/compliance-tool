@@ -233,7 +233,11 @@ function unreadableBlock(unreadable: string[]): string {
     <tr><td style="padding:2px 0 2px 14px;">
       <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${MILLSCALE};padding-bottom:6px;"><strong>These were NOT assessed.</strong> Nothing above takes them into account.</div>
       ${names}
-      <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};padding-top:6px;">Scans and photos without a text layer are the usual reason. Sending the original file, or a PDF you can select text in, usually fixes it.</div>
+      <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};padding-top:8px;">These are almost always scans or photographs of paper. There is no text inside them to search &ndash; only a picture of text. Any of these fixes it:</div>
+      <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};padding-top:6px;">&bull; Send the file the document was originally written in, usually Word.</div>
+      <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};">&bull; Re-export a PDF from that original rather than scanning a printout.</div>
+      <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};">&bull; If the scan is all that exists, most scanners and Adobe Acrobat can re-save it with the text recognised &ndash; look for <strong style="color:${MILLSCALE};">OCR</strong>, <strong style="color:${MILLSCALE};">Recognise Text</strong>, or <strong style="color:${MILLSCALE};">Make Searchable</strong>.</div>
+      <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${MILLSCALE};padding-top:8px;">Reply with one of those and we&rsquo;ll run it again properly.</div>
     </td></tr>
   </table>
 </td></tr>`;
@@ -262,6 +266,7 @@ export function analysisHtml(
   analysis: Analysis,
   unreadable: string[],
   priceCopy: string,
+  notices: string[] = [],
 ): string {
   const items = analysis.items;
   const collapsed = items.length > 0 && items.every((i) => i.status === "unknown");
@@ -292,9 +297,31 @@ ${probable.length > 0 ? heading("What looks likely, but worth checking") + proba
 ${uncertain.length > 0 ? heading("Things we couldn't establish - check these yourself") + uncertain.map((i) => itemBlock(i, true)).join("") : ""}
 ${questions}`;
 
+  // Directly under the summary, ahead of any finding. It changes how every
+  // line below should be read, so it cannot sit at the bottom where it would
+  // be found only after the conclusions have landed.
+  const partial =
+    notices.length > 0
+      ? `${heading("How much of your file we read")}
+<tr><td style="padding:6px 32px 8px 32px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border-left:3px solid ${RUST_FLAG};">
+    <tr><td style="padding:2px 0 2px 14px;">
+      ${notices
+        .map(
+          (n) =>
+            `<div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${MILLSCALE};padding-bottom:4px;">${esc(n)}</div>`,
+        )
+        .join("")}
+      <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};padding-top:4px;">Because of that, nothing below is called missing on the strength of these files &ndash; only what we positively found is reported from them.</div>
+    </td></tr>
+  </table>
+</td></tr>`
+      : "";
+
   const inner = `${preliminaryNotice()}
 ${paragraph(`${row.contact_name},`)}
 ${paragraph(analysis.summary, 14)}
+${partial}
 ${sections}
 ${unreadableBlock(unreadable)}
 ${priceBlock(analysis.priceBand, priceCopy)}

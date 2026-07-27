@@ -50,12 +50,12 @@ async function extractAll(submissionId: string): Promise<ExtractedDocument[]> {
       continue;
     }
 
-    const isImage = document.mime_type.startsWith("image/");
     const extraction = await extractDocument(
       { bytes, mimeType: document.mime_type, fileName: document.file_name },
-      // The budget is only spent on files that would actually use it, so an
-      // image arriving after two PDFs isn't refused because they went first.
-      { allowOcr: isImage ? budget.spend() : false },
+      // Passed rather than pre-decided: only extraction knows whether a PDF
+      // turns out to be a scan, and a text-layer PDF should not burn a slot
+      // the file that actually needs OCR is waiting for.
+      { budget },
     );
 
     // Stored so a human can see what was actually searched. Reading the

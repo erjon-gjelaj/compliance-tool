@@ -74,6 +74,31 @@ function tickRule(): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>${ticks}</tr></table>`;
 }
 
+/**
+ * The tape-rule mark from components/wordmark.tsx, as table cells.
+ *
+ * Deliberately not an image. Remote images are blocked by default in Outlook
+ * and for plenty of Gmail users, so the one piece of branding would render as
+ * a grey placeholder for a good share of recipients — worse than not having
+ * it. They are also how tracking pixels work, and this is a new domain with no
+ * sending reputation posting automated mail to contractors behind corporate
+ * filters. A CID attachment avoids the blocking but puts a paperclip on an
+ * email with nothing attached.
+ *
+ * The mark is only a baseline with two long ticks and two short ones, so
+ * borders reproduce it exactly. Renders unconditionally, everywhere.
+ */
+function tapeRuleMark(): string {
+  const tick = (h: number) =>
+    `<td style="width:2px;height:${h}px;background-color:#7fc9b5;font-size:0;line-height:0;">&nbsp;</td>`;
+  const gap = `<td style="width:5px;font-size:0;line-height:0;">&nbsp;</td>`;
+
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+  <tr><td colspan="7" style="height:2px;background-color:#7fc9b5;font-size:0;line-height:0;">&nbsp;</td></tr>
+  <tr>${tick(9)}${gap}${tick(5)}${gap}${tick(5)}${gap}${tick(9)}</tr>
+</table>`;
+}
+
 function heading(text: string): string {
   return `<tr><td style="padding:28px 32px 4px 32px;font-family:${BODY_FONT};font-size:12px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:${SLATE_WASH};">${esc(text)}</td></tr>`;
 }
@@ -137,8 +162,13 @@ function shell(inner: string, preheader: string): string {
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;max-width:100%;background-color:${PAPER};border:1px solid ${ZINC_DUST};border-collapse:collapse;">
 
 <tr><td style="background-color:${MILLSCALE};padding:20px 32px 16px 32px;">
-  <div style="font-family:${BODY_FONT};font-size:19px;font-weight:700;letter-spacing:-0.01em;color:${GALVANISE};">${esc(SITE_NAME)}</div>
-  <div style="font-family:${MONO_FONT};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#7fc9b5;padding-top:3px;">Preliminary gap review</div>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+    <tr>
+      <td valign="middle" style="padding-right:10px;">${tapeRuleMark()}</td>
+      <td valign="middle" style="font-family:${BODY_FONT};font-size:19px;font-weight:700;letter-spacing:-0.01em;color:${GALVANISE};">${esc(SITE_NAME)}</td>
+    </tr>
+  </table>
+  <div style="font-family:${MONO_FONT};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#7fc9b5;padding-top:6px;">Preliminary gap review</div>
 </td></tr>
 <tr><td style="font-size:0;line-height:0;background-color:${MILLSCALE};">${tickRule()}</td></tr>
 

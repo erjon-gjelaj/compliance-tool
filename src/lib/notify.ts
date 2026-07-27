@@ -311,10 +311,15 @@ function renderItems(items: Analysis["items"]): string[] {
       lines.push(`  Based on: ${item.basis}`);
       if (item.action) lines.push(`  Next: ${item.action}`);
 
-      // Only verified citations are rendered. An unverified one is stripped
-      // upstream — see the schema validator.
-      for (const citation of item.citations) {
-        lines.push(`  ${citation.cfr} - ${citation.title}`);
+      // Labelled as a reference, never as a duty. The standard exists; what
+      // it requires of THIS contractor turns on their work and their site,
+      // which we cannot determine and must not imply we have.
+      if (item.citations.length > 0) {
+        lines.push("  OSHA standards on this subject:");
+        for (const citation of item.citations) {
+          lines.push(`    ${citation.cfr} - ${citation.title}`);
+          if (citation.note) lines.push(`      ${citation.note}`);
+        }
       }
 
       lines.push("");
@@ -406,6 +411,18 @@ function renderAnalysis(
       "  or Make Searchable.",
       "",
       "Reply with one of those and we'll run it again properly.",
+    );
+  }
+
+  // Stated rather than buried. Someone acting on a lockout/tagout line needs
+  // to know we are declining to cite a construction standard, not assume the
+  // general industry one covers them.
+  if (analysis.warnings.length > 0) {
+    lines.push(
+      "",
+      "WHERE WE STOP SHORT",
+      "",
+      ...analysis.warnings.map((warning) => `- ${warning.message}`),
     );
   }
 

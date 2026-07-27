@@ -4,9 +4,12 @@ import {
   isReliable,
   type ExtractedDocument,
 } from "@/lib/analysis/documents";
+import { CITATION_GAPS } from "@/lib/requirements/citations";
 import {
+  CITATIONS_SOURCE_DATE,
   REQUIREMENTS_VERSION,
   anyVerified,
+  citationsFor,
   requirementsFor,
   type Requirement,
 } from "@/lib/requirements";
@@ -111,7 +114,31 @@ function itemFor(
   const base = {
     requirement: requirement.label,
     source: requirement.source,
-    citations: [],
+    // Retrieved from eCFR by scripts/verify-citations.mts, not recalled here.
+    // Present on the item whatever its status: the standard on a subject does
+    // not depend on whether this contractor's file mentions it.
+    citations: citationsFor(requirement.id).map((citation) => ({
+      cfr: citation.cfr,
+      // Subpart first, because plenty of section headings are useless alone:
+      // 1910.132 and 1926.1203 are both published as "General requirements",
+      // and only the subpart says one is about protective equipment and the
+      // other about confined spaces in construction. Both strings came back
+      // from eCFR; joining them is the only editorial act here.
+      title: citation.subpart
+        ? `${citation.subpart} — ${citation.title}`
+        : citation.title,
+      verifiedAt: CITATIONS_SOURCE_DATE,
+      supportsClaim: true,
+      // 1910.147 and 1910.146 both exclude construction outright. A
+      // scaffolding or mechanical subcontractor on a plant turnaround may
+      // well be doing construction work, and showing them a general industry
+      // standard without saying so is close to misleading. Which part applies
+      // turns on the activity rather than the trade, so the caveat is stated
+      // and the judgement left with them.
+      note: citation.excludesConstruction
+        ? "This standard states it does not cover construction employment. Construction work is covered by Part 1926."
+        : undefined,
+    })),
     action: requirement.action,
   };
 
@@ -346,6 +373,17 @@ export function buildAnalysis({
 
   return {
     summary: summaryFor(submission, items, documents),
+    // Declared refusals to map, carried in the output rather than left in a
+    // log nobody reads. Only for requirements actually reported on, so a gap
+    // in something irrelevant to this contractor stays quiet.
+    warnings: CITATION_GAPS.filter((gap) =>
+      requirements.some((entry) => entry.id === gap.requirement),
+    ).map((gap) => ({
+      code: gap.code,
+      requirement: gap.requirement,
+      industry: gap.industry,
+      message: gap.reason,
+    })),
     items,
     questionsForClient: questionsFor(submission, items, documents),
     priceBand: priceBandFor(submission, items, documents),

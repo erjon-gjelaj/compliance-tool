@@ -1,0 +1,194 @@
+/**
+ * Checks every candidate citation against the eCFR API and writes the cache
+ * the application actually reads.
+ *
+ *   npx tsx scripts/verify-citations.mts
+ *
+ * Run this when CITATION_CANDIDATES changes, or periodically to pick up
+ * amendments. It writes src/lib/requirements/verified-citations.json, which is
+ * committed — the request path never touches the network, so a review is
+ * deterministic and an eCFR outage cannot affect a contractor's email.
+ *
+ * A candidate must clear two hurdles. The section has to exist, and the words
+ * in `expect` have to appear in what comes back — checked against the subpart
+ * description as well as the section heading, because headings like "General
+ * requirements" carry no meaning on their own. Anything that fails is dropped
+ * and reported, never written out with a warning attached: a citation nobody
+ * verified is worth less than no citation, because it looks equally official.
+ *
+ * What lands in the cache is the government's own heading, verbatim. No text
+ * describing a regulation is written by hand anywhere in this pipeline.
+ */
+
+import { writeFileSync } from "node:fs";
+import { CITATION_CANDIDATES } from "../src/lib/requirements/citations.ts";
+
+const API = "https://www.ecfr.gov/api/versioner/v1";
+
+type Resolved = {
+  cfr: string;
+  /** The official section heading, exactly as published. */
+  title: string;
+  part: string;
+  subpart: string;
+  url: string;
+  /**
+   * True when the standard's own text says it does not cover construction.
+   *
+   * Retrieved, not asserted. 1910.147 and 1910.146 both exclude construction
+   * employment outright, which matters enormously to a scaffolding or
+   * mechanical subcontractor on a plant job — showing them a general industry
+   * standard with no note is close to misleading. Detected rather than
+   * hand-written because the whole point of this pipeline is that nobody
+   * types a regulatory fact from memory.
+   */
+  excludesConstruction: boolean;
+};
+
+/**
+ * Looks for exclusion language that specifically names construction.
+ *
+ * Deliberately narrow. 1910.1200 also contains "does not apply to", but about
+ * hazardous waste — a check for exclusion language alone would flag it
+ * wrongly, so the clause itself has to mention construction.
+ */
+function excludesConstruction(xml: string): boolean {
+  const text = xml
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ");
+
+  const clauses = text.match(
+    /(?:does not (?:cover|apply to)|shall not apply to)[^.]{0,200}/gi,
+  );
+
+  return (clauses ?? []).some((clause) => /construction/i.test(clause));
+}
+
+async function get(url: string): Promise<string | null> {
+  const response = await fetch(url, {
+    headers: { "user-agent": "certloop-citation-check" },
+  });
+  if (!response.ok) return null;
+  return await response.text();
+}
+
+/** The date eCFR considers Title 29 current to. */
+async function currentDate(): Promise<string> {
+  const body = await get(`${API}/titles.json`);
+  if (!body) throw new Error("could not read eCFR title list");
+
+  const titles = JSON.parse(body).titles as {
+    number: number;
+    latest_amended_on: string;
+  }[];
+  const labor = titles.find((t) => t.number === 29);
+  if (!labor) throw new Error("Title 29 missing from eCFR title list");
+
+  return labor.latest_amended_on;
+}
+
+async function resolve(
+  candidate: (typeof CITATION_CANDIDATES)[number],
+  date: string,
+): Promise<{ ok: true; value: Resolved } | { ok: false; why: string }> {
+  const { title, part, section, expect } = candidate;
+
+  const xml = await get(
+    `${API}/full/${date}/title-${title}.xml?part=${part}&section=${section}`,
+  );
+  if (!xml || xml.includes('"error"')) {
+    return { ok: false, why: "section not found in eCFR" };
+  }
+
+  const head = /<HEAD>(.*?)<\/HEAD>/s.exec(xml)?.[1]?.trim();
+  if (!head) return { ok: false, why: "no heading in response" };
+
+  // Strip the leading section symbol and number: what is wanted is the
+  // heading itself, which is displayed on its own next to the citation.
+  const heading = head.replace(/^§+\s*[\d.]+\s*/, "").trim();
+
+  const ancestry = await get(
+    `${API}/ancestry/${date}/title-${title}.json?part=${part}&section=${section}`,
+  );
+  if (!ancestry) return { ok: false, why: "ancestry unavailable" };
+
+  const ancestors = JSON.parse(ancestry).ancestors as {
+    type: string;
+    identifier: string;
+    label_description?: string;
+  }[];
+
+  const describe = (type: string) =>
+    ancestors.find((a) => a.type === type)?.label_description ?? "";
+
+  const partName = describe("part");
+  const subpartName = describe("subpart");
+
+  // Checked against subpart and heading together — see the note on
+  // "General requirements" above.
+  const haystack = `${subpartName} ${heading}`.toLowerCase();
+  const missing = expect.filter((word) => !haystack.includes(word.toLowerCase()));
+
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      why: `heading does not mention ${missing.map((m) => `"${m}"`).join(", ")} — got "${subpartName} / ${heading}"`,
+    };
+  }
+
+  return {
+    ok: true,
+    value: {
+      cfr: `${title} CFR ${section}`,
+      title: heading,
+      part: partName,
+      subpart: subpartName,
+      url: `https://www.ecfr.gov/current/title-${title}/part-${part}/section-${section}`,
+      excludesConstruction: excludesConstruction(xml),
+    },
+  };
+}
+
+const date = await currentDate();
+console.log(`eCFR Title 29 current to ${date}\n`);
+
+const verified: Record<string, Resolved[]> = {};
+let failures = 0;
+
+for (const candidate of CITATION_CANDIDATES) {
+  const result = await resolve(candidate, date);
+
+  if (!result.ok) {
+    failures += 1;
+    console.log(`  DROPPED  ${candidate.section.padEnd(11)} ${result.why}`);
+    continue;
+  }
+
+  (verified[candidate.requirement] ??= []).push(result.value);
+  console.log(
+    `  ok       ${candidate.section.padEnd(11)} ${result.value.title}` +
+      (result.value.excludesConstruction ? "   [excludes construction]" : ""),
+  );
+}
+
+const out = {
+  _comment:
+    "GENERATED by scripts/verify-citations.mts from the eCFR API. Do not edit by hand: every heading here was retrieved, and hand-editing would put unverified text in front of contractors. Add candidates to citations.ts and re-run instead.",
+  sourceDate: date,
+  generatedOn: new Date().toISOString().slice(0, 10),
+  citations: verified,
+};
+
+writeFileSync(
+  "src/lib/requirements/verified-citations.json",
+  `${JSON.stringify(out, null, 2)}\n`,
+);
+
+const kept = Object.values(verified).flat().length;
+console.log(
+  `\n${kept} verified across ${Object.keys(verified).length} requirements, ${failures} dropped`,
+);
+
+// Non-zero on any failure: a silently shrinking citation list is exactly the
+// kind of thing that goes unnoticed for months.
+if (failures > 0) process.exit(1);

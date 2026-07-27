@@ -213,8 +213,9 @@
     {
       "id": "031",
       "title": "Internal ops",
-      "status": "in_progress",
-      "notes": "Scope B deliverable 7, on branch task/031-internal-ops. Two of the three parts already existed: submission notification (task 025) and analysis logging to the analyses table (task 027). The missing piece was the internal submissions page, which is what this branch adds - /internal/submissions behind ADMIN_SECRET. NOT PUSHED, awaiting human review."
+      "status": "done",
+      "notes": "Scope B deliverable 7. Two of three parts already existed: submission notification (025) and analysis logging to the analyses table (027). This added the missing internal page at /internal/submissions behind ADMIN_SECRET. Secret posted once and exchanged for an httpOnly cookie rather than carried in a URL, where it would land in browser history, the Referer header and request logs; cookie holds a sha256 of the secret rather than the secret; constant-time comparison; unset ADMIN_SECRET locks rather than opens. Read-only - deletion stays behind the DELETE endpoint, since a stray click on a page behind one shared secret should not destroy uploads. Partial rows listed too. Verified locally: gate rejects a wrong key, ACCEPTS the real one (the human got past it to a Supabase env error, which only happens post-auth), robots disallows /internal, sitemap excludes it. The table itself is unverified - local .env.local has no Supabase keys - so it needs a look on production.",
+      "needs_human_review": false
     },
     {
       "id": "032",

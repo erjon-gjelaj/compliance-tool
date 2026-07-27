@@ -89,19 +89,22 @@ function tickRule(): string {
  * borders reproduce it exactly. Renders unconditionally, everywhere.
  */
 function tapeRuleMark(): string {
-  // Geometry taken from the SVG rather than eyeballed. There, on a 24 grid at
+  // Geometry taken from the SVG, not eyeballed. There, on a 24 grid at
   // stroke-width 2: ticks at x=3/9/15/21 so 2 wide with 4 between, baseline
-  // x=2..22 so exactly 20 across, long ticks 9 and short ticks 5.
+  // x=2..22 so exactly 20 across, long ticks 9 and short ticks 5. Doubled
+  // here — at true size a 2px baseline is invisible beside 19px bold text.
   //
-  // Scaled 1.5x, which keeps every ratio and stops it reading as wispy beside
-  // 19px bold text — at true size the 2px baseline almost disappeared.
+  // The colour goes on a fixed-height div, NOT on the cell. A td's height is a
+  // minimum and every cell in a row stretches to the tallest one, so colouring
+  // the cell directly made all four ticks the same length and flattened the
+  // long/short rhythm that is the whole character of a tape rule.
   const tick = (h: number) =>
-    `<td style="width:3px;height:${h}px;background-color:#7fc9b5;font-size:0;line-height:0;">&nbsp;</td>`;
-  const gap = `<td style="width:6px;font-size:0;line-height:0;">&nbsp;</td>`;
+    `<td valign="top" style="width:4px;font-size:0;line-height:0;"><div style="width:4px;height:${h}px;background-color:#7fc9b5;font-size:0;line-height:0;">&nbsp;</div></td>`;
+  const gap = `<td style="width:8px;font-size:0;line-height:0;">&nbsp;</td>`;
 
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;line-height:0;">
-  <tr><td colspan="7" style="width:30px;height:3px;background-color:#7fc9b5;font-size:0;line-height:0;">&nbsp;</td></tr>
-  <tr valign="top">${tick(14)}${gap}${tick(8)}${gap}${tick(8)}${gap}${tick(14)}</tr>
+  <tr><td colspan="7" style="font-size:0;line-height:0;"><div style="width:40px;height:4px;background-color:#7fc9b5;font-size:0;line-height:0;">&nbsp;</div></td></tr>
+  <tr>${tick(18)}${gap}${tick(10)}${gap}${tick(10)}${gap}${tick(18)}</tr>
 </table>`;
 }
 

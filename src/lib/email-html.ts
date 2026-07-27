@@ -266,7 +266,6 @@ export function analysisHtml(
   analysis: Analysis,
   unreadable: string[],
   priceCopy: string,
-  notices: string[] = [],
 ): string {
   const items = analysis.items;
   const collapsed = items.length > 0 && items.every((i) => i.status === "unknown");
@@ -297,31 +296,10 @@ ${probable.length > 0 ? heading("What looks likely, but worth checking") + proba
 ${uncertain.length > 0 ? heading("Things we couldn't establish - check these yourself") + uncertain.map((i) => itemBlock(i, true)).join("") : ""}
 ${questions}`;
 
-  // Directly under the summary, ahead of any finding. It changes how every
-  // line below should be read, so it cannot sit at the bottom where it would
-  // be found only after the conclusions have landed.
-  const partial =
-    notices.length > 0
-      ? `${heading("How much of your file we read")}
-<tr><td style="padding:6px 32px 8px 32px;">
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border-left:3px solid ${RUST_FLAG};">
-    <tr><td style="padding:2px 0 2px 14px;">
-      ${notices
-        .map(
-          (n) =>
-            `<div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${MILLSCALE};padding-bottom:4px;">${esc(n)}</div>`,
-        )
-        .join("")}
-      <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};padding-top:4px;">Because of that, nothing below is called missing on the strength of these files &ndash; only what we positively found is reported from them.</div>
-    </td></tr>
-  </table>
-</td></tr>`
-      : "";
 
   const inner = `${preliminaryNotice()}
 ${paragraph(`${row.contact_name},`)}
 ${paragraph(analysis.summary, 14)}
-${partial}
 ${sections}
 ${unreadableBlock(unreadable)}
 ${priceBlock(analysis.priceBand, priceCopy)}

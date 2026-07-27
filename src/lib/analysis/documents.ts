@@ -16,8 +16,6 @@ export type ExtractedDocument = {
   text: string;
   /** Why it could not be read, for the log and the email. */
   detail?: string;
-  /** Shown to the contractor when the file was only read in part. */
-  notice?: string;
 };
 
 export function isReadable(entry: ExtractedDocument): boolean {
@@ -32,6 +30,12 @@ export function isReadable(entry: ExtractedDocument): boolean {
  * are there — but can never show that one is absent. Absence of evidence from
  * OCR is not evidence of absence, and the difference decides whether we are
  * allowed to tell someone a document is missing.
+ *
+ * Nothing produces `ocr` today, so this currently equals "was read at all".
+ * It is kept because it is the rule that makes OCR safe to reintroduce, and
+ * rediscovering it the hard way — by telling a contractor a document is
+ * missing when it was merely misread — is the outcome worth spending a few
+ * dead lines to avoid.
  */
 export function isReliable(entry: ExtractedDocument): boolean {
   return entry.status === "ok";

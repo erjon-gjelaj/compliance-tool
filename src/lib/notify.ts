@@ -332,7 +332,6 @@ function renderAnalysis(
   row: SubmissionRow,
   analysis: Analysis,
   unreadable: string[],
-  notices: string[],
 ): string {
   // Nothing was readable, so every item is an unknown. Thirteen expanded
   // entries that all say the same thing is the whole catalogue printed back at
@@ -352,21 +351,6 @@ function renderAnalysis(
     "",
     analysis.summary,
   ];
-
-  // Directly under the summary, before any finding. It changes how every line
-  // below should be read, so it cannot sit at the bottom where it would be
-  // found after the conclusions have already landed.
-  if (notices.length > 0) {
-    lines.push(
-      "",
-      "HOW MUCH OF YOUR FILE WE READ",
-      "",
-      ...notices.map((notice) => `- ${notice}`),
-      "",
-      "Because of that, nothing below is called missing on the strength of",
-      "these files — only what we positively found is reported from them.",
-    );
-  }
 
   const questions =
     analysis.questionsForClient.length > 0
@@ -455,7 +439,6 @@ export function analysisMessage(
   row: SubmissionRow,
   analysis: Analysis,
   unreadable: string[],
-  notices: string[],
   config: SmtpConfig,
 ) {
   return {
@@ -465,13 +448,12 @@ export function analysisMessage(
     subject: `${SITE_NAME}: your preliminary gap review`,
     // Both parts, always. text/plain stays the source of truth for what the
     // review says; a client that refuses HTML still gets the whole thing.
-    text: renderAnalysis(row, analysis, unreadable, notices),
+    text: renderAnalysis(row, analysis, unreadable),
     html: analysisHtml(
       row,
       analysis,
       unreadable,
       PRICE_BAND_COPY[analysis.priceBand] ?? PRICE_BAND_COPY.unknown,
-      notices,
     ),
   };
 }
@@ -481,7 +463,6 @@ export function internalAnalysisMessage(
   row: SubmissionRow,
   analysis: Analysis,
   unreadable: string[],
-  notices: string[],
   config: SmtpConfig,
 ) {
   return {
@@ -502,7 +483,7 @@ export function internalAnalysisMessage(
       "",
       "=== What they received ===",
       "",
-      renderAnalysis(row, analysis, unreadable, notices),
+      renderAnalysis(row, analysis, unreadable),
     ].join("\n"),
   };
 }
@@ -600,19 +581,6 @@ function unreadableNames(documents: ExtractedDocument[]): string[] {
     .map((entry) => entry.document.file_name);
 }
 
-/**
- * Files that were read, but not all the way through.
- *
- * Kept separate from the unreadable list because they mean opposite things to
- * the reader: an unreadable file contributed nothing, a partial one
- * contributed something that must not be mistaken for everything.
- */
-function partialNotices(documents: ExtractedDocument[]): string[] {
-  return documents
-    .filter((entry) => entry.notice)
-    .map((entry) => `${entry.document.file_name}: ${entry.notice}`);
-}
-
 /** Same never-throws contract as the other senders. */
 async function sendPair(
   build: (config: SmtpConfig) => [unknown, unknown],
@@ -653,12 +621,11 @@ export async function sendAnalysisEmails(
   // The extractor owns this list. A file it could not read is a fact rather
   // than a judgement, so it is not something to re-derive downstream.
   const unreadable = unreadableNames(documents);
-  const notices = partialNotices(documents);
 
   await sendPair(
     (config) => [
-      internalAnalysisMessage(row, analysis, unreadable, notices, config),
-      analysisMessage(row, analysis, unreadable, notices, config),
+      internalAnalysisMessage(row, analysis, unreadable, config),
+      analysisMessage(row, analysis, unreadable, config),
     ],
     ["Internal analysis copy", "Analysis email"],
   );

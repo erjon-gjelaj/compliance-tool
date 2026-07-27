@@ -16,13 +16,14 @@ const PAGE_DESCRIPTION =
 /**
  * The gap-check server action runs here, and the analysis runs inside it via
  * after() — which counts towards this function's wall clock, not a separate
- * one. OCR of a scanned PDF is the slow part, so the default is not enough.
+ * one.
  *
- * 60 is the ceiling on Vercel's Hobby plan; Pro allows far more. PDF_OCR_BUDGET_MS
- * in extract.ts is set below this on purpose, leaving room for the analysis to
- * finish and the email to go out. Raise the two together, never one alone —
- * OCR overrunning this limit kills the invocation and loses the email as well
- * as the review.
+ * Extraction is fast now that there is no OCR: reading a text layer is
+ * milliseconds, and the slowest step left is the SMTP round trip. This is
+ * headroom rather than a requirement, and 60 is the ceiling on Vercel's Hobby
+ * plan anyway. It matters because an invocation killed mid-flight loses the
+ * email as well as the review, which is the one outcome worth paying for
+ * margin to avoid.
  */
 export const maxDuration = 60;
 

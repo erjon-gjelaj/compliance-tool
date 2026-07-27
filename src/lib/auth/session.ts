@@ -2,6 +2,8 @@ import "server-only";
 
 import { cookies } from "next/headers";
 
+import { SESSION_HINT_COOKIE } from "@/lib/auth/cookie-names";
+
 import {
   SESSION_TTL_SECONDS,
   signToken,
@@ -33,6 +35,33 @@ import {
 
 const COOKIE = "certloop_session";
 
+/**
+ * A second cookie that exists only so the navbar can say "Sign out".
+ *
+ * It carries no authority whatsoever. It is not signed, it is not httpOnly,
+ * anyone can set it in a console, and nothing server-side ever reads it — the
+ * real session is COOKIE above and every access decision goes through
+ * currentClient(). Forging this one changes a word in the header and nothing
+ * else, which is exactly the amount of power it is meant to have.
+ *
+ * It exists because the alternatives are worse. The header is a client
+ * component and cannot read an httpOnly cookie; reading the session in the
+ * root layout instead would make every page dynamic, and five of the six are
+ * static marketing pages whose whole job is to be indexed and fast. Fetching
+ * a /api/session endpoint on mount would cost a request on every page load.
+ * This costs nothing and leaks nothing: whether you are signed in is already
+ * obvious to whoever is holding the browser.
+ *
+ * It can go stale — rotating AUTH_JWT_SECRET invalidates the session but
+ * leaves this behind, so the header would offer "Sign out" to someone already
+ * signed out. That heals itself on the click: signing out clears both and
+ * lands on the sign-in page, which is where they needed to go anyway.
+ *
+ * The name lives in lib/auth/cookie-names.ts because the header needs it too
+ * and this module is deliberately server-only.
+ */
+const HINT_COOKIE = SESSION_HINT_COOKIE;
+
 export type ClientSession = {
   email: string;
   /** When the seven days run out, as a Date, for the "signed in until" line. */
@@ -59,11 +88,22 @@ export async function openClientSession(email: string): Promise<void> {
     // is only going to be rejected.
     maxAge: SESSION_TTL_SECONDS,
   });
+
+  // Same lifetime as the session it describes, so the two expire together and
+  // the header stops offering "Sign out" at the moment it stops being true.
+  jar.set(HINT_COOKIE, "1", {
+    httpOnly: false,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: SESSION_TTL_SECONDS,
+  });
 }
 
 export async function closeClientSession(): Promise<void> {
   const jar = await cookies();
   jar.delete(COOKIE);
+  jar.delete(HINT_COOKIE);
 }
 
 /**

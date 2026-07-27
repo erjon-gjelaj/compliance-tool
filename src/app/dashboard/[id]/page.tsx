@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Download, FileText, FileWarning } from "lucide-react";
+import { ArrowLeft, FileText, FileWarning } from "lucide-react";
 
 import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
@@ -13,6 +13,7 @@ import {
   type DocumentView,
 } from "@/lib/dashboard";
 import { ReviewPanel } from "@/components/review-panel";
+import { DocumentDownload } from "@/components/document-download";
 
 export const metadata = pageMetadata({
   title: "Your gap check",
@@ -74,15 +75,13 @@ function DocumentRow({ document }: { document: DocumentView }) {
         A link to a route handler, not to storage. The bucket is private and
         the URL that reaches it is minted per click and expires in minutes, so
         there is no address here that could be copied out of the page and used
-        later, or by anyone else.
+        later, or by anyone else. Minting it is also why the link has a pending
+        state — see the component.
       */}
-      <a
-        href={`/api/documents/${document.id}`}
-        className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-verdigris underline-offset-4 hover:underline"
-      >
-        <Download aria-hidden className="h-4 w-4" />
-        Download
-      </a>
+      <DocumentDownload
+        documentId={document.id}
+        fileName={document.file_name}
+      />
     </li>
   );
 }

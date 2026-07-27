@@ -7,6 +7,7 @@ import { GAP_CHECK_HREF } from "@/lib/nav";
 import { pageMetadata } from "@/lib/metadata";
 import { currentClient } from "@/lib/auth/session";
 import { requestSignInLink } from "@/app/sign-in/actions";
+import { SubmitButton } from "@/components/submit-button";
 
 /**
  * Sign-in: one field, one button, no password.
@@ -139,9 +140,18 @@ export default async function SignInPage({
           </p>
         ) : null}
 
-        <button type="submit" className="btn-primary mt-5 w-full">
+        {/*
+          Worth a pending state more than most buttons here: this one sends an
+          email, and the wait is a network round trip plus an SMTP handshake.
+          Without feedback the honest response to a dead-looking button is to
+          press it again, and three presses is the per-address rate limit.
+        */}
+        <SubmitButton
+          pendingLabel="Sending your link…"
+          className="btn-primary mt-5 w-full"
+        >
           Email me a link
-        </button>
+        </SubmitButton>
       </form>
 
       <p className="type-body mt-6 border-t border-zinc-dust pt-5">

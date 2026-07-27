@@ -5,6 +5,7 @@ import { LogOut } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 import { currentClient } from "@/lib/auth/session";
 import { signOut } from "@/app/sign-in/actions";
+import { SubmitButton } from "@/components/submit-button";
 
 /**
  * The gate on every signed-in page.
@@ -46,13 +47,13 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-4 text-sm text-slate-wash">
             <span className="hidden sm:inline">{session.email}</span>
             <form action={signOut}>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1.5 underline-offset-4 hover:underline"
+              <SubmitButton
+                pendingLabel="Signing out…"
+                className="inline-flex cursor-pointer items-center gap-1.5 underline-offset-4 hover:underline disabled:opacity-70"
+                icon={<LogOut aria-hidden className="h-4 w-4" />}
               >
-                <LogOut aria-hidden className="h-4 w-4" />
                 Sign out
-              </button>
+              </SubmitButton>
             </form>
           </div>
         </div>

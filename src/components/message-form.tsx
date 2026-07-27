@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { ArrowRight, CircleAlert, Mail } from "lucide-react";
 import { submitMessage } from "@/app/actions";
+import { Spinner } from "@/components/spinner";
 import {
   HONEYPOT_FIELD,
   initialMessageFormState,
@@ -206,7 +207,9 @@ export function MessageForm() {
         className="btn-primary mt-7 w-full sm:w-auto"
       >
         {isPending ? "Sending…" : "Send message"}
-        {!isPending && (
+        {isPending ? (
+          <Spinner />
+        ) : (
           <ArrowRight aria-hidden="true" strokeWidth={2} className="h-4 w-4" />
         )}
       </button>

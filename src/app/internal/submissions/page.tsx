@@ -9,6 +9,7 @@ import {
 } from "@/lib/internal-auth";
 import { listSubmissions, type SubmissionListRow } from "@/lib/submissions";
 import { SITE_NAME } from "@/lib/constants";
+import { SubmitButton } from "@/components/submit-button";
 
 /**
  * The internal submissions list.
@@ -70,12 +71,12 @@ function Gate({ denied }: { denied: boolean }) {
               That key was not accepted.
             </p>
           ) : null}
-          <button
-            type="submit"
-            className="mt-4 w-full bg-verdigris px-4 py-2 text-sm font-semibold text-paper"
+          <SubmitButton
+            pendingLabel="Checking…"
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 bg-verdigris px-4 py-2 text-sm font-semibold text-paper disabled:opacity-70"
           >
             Continue
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </main>
@@ -177,12 +178,12 @@ export default async function InternalSubmissionsPage({
           </p>
         </div>
         <form action={signOut}>
-          <button
-            type="submit"
-            className="text-sm font-medium text-slate-wash underline underline-offset-4"
+          <SubmitButton
+            pendingLabel="Signing out…"
+            className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-wash underline underline-offset-4 disabled:opacity-70"
           >
             Sign out
-          </button>
+          </SubmitButton>
         </form>
       </div>
 

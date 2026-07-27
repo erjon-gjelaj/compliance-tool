@@ -7,6 +7,7 @@ import { Wordmark } from "@/components/wordmark";
 import { NAV_LINKS, SIGN_IN_LINK } from "@/lib/nav";
 import { SESSION_HINT_COOKIE } from "@/lib/auth/cookie-names";
 import { signOut } from "@/app/sign-in/actions";
+import { SubmitButton } from "@/components/submit-button";
 
 /**
  * Four pages total, so the nav is a flat row that stays visible at every
@@ -113,9 +114,12 @@ export function SiteHeader() {
                   the links beside it rather than looking like a control.
                 */
                 <form action={signOut}>
-                  <button type="submit" className={LINK_CLASS}>
+                  <SubmitButton
+                    pendingLabel="Signing out…"
+                    className={`inline-flex items-center gap-2 ${LINK_CLASS}`}
+                  >
                     Sign out
-                  </button>
+                  </SubmitButton>
                 </form>
               ) : (
                 <Link

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { createUploadSlots, submitIntakeStep } from "@/app/actions";
 import { SelectField } from "@/components/select-field";
+import { Spinner } from "@/components/spinner";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { HONEYPOT_FIELD } from "@/lib/messages";
 import {
@@ -911,16 +912,13 @@ export function IntakeForm() {
               : step === TOTAL_STEPS
                 ? "Send my gap check"
                 : "Continue"}
-          {!busy &&
-            (step === TOTAL_STEPS ? (
-              <Check aria-hidden="true" strokeWidth={2} className="h-4 w-4" />
-            ) : (
-              <ArrowRight
-                aria-hidden="true"
-                strokeWidth={2}
-                className="h-4 w-4"
-              />
-            ))}
+          {busy ? (
+            <Spinner />
+          ) : step === TOTAL_STEPS ? (
+            <Check aria-hidden="true" strokeWidth={2} className="h-4 w-4" />
+          ) : (
+            <ArrowRight aria-hidden="true" strokeWidth={2} className="h-4 w-4" />
+          )}
         </button>
 
         {/*

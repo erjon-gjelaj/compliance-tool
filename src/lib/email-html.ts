@@ -89,13 +89,19 @@ function tickRule(): string {
  * borders reproduce it exactly. Renders unconditionally, everywhere.
  */
 function tapeRuleMark(): string {
+  // Geometry taken from the SVG rather than eyeballed. There, on a 24 grid at
+  // stroke-width 2: ticks at x=3/9/15/21 so 2 wide with 4 between, baseline
+  // x=2..22 so exactly 20 across, long ticks 9 and short ticks 5.
+  //
+  // Scaled 1.5x, which keeps every ratio and stops it reading as wispy beside
+  // 19px bold text — at true size the 2px baseline almost disappeared.
   const tick = (h: number) =>
-    `<td style="width:2px;height:${h}px;background-color:#7fc9b5;font-size:0;line-height:0;">&nbsp;</td>`;
-  const gap = `<td style="width:5px;font-size:0;line-height:0;">&nbsp;</td>`;
+    `<td style="width:3px;height:${h}px;background-color:#7fc9b5;font-size:0;line-height:0;">&nbsp;</td>`;
+  const gap = `<td style="width:6px;font-size:0;line-height:0;">&nbsp;</td>`;
 
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-  <tr><td colspan="7" style="height:2px;background-color:#7fc9b5;font-size:0;line-height:0;">&nbsp;</td></tr>
-  <tr>${tick(9)}${gap}${tick(5)}${gap}${tick(5)}${gap}${tick(9)}</tr>
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;line-height:0;">
+  <tr><td colspan="7" style="width:30px;height:3px;background-color:#7fc9b5;font-size:0;line-height:0;">&nbsp;</td></tr>
+  <tr valign="top">${tick(14)}${gap}${tick(8)}${gap}${tick(8)}${gap}${tick(14)}</tr>
 </table>`;
 }
 
@@ -147,13 +153,13 @@ function compactList(items: AnalysisItem[]): string {
   return `<tr><td style="padding:4px 32px 8px 32px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">${rows}</table></td></tr>`;
 }
 
-function shell(inner: string, preheader: string): string {
+function shell(inner: string, preheader: string, kicker = "Preliminary gap review"): string {
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>${esc(SITE_NAME)} preliminary gap review</title>
+<title>${esc(SITE_NAME)} &ndash; ${esc(kicker)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:${GALVANISE};">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(preheader)}</div>
@@ -168,7 +174,7 @@ function shell(inner: string, preheader: string): string {
       <td valign="middle" style="font-family:${BODY_FONT};font-size:19px;font-weight:700;letter-spacing:-0.01em;color:${GALVANISE};">${esc(SITE_NAME)}</td>
     </tr>
   </table>
-  <div style="font-family:${MONO_FONT};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#7fc9b5;padding-top:6px;">Preliminary gap review</div>
+  <div style="font-family:${MONO_FONT};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#7fc9b5;padding-top:6px;">${esc(kicker)}</div>
 </td></tr>
 <tr><td style="font-size:0;line-height:0;background-color:${MILLSCALE};">${tickRule()}</td></tr>
 
@@ -292,6 +298,80 @@ ${ctaBlock()}`;
   return shell(inner, "Your preliminary gap review from CertLoop.");
 }
 
+/**
+ * What they told us, as a two-column table.
+ *
+ * Same rules as the plain-text version it mirrors: a skipped step is left out
+ * rather than printed empty, since "skipped" and "answered blank" would
+ * otherwise look identical, and attached files are named rather than counted.
+ */
+function intakeSummaryHtml(row: SubmissionRow, documents: string[]): string {
+  const pairs: [string, string][] = [
+    ["Trade", row.trade],
+    ["Hiring client", row.hiring_client],
+    ["Platform", row.platform],
+    ["Deadline", row.deadline ?? "not known"],
+    ["Name", row.contact_name],
+    ["Email", row.email],
+  ];
+
+  if (row.headcount_band) pairs.push(["Crew size", row.headcount_band]);
+  if (row.states?.length) pairs.push(["States", row.states.join(", ")]);
+  if (row.emr) pairs.push(["EMR", row.emr]);
+  if (row.trir) pairs.push(["TRIR", row.trir]);
+  if (row.previously_registered) {
+    pairs.push(["Registered before", row.previously_registered]);
+  }
+
+  if (row.documents_unsure) {
+    pairs.push(["Documents held", "not sure"]);
+  } else if (row.documents_held?.length) {
+    pairs.push(["Documents held", row.documents_held.join(", ")]);
+  }
+
+  if (documents.length > 0) pairs.push(["Attached", documents.join(", ")]);
+
+  const rows = pairs
+    .map(
+      ([k, v]) =>
+        `<tr>
+      <td valign="top" style="padding:5px 14px 5px 0;font-family:${BODY_FONT};font-size:13px;line-height:1.5;color:${SLATE_WASH};white-space:nowrap;">${esc(k)}</td>
+      <td valign="top" style="padding:5px 0;font-family:${BODY_FONT};font-size:13px;line-height:1.5;color:${MILLSCALE};">${esc(v)}</td>
+    </tr>`,
+    )
+    .join("");
+
+  return `<tr><td style="padding:4px 32px 8px 32px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;background-color:${GALVANISE};border:1px solid ${ZINC_DUST};">
+    <tr><td style="padding:10px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">${rows}</table>
+    </td></tr>
+  </table>
+</td></tr>`;
+}
+
+/**
+ * The confirmation, sent the moment the intake lands.
+ *
+ * This one is not a review and must not look like one, so it carries no
+ * preliminary-review disclaimer — there is nothing yet to disclaim. It says
+ * what happens next and reflects back what we received.
+ */
+export function confirmationHtml(row: SubmissionRow, documents: string[]): string {
+  const inner = `${paragraph(`Thanks ${row.contact_name} — your gap check is in.`)}
+${paragraph("You'll get one email back listing what your ISNetworld or Avetta file still looks short on, in the order worth tackling. Nothing else: no mailing list, and no call to book.", 14)}
+${paragraph("Working towards a fixed date? Reply to this email and say when, and we'll tell you honestly whether we can be useful in time.", 14)}
+${heading("What you sent us")}
+${intakeSummaryHtml(row, documents)}
+<tr><td style="padding:14px 32px 26px 32px;font-family:${BODY_FONT};font-size:12px;line-height:1.6;color:${SLATE_WASH};">A gap check is guidance to help you prepare your own submission, not a compliance determination.</td></tr>`;
+
+  return shell(
+    inner,
+    "We've got your gap check — your review is on its way.",
+    "Gap check received",
+  );
+}
+
 /** The HTML twin of the explainer, sent when there is no analysis to send. */
 export function explainerHtml(row: SubmissionRow, unreadable: string[]): string {
   const inner = `${preliminaryNotice()}
@@ -304,5 +384,5 @@ ${paragraph("Working to a fixed date? Reply and say when, and we'll tell you hon
 ${heading("Want us to take it further?")}
 ${ctaBlock()}`;
 
-  return shell(inner, "A person is reviewing your gap check.");
+  return shell(inner, "A person is reviewing your gap check.", "Gap check received");
 }

@@ -4,7 +4,7 @@ import type { MessageInput } from "@/lib/messages";
 import type { SubmissionRow } from "@/lib/submissions";
 import type { Analysis, AnalysisItem } from "@/lib/analysis/schema";
 import { isReadable, type ExtractedDocument } from "@/lib/analysis/documents";
-import { analysisHtml, explainerHtml } from "@/lib/email-html";
+import { analysisHtml, confirmationHtml, explainerHtml } from "@/lib/email-html";
 
 /**
  * Transactional email over SMTP: the two messages a gap-check intake
@@ -201,6 +201,7 @@ export function intakeConfirmationMessage(
       "client. A gap check is guidance to help you prepare your own submission,",
       "not a compliance determination.",
     ].join("\n"),
+    html: confirmationHtml(row, documents),
   };
 }
 

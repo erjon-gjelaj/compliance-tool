@@ -412,6 +412,72 @@ ${intakeSummaryHtml(row, documents)}
   );
 }
 
+/**
+ * The sign-in link email.
+ *
+ * The one message in here that carries a credential, which changes what the
+ * design has to do. Three things it does differently from the others:
+ *
+ * The URL appears twice — once as the button, once as visible text underneath.
+ * That is not redundancy. A recipient who cannot tell a real sign-in mail from
+ * a fake one has no way to check a button, and "hover to see where it goes" is
+ * advice that does not survive a phone. Printing the address in full lets
+ * someone confirm it says certloop.net before they touch it, and it is also
+ * the fallback for the clients that strip the button outright.
+ *
+ * There is no reply-and-we'll-help call to action. Every other email here ends
+ * by inviting a conversation; this one ends by telling someone who did not ask
+ * for it that they can ignore it safely. Adding a second thing to do would
+ * bury the only line that matters to the person being phished.
+ *
+ * And no summary of their submission. A sign-in mail should say as little
+ * about the account as possible — it is the one message that gets sent to an
+ * address on somebody else's say-so.
+ */
+export function signInHtml(url: string, minutes: number): string {
+  // Escaped for the attribute even though a JWT is base64url and cannot
+  // contain a quote. The signature holds, but the habit is what keeps holding
+  // when someone changes what goes in this URL later.
+  const href = esc(url);
+
+  const inner = `${paragraph("Here is your way in.")}
+${paragraph(`Open your ${SITE_NAME} dashboard to read the documents you sent us and the review we produced from them.`, 14)}
+
+<tr><td style="padding:18px 32px 6px 32px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+    <tr><td style="background-color:${VERDIGRIS};padding:14px 26px;">
+      <a href="${href}" style="font-family:${BODY_FONT};font-size:15px;font-weight:700;color:${PAPER};text-decoration:none;">Open my dashboard</a>
+    </td></tr>
+  </table>
+</td></tr>
+
+<tr><td style="padding:14px 32px 4px 32px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;background-color:${GALVANISE};border:1px solid ${ZINC_DUST};">
+    <tr><td style="padding:12px 16px;">
+      <div style="font-family:${BODY_FONT};font-size:12px;line-height:1.6;color:${SLATE_WASH};padding-bottom:6px;">Button not working? Copy this address into your browser:</div>
+      <div style="font-family:${MONO_FONT};font-size:12px;line-height:1.5;color:${MILLSCALE};word-break:break-all;">${href}</div>
+    </td></tr>
+  </table>
+</td></tr>
+
+${paragraph(`The link stops working after ${minutes} minutes. Signing in keeps you signed in on this device for 7 days.`, 13)}
+
+${heading("Didn't ask for this?")}
+<tr><td style="padding:6px 32px 26px 32px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border-left:3px solid ${ZINC_DUST};">
+    <tr><td style="padding:2px 0 2px 14px;font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};">
+      Ignore this email &ndash; nothing has been opened and nothing has changed. Somebody typed this address into our sign-in form, which anyone can do; it is not a sign that your account has been touched. Nobody can reach your documents without a link sent to this address.
+    </td></tr>
+  </table>
+</td></tr>`;
+
+  return shell(
+    inner,
+    `Your sign-in link — good for ${minutes} minutes.`,
+    "Sign-in link",
+  );
+}
+
 /** The HTML twin of the explainer, sent when there is no analysis to send. */
 export function explainerHtml(row: SubmissionRow, unreadable: string[]): string {
   const inner = `${preliminaryNotice()}

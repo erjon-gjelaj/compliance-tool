@@ -4,7 +4,12 @@ import type { MessageInput } from "@/lib/messages";
 import type { SubmissionRow } from "@/lib/submissions";
 import type { Analysis, AnalysisItem } from "@/lib/analysis/schema";
 import { isReadable, type ExtractedDocument } from "@/lib/analysis/documents";
-import { analysisHtml, confirmationHtml, explainerHtml } from "@/lib/email-html";
+import {
+  analysisHtml,
+  confirmationHtml,
+  explainerHtml,
+  signInHtml,
+} from "@/lib/email-html";
 
 /**
  * Transactional email over SMTP: the two messages a gap-check intake
@@ -687,12 +692,18 @@ export async function sendExplainerEmails(
  * because the body carries a credential and the one thing this must never do
  * is address it to anyone but the account holder.
  *
- * No HTML part, deliberately, and no marketing around it. A plain-text
- * message with one URL is the format least likely to be mangled by a link
- * rewriter or a scanner that follows every link in an email — the latter
- * would burn the link before the person ever saw it. It is also the format
- * that looks least like the phishing mail it structurally resembles, which is
- * why the body says plainly what to do if they did not ask for it.
+ * Both parts are always sent, and text/plain stays the source of truth for
+ * what it SAYS — a client that refuses HTML still gets a working link.
+ *
+ * The earlier version of this was plain text only, on the grounds that one
+ * bare URL is the hardest thing for a corporate gateway to mangle. That
+ * reasoning was half right and is worth recording rather than deleting: a
+ * gateway that rewrites links rewrites them in both parts, and one that
+ * follows every link would burn a single-use token — but this token is
+ * deliberately not single-use, so a scanner opening it costs nothing. What
+ * plain text actually bought was resemblance to the phishing mail this
+ * structurally is, which the HTML answers better than plain text did: the
+ * destination is printed in full, in monospace, under the button.
  */
 export function signInMessage(
   email: string,
@@ -721,6 +732,7 @@ export function signInMessage(
       `${SITE_NAME} — ${SITE_URL}`,
       `Questions: ${CONTACT_EMAIL}`,
     ].join("\n"),
+    html: signInHtml(url, minutes),
   };
 }
 

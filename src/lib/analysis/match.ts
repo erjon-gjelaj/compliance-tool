@@ -1,5 +1,9 @@
 import type { SubmissionRow } from "@/lib/submissions";
-import { isReadable, type ExtractedDocument } from "@/lib/analysis/documents";
+import {
+  isReadable,
+  isReliable,
+  type ExtractedDocument,
+} from "@/lib/analysis/documents";
 import {
   REQUIREMENTS_VERSION,
   anyVerified,
@@ -25,12 +29,18 @@ import type { Analysis, AnalysisItem } from "@/lib/analysis/schema";
  *   likely_missing  they sent documents, and the words are in none of them
  *   unknown         we have nothing to go on either way
  *
- * Two consequences worth stating plainly. A match is evidence the subject is
+ * Three consequences worth stating plainly. A match is evidence the subject is
  * covered somewhere, not that the document is adequate — a programme can
- * mention fall protection and still be rejected. And a non-match on a file we
+ * mention fall protection and still be rejected. A non-match on a file we
  * could not read is not a finding at all, which is why unreadable files are
  * held out of the "we looked and it wasn't there" reasoning entirely and
  * listed by name instead.
+ *
+ * And the two directions are not symmetric where image recognition is
+ * involved. OCR text can show a subject IS covered — the words are on the page
+ * — but never that one is absent, because dropping a word is its commonest
+ * failure. So OCR can produce `present`, at reduced confidence, and can never
+ * produce `likely_missing`. See isReliable.
  */
 
 /** How many documents have text we can actually search. */
@@ -91,6 +101,9 @@ function itemFor(
 ): AnalysisItem {
   const hit = findPhrase(requirement, documents);
   const searched = readable(documents);
+  // Everything searched, versus the subset read reliably enough that finding
+  // nothing in it is itself a finding. See isReliable.
+  const reliable = documents.filter(isReliable);
   const ticked = requirement.checklist
     ? (submission.documents_held ?? []).includes(requirement.checklist)
     : false;
@@ -148,11 +161,33 @@ function itemFor(
     };
   }
 
+  // Anything read by image recognition disqualifies a "missing" verdict.
+  //
+  // A match from OCR is already reported a level down, but a NON-match was
+  // falling straight through to likely_missing, which is the asymmetry the
+  // wrong way round: OCR's usual failure is dropping or mangling a word, so it
+  // is much better at showing a subject IS covered than that one is absent.
+  // Left alone, a photographed manual whose heading OCR'd badly would tell
+  // someone they lack a programme sitting on page 12 of their own document.
+  //
+  // This holds even when a reliable file was also searched, because the phrase
+  // could be in the part we could not read properly.
+  if (reliable.length < searched.length) {
+    return {
+      ...base,
+      status: "unknown",
+      confidence: "low",
+      basis:
+        "we could only read some of what you sent by image recognition, which drops words too often for us to tell you this is missing on the strength of it",
+      action: `${requirement.action} A file we can read the text of would settle it.`,
+    };
+  }
+
   return {
     ...base,
     status: "likely_missing",
     confidence: "medium",
-    basis: `not mentioned in the ${searched.length === 1 ? "file" : `${searched.length} files`} you sent, and not ticked on your checklist`,
+    basis: `not mentioned in the ${reliable.length === 1 ? "file" : `${reliable.length} files`} you sent, and not ticked on your checklist`,
   };
 }
 

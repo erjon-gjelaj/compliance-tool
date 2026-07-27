@@ -392,8 +392,20 @@ function renderAnalysis(
       "",
       ...unreadable.map((name) => `- ${name}`),
       "",
-      "Scans and photos without a text layer are the usual reason. Sending",
-      "the original file, or a PDF you can select text in, usually fixes it.",
+      // Specific and actionable. "Send a better file" is not advice; naming
+      // the three things that actually work is. Most of these are scans of
+      // paper, and the person holding the scan usually has the original.
+      "These are almost always scans or photographs of paper. There is no",
+      "text inside them to search — only a picture of text. Any of these",
+      "fixes it:",
+      "",
+      "- Send the file the document was originally written in, usually Word.",
+      "- Re-export a PDF from that original rather than scanning a printout.",
+      "- If the scan is all that exists, most scanners and Adobe Acrobat can",
+      "  re-save it with the text recognised — look for OCR, Recognise Text,",
+      "  or Make Searchable.",
+      "",
+      "Reply with one of those and we'll run it again properly.",
     );
   }
 

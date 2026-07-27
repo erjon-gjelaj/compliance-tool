@@ -21,3 +21,16 @@ export type ExtractedDocument = {
 export function isReadable(entry: ExtractedDocument): boolean {
   return entry.status === "ok" || entry.status === "ocr";
 }
+
+/**
+ * Read reliably enough that NOT finding something in it means something.
+ *
+ * Deliberately narrower than isReadable. Image recognition drops and mangles
+ * words routinely, so its text can show that a subject IS covered — the words
+ * are there — but can never show that one is absent. Absence of evidence from
+ * OCR is not evidence of absence, and the difference decides whether we are
+ * allowed to tell someone a document is missing.
+ */
+export function isReliable(entry: ExtractedDocument): boolean {
+  return entry.status === "ok";
+}

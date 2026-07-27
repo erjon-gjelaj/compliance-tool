@@ -199,20 +199,23 @@
     {
       "id": "029",
       "title": "Model prompt guardrails",
-      "status": "todo",
-      "notes": "Scope B deliverable 5. No invented regulations or client requirements, no compliance verdicts, omission over speculation, every item cites its basis."
+      "status": "superseded",
+      "notes": "SUPERSEDED by task 027, not implemented. This asked for guardrails on a model prompt. There is no model and no prompt anymore - 027 removed the SDK, the client, the prompt module and the API key at the human instruction, and CLAUDE.md carries a No language models section. Everything 029 wanted is now structural rather than instructional: match.ts can only report a phrase found in a file they sent or an answer they gave, so no regulation can be invented, no compliance verdict can be reached, and every item names its basis by construction. Guardrails you cannot violate beat guardrails you ask a model to respect. Flagged for human review rather than silently deleted.",
+      "needs_human_review": true
     },
     {
       "id": "030",
       "title": "Reference data seam",
-      "status": "todo",
-      "notes": "Scope B deliverable 6. lib/requirements/ as typed versioned data by trade x platform, near-empty with TODO-VERIFY markers, hand-editable by a non-developer, preferred by the prompt over model knowledge."
+      "status": "done",
+      "notes": "Effectively delivered by task 027 rather than as its own piece of work. lib/requirements is typed (Requirement), versioned (REQUIREMENTS_VERSION), keyed by trade x platform (requirementsFor), documented for a non-developer to edit, and every entry is verified:false under a TODO-VERIFY header. It stopped being a placeholder because the matcher needs it to function. The one clause that cannot apply is preferred by the prompt over model knowledge - there is no prompt and no model knowledge, the data IS the logic. Flagged so a human confirms this counts as done rather than it being closed on my say-so.",
+      "needs_human_review": true
     },
     {
       "id": "031",
       "title": "Internal ops",
-      "status": "todo",
-      "notes": "Scope B deliverable 7. Submission notification, internal-only submissions page behind a shared env secret, model input/output logged to the DB."
+      "status": "done",
+      "notes": "Scope B deliverable 7. Two of three parts already existed: submission notification (025) and analysis logging to the analyses table (027). This added the missing internal page at /internal/submissions behind ADMIN_SECRET. Secret posted once and exchanged for an httpOnly cookie rather than carried in a URL, where it would land in browser history, the Referer header and request logs; cookie holds a sha256 of the secret rather than the secret; constant-time comparison; unset ADMIN_SECRET locks rather than opens. Read-only - deletion stays behind the DELETE endpoint, since a stray click on a page behind one shared secret should not destroy uploads. Partial rows listed too. Verified locally: gate rejects a wrong key, ACCEPTS the real one (the human got past it to a Supabase env error, which only happens post-auth), robots disallows /internal, sitemap excludes it. The table itself is unverified - local .env.local has no Supabase keys - so it needs a look on production.",
+      "needs_human_review": false
     },
     {
       "id": "032",

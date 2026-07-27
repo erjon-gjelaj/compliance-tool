@@ -132,6 +132,39 @@ export async function getSubmission(
   return (data as SubmissionRow | null) ?? null;
 }
 
+/** A submission plus the file names attached to it, for the internal list. */
+export type SubmissionListRow = SubmissionRow & { document_names: string[] };
+
+/**
+ * The internal list, newest first.
+ *
+ * Partial rows are included deliberately. Someone who dropped out at step two
+ * is a stronger signal than a completed intake — it says where the form loses
+ * people — and hiding them would make the funnel invisible.
+ */
+export async function listSubmissions(
+  limit = 100,
+): Promise<SubmissionListRow[]> {
+  const supabase = getSupabaseAdminClient();
+
+  const { data, error } = await supabase
+    .from("submissions")
+    .select("*, submission_documents(file_name)")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(`Could not list submissions: ${error.message}`);
+
+  type Joined = SubmissionRow & {
+    submission_documents?: { file_name: string }[] | null;
+  };
+
+  return ((data ?? []) as Joined[]).map(({ submission_documents, ...row }) => ({
+    ...row,
+    document_names: (submission_documents ?? []).map((d) => d.file_name),
+  }));
+}
+
 /**
  * Turns a stored row back into form values, so stepping backwards shows what
  * was already answered instead of an empty form.

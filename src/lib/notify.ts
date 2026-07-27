@@ -4,6 +4,7 @@ import type { MessageInput } from "@/lib/messages";
 import type { SubmissionRow } from "@/lib/submissions";
 import type { Analysis, AnalysisItem } from "@/lib/analysis/schema";
 import { isReadable, type ExtractedDocument } from "@/lib/analysis/documents";
+import { analysisHtml, explainerHtml } from "@/lib/email-html";
 
 /**
  * Transactional email over SMTP: the two messages a gap-check intake
@@ -331,6 +332,15 @@ function renderAnalysis(
   analysis: Analysis,
   unreadable: string[],
 ): string {
+  // Nothing was readable, so every item is an unknown. Thirteen expanded
+  // entries that all say the same thing is the whole catalogue printed back at
+  // someone, and it reads as though the tool did nothing. Lead with the
+  // questions, which are the only actionable part, and shrink the catalogue to
+  // a list of names.
+  const collapsed =
+    analysis.items.length > 0 &&
+    analysis.items.every((item) => item.status === "unknown");
+
   const lines = [
     `${row.contact_name},`,
     "",
@@ -339,18 +349,35 @@ function renderAnalysis(
     "---",
     "",
     analysis.summary,
-    ...renderItems(analysis.items),
   ];
 
-  if (analysis.questionsForClient.length > 0) {
+  const questions =
+    analysis.questionsForClient.length > 0
+      ? [
+          "",
+          collapsed ? "START HERE" : "QUESTIONS FOR YOU",
+          "",
+          collapsed
+            ? "These are the things that would let us give you a real answer:"
+            : "We couldn't answer these from what we had:",
+          "",
+          ...analysis.questionsForClient.map((question) => `- ${question}`),
+        ]
+      : [];
+
+  if (collapsed) {
     lines.push(
+      ...questions,
       "",
-      "QUESTIONS FOR YOU",
+      "WHAT WE'D NORMALLY LOOK FOR",
       "",
-      "We couldn't answer these from what we had:",
+      "The document types most often asked for at prequalification. We",
+      "couldn't check any of these against your file yet.",
       "",
-      ...analysis.questionsForClient.map((question) => `- ${question}`),
+      ...analysis.items.map((item) => `- ${item.requirement}`),
     );
+  } else {
+    lines.push(...renderItems(analysis.items), ...questions);
   }
 
   // Never omitted when there is something in it. Someone who attached six
@@ -371,7 +398,10 @@ function renderAnalysis(
 
   lines.push(
     "",
-    "WHAT THIS WOULD COST",
+    // The heading only promises a cost when there is one. "What this would
+    // cost" above "we don't have enough to estimate this yet" writes a cheque
+    // the body does not cash.
+    analysis.priceBand === "unknown" ? "ABOUT PRICING" : "WHAT THIS WOULD COST",
     "",
     PRICE_BAND_COPY[analysis.priceBand] ?? PRICE_BAND_COPY.unknown,
     "This is an indicative band and not a quote. It is not binding, and we'd",
@@ -403,7 +433,15 @@ export function analysisMessage(
     to: row.email,
     replyTo: config.to,
     subject: `${SITE_NAME}: your preliminary gap review`,
+    // Both parts, always. text/plain stays the source of truth for what the
+    // review says; a client that refuses HTML still gets the whole thing.
     text: renderAnalysis(row, analysis, unreadable),
+    html: analysisHtml(
+      row,
+      analysis,
+      unreadable,
+      PRICE_BAND_COPY[analysis.priceBand] ?? PRICE_BAND_COPY.unknown,
+    ),
   };
 }
 
@@ -494,6 +532,7 @@ export function explainerMessage(
     replyTo: config.to,
     subject: `${SITE_NAME}: we've got your gap check`,
     text: lines.join("\n"),
+    html: explainerHtml(row, unreadable),
   };
 }
 

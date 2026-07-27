@@ -192,8 +192,9 @@
     {
       "id": "028",
       "title": "Automated response email",
-      "status": "todo",
-      "notes": "Scope B deliverable 4. Renders the analysis JSON to HTML, preliminary-review header, items grouped by confidence with low-confidence rendered as questions, unreadable files listed, one CTA, non-binding price band."
+      "status": "done",
+      "notes": "Scope B deliverable 4, on branch task/028-html-email. The review already had its structure - preliminary header, confidence grouping, unreadable files, one CTA, non-binding price band - all confirmed working in production. What was missing was presentation. src/lib/email-html.ts renders the HTML half: presentation tables and inline styles only, because Outlook lays out through Word and has no flexbox, grid, custom properties or reliable style block. Site palette by hex, and the tape-rule signature rebuilt from bordered table cells since no mail client can be trusted with the SVG. Every interpolated value is escaped - file names and the hiring client name come from a public form, and an ampersand in a company name would break the markup with no ill intent. text/plain stays the source of truth and both parts are always sent. Two content fixes alongside: the empty-submission case no longer prints thirteen expanded identical unknowns - it leads with the questions and collapses the catalogue to a list of names - and the price heading reads About pricing rather than What this would cost when the band is unknown. Reordering the questions turned up a copy bug: two of them said the categories above, which is wrong once they lead, so both are now position-neutral. Rendered both states and checked them in a browser. Build and lint pass clean. Not verified in a real mail client - Outlook and Gmail rendering is the open risk.",
+      "needs_human_review": false
     },
     {
       "id": "029",

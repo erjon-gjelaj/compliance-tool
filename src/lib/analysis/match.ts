@@ -247,13 +247,16 @@ function questionsFor(
     // yet, so the honest framing is "these are the usual categories" and not
     // "these are your requirements".
     questions.push(
-      "Does your client's list match the categories above? Ours is the set we see most often, not a verified copy of anyone's requirements.",
+      // Deliberately not "the categories above": when nothing was readable the
+      // email leads with these questions and the categories follow, so any
+      // wording that names a position is wrong half the time.
+      "Does your client's list match the categories we've listed? Ours is the set we see most often, not a verified copy of anyone's requirements.",
     );
   }
 
   if (submission.documents_unsure) {
     questions.push(
-      "Who put your current file together, and can you get the documents from them? Almost everything above is unknown until we can see what exists.",
+      "Who put your current file together, and can you get the documents from them? Almost nothing can be checked until we can see what exists.",
     );
   }
 

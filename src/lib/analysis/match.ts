@@ -132,21 +132,19 @@ function itemFor(
     };
   }
 
-  if (submission.documents_unsure) {
-    return {
-      ...base,
-      status: "unknown",
-      confidence: "low",
-      basis: "you said you were not sure what your file contains",
-    };
-  }
-
+  // Both remaining unknowns need there to be nothing to search. Once a file
+  // has actually been read, the search outcome is better evidence than
+  // anything ticked on the form: "not sure what my file contains" describes
+  // what they know, not what the document says. Checking it first made
+  // likely_missing unreachable for exactly the person this is built for.
   if (searched.length === 0) {
     return {
       ...base,
       status: "unknown",
       confidence: "low",
-      basis: "nothing to check it against — you did not tick it or send a file",
+      basis: submission.documents_unsure
+        ? "you said you were not sure what your file contains"
+        : "nothing to check it against — you did not tick it or send a file",
     };
   }
 

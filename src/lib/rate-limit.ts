@@ -78,3 +78,19 @@ export const INTAKE_START_LIMIT = { limit: 5, windowMs: 10 * 60 * 1000 };
 
 /** Deliberately looser: one person editing their own intake makes several. */
 export const INTAKE_STEP_LIMIT = { limit: 60, windowMs: 10 * 60 * 1000 };
+
+/**
+ * Requesting a sign-in link.
+ *
+ * Applied twice per request, on two different keys, because they stop two
+ * different things. By address, it stops someone using the form to mail-bomb
+ * one contractor — the address is the target and the attacker's own IP is not
+ * the limit that matters. By caller, it stops a script walking a list of
+ * addresses to find out which ones have an account.
+ *
+ * Tight numbers on purpose. Nobody legitimately needs a fourth link inside
+ * ten minutes, and every send is an email we are paying for and a credential
+ * put on the wire.
+ */
+export const SIGN_IN_EMAIL_LIMIT = { limit: 3, windowMs: 10 * 60 * 1000 };
+export const SIGN_IN_CALLER_LIMIT = { limit: 10, windowMs: 10 * 60 * 1000 };

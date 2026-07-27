@@ -26,3 +26,14 @@ export const LEGAL_LINKS = [{ href: "/privacy", label: "Privacy" }] as const;
  * path with a fragment: from /about a bare "#gap-check" would do nothing.
  */
 export const GAP_CHECK_HREF = "/#gap-check";
+
+/**
+ * The way back in for someone who has already sent us something.
+ *
+ * Kept out of NAV_LINKS and LEGAL_LINKS on purpose: those two feed the
+ * sitemap, and an account door has no business in a search index. It is
+ * placed separately in the header, set apart from the three content pages,
+ * because it is the only link up there aimed at existing clients rather than
+ * at someone deciding whether to become one.
+ */
+export const SIGN_IN_LINK = { href: "/sign-in", label: "Sign in" } as const;

@@ -94,7 +94,7 @@ function buildTransport(config: SmtpConfig) {
  * ---------------------------------------------------------------------- */
 
 /** The answers, laid out the same way in both intake emails. */
-function intakeSummary(row: SubmissionRow): string {
+function intakeSummary(row: SubmissionRow, documents: string[]): string {
   const lines = [
     `Trade:          ${row.trade}`,
     `Hiring client:  ${row.hiring_client}`,
@@ -125,10 +125,24 @@ function intakeSummary(row: SubmissionRow): string {
     );
   }
 
+  // Listed by name rather than counted. "3 files attached" is not something
+  // you can check against what you actually sent.
+  if (documents.length > 0) {
+    lines.push(
+      "",
+      "Documents attached:",
+      ...documents.map((name) => `  - ${name}`),
+    );
+  }
+
   return lines.join("\n");
 }
 
-export function internalIntakeMessage(row: SubmissionRow, config: SmtpConfig) {
+export function internalIntakeMessage(
+  row: SubmissionRow,
+  documents: string[],
+  config: SmtpConfig,
+) {
   return {
     from: config.from,
     to: config.to,
@@ -137,7 +151,7 @@ export function internalIntakeMessage(row: SubmissionRow, config: SmtpConfig) {
     text: [
       "A gap-check intake was completed.",
       "",
-      intakeSummary(row),
+      intakeSummary(row, documents),
       "",
       `Submission id: ${row.id}`,
       "",
@@ -156,6 +170,7 @@ export function internalIntakeMessage(row: SubmissionRow, config: SmtpConfig) {
  */
 export function intakeConfirmationMessage(
   row: SubmissionRow,
+  documents: string[],
   config: SmtpConfig,
 ) {
   return {
@@ -175,7 +190,7 @@ export function intakeConfirmationMessage(
       "",
       "Here's what you sent us:",
       "",
-      intakeSummary(row),
+      intakeSummary(row, documents),
       "",
       "---",
       `${SITE_NAME} is an independent service and is not affiliated with,`,
@@ -197,7 +212,10 @@ export function intakeConfirmationMessage(
  * mistyped address must not also cost the internal copy, which is the one
  * that tells us the intake exists at all.
  */
-export async function sendIntakeEmails(row: SubmissionRow): Promise<void> {
+export async function sendIntakeEmails(
+  row: SubmissionRow,
+  documents: string[] = [],
+): Promise<void> {
   const config = readSmtpConfig();
   if (!config) return;
 
@@ -210,8 +228,8 @@ export async function sendIntakeEmails(row: SubmissionRow): Promise<void> {
   }
 
   const results = await Promise.allSettled([
-    transport.sendMail(internalIntakeMessage(row, config)),
-    transport.sendMail(intakeConfirmationMessage(row, config)),
+    transport.sendMail(internalIntakeMessage(row, documents, config)),
+    transport.sendMail(intakeConfirmationMessage(row, documents, config)),
   ]);
 
   const labels = ["internal notification", "submitter confirmation"];

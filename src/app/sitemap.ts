@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/constants";
-import { NAV_LINKS } from "@/lib/nav";
+import { LEGAL_LINKS, NAV_LINKS } from "@/lib/nav";
 
 /**
  * Driven off NAV_LINKS so a page added to the nav can't be left out of the
@@ -17,7 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 1,
     },
-    ...NAV_LINKS.map(({ href }) => ({
+    ...[...NAV_LINKS, ...LEGAL_LINKS].map(({ href }) => ({
       url: `${SITE_URL}${href}`,
       lastModified,
       changeFrequency: "monthly" as const,

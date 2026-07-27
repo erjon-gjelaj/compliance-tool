@@ -15,12 +15,30 @@ than code.
 > fallback path.
 >
 > 1. Run `supabase/migrations/0002_submissions.sql` in the Supabase SQL
->    editor. It creates the `submissions` table.
+>    editor. It creates the `submissions` table. Then run
+>    `0003_documents.sql`, which adds the `submission_documents` table and
+>    creates the private `submission-documents` storage bucket. The bucket is
+>    created from SQL rather than by hand, so there is nothing to click in the
+>    Storage dashboard — but do check afterwards that it shows as **Private**.
 > 2. Add `SUPABASE_SERVICE_ROLE_KEY` to the environment, locally in
 >    `.env.local` and in Vercel's project settings (all environments). It is
 >    under Dashboard > Project Settings > API, labelled `service_role`. It
 >    bypasses row level security, so it must never take a `NEXT_PUBLIC_`
 >    prefix and must never be committed.
+> 3. Set `ADMIN_SECRET` to a long random string, locally and in Vercel. It
+>    guards the submission hard-delete endpoint — without it, a deletion
+>    request cannot be honoured. Generate one with
+>    `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+>
+> To delete a submission and its uploaded files:
+>
+> ```bash
+> curl -X DELETE https://certloop.net/api/submissions/<id> -H "x-admin-secret: <secret>"
+> ```
+>
+> That removes the storage objects first and the row second, so a failure
+> halfway leaves a record pointing at files that are already gone — visible
+> and recoverable — rather than files nothing points at.
 >
 > If a submission fails with `permission denied for table submissions`, that
 > is a table-privilege error rather than an RLS one, and it means one of two

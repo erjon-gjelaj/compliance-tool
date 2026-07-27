@@ -12,6 +12,7 @@ import { CONTACT_EMAIL } from "@/lib/constants";
 import {
   TOTAL_STEPS,
   initialIntakeState,
+  validateStepFour,
   validateStepOne,
   validateStepThree,
   validateStepTwo,
@@ -20,6 +21,7 @@ import {
   type StepNumber,
 } from "@/lib/intake";
 import {
+  completeWithDocuments,
   createSubmission,
   getSubmission,
   recordProgress,
@@ -28,6 +30,12 @@ import {
   saveStepTwo,
   updateSubmission,
 } from "@/lib/submissions";
+import {
+  confirmUploads,
+  listDocuments,
+  requestUploadSlots,
+} from "@/lib/documents";
+import type { FileClaim } from "@/lib/uploads";
 import {
   INTAKE_START_LIMIT,
   INTAKE_STEP_LIMIT,
@@ -85,7 +93,7 @@ function submittedIntakeValues(formData: FormData): IntakeValues {
 
 function stepFrom(formData: FormData): StepNumber {
   const raw = Number(formData.get("step"));
-  if (raw === 2 || raw === 3) return raw;
+  if (raw === 2 || raw === 3 || raw === 4) return raw;
   return 1;
 }
 
@@ -211,11 +219,12 @@ export async function submitIntakeStep(
       return { status: "editing", step: 3, submissionId, values };
     }
 
-    // Step 3, the last one. Skipping it still completes the intake — they
-    // have already given us enough to be worth answering.
-    if (intent === "skip") {
-      await recordProgress(submissionId, TOTAL_STEPS);
-    } else {
+    if (step === 3) {
+      if (intent === "skip") {
+        await recordProgress(submissionId, 3);
+        return { status: "editing", step: 4, submissionId };
+      }
+
       const result = validateStepThree(formData);
 
       if (!result.ok) {
@@ -230,19 +239,133 @@ export async function submitIntakeStep(
       }
 
       await saveStepThree(submissionId, result.value);
+      return { status: "editing", step: 4, submissionId, values };
+    }
+
+    // Step 4: the documents. Skipping still completes the intake — plenty of
+    // people have nothing written down yet, which is itself an answer.
+    if (intent === "skip") {
+      await recordProgress(submissionId, TOTAL_STEPS);
+    } else {
+      const result = validateStepFour(formData);
+
+      if (!result.ok) {
+        return {
+          status: "error",
+          step: 4,
+          submissionId,
+          message: "Check the highlighted fields and try again.",
+          errors: result.errors,
+          values,
+        };
+      }
+
+      // The files are already in storage by now — the browser sent them
+      // straight there with signed upload URLs. This is where we find out
+      // what actually landed, and anything that isn't what it claimed to be
+      // is deleted rather than recorded.
+      const confirmation = await confirmUploads(
+        submissionId,
+        result.value.uploads,
+      );
+
+      await completeWithDocuments(submissionId, {
+        consented: result.value.consented && confirmation.accepted.length > 0,
+      });
+
+      if (confirmation.rejected.length > 0) {
+        // Surfaced rather than swallowed. Someone who attached six files and
+        // hears nothing will assume all six were read, and silence is
+        // exactly the wrong answer about a document nobody looked at.
+        console.warn(
+          "Rejected uploads:",
+          confirmation.rejected
+            .map((entry) => `${entry.fileName} (${entry.reason})`)
+            .join("; "),
+        );
+
+        if (confirmation.accepted.length === 0) {
+          return {
+            status: "error",
+            step: 4,
+            submissionId,
+            message: `We couldn't read ${confirmation.rejected.length === 1 ? "that file" : "any of those files"}. Send without them, or try a different format.`,
+            errors: {
+              uploads: confirmation.rejected
+                .map((entry) => `${entry.fileName}: ${entry.reason}`)
+                .join(" · "),
+            },
+            values,
+          };
+        }
+      }
     }
 
     // Only after the row is safely stored. Awaited so the sends aren't cut
     // short when the invocation ends, and it cannot throw or fail the
     // submission — see sendIntakeEmails.
     const stored = await getSubmission(submissionId);
-    if (stored) await sendIntakeEmails(stored);
+    if (stored) {
+      const documents = await listDocuments(submissionId);
+      await sendIntakeEmails(
+        stored,
+        documents.map((document) => document.file_name),
+      );
+    }
 
     return { status: "success", step: TOTAL_STEPS, submissionId };
   } catch (cause) {
     // Logged server-side only: database errors can leak schema details.
     console.error("Intake step failed:", cause);
     return { ...prevState, status: "error", step, message: INTAKE_FAILURE, values };
+  }
+}
+
+/**
+ * Mints one signed upload URL per file, so the browser can send the bytes
+ * straight to Supabase Storage.
+ *
+ * Called before the step-4 form is submitted, not as part of it. Uploads
+ * cannot go through a server action at all: Vercel caps a serverless request
+ * body at 4.5MB, and this step takes up to ten files of up to 10MB each.
+ *
+ * What comes back is a capability for one specific object path per file —
+ * it cannot be used to write anywhere else, overwrite anything, or read
+ * anything. The claims passed in are self-reported and are checked again
+ * against the real bytes once they land; see confirmUploads.
+ */
+export async function createUploadSlots(
+  submissionId: string,
+  claims: FileClaim[],
+) {
+  if (!submissionId) {
+    return { ok: false as const, error: "We lost track of your answers — start again from the first step." };
+  }
+
+  const limit = rateLimit(await callerKey(), INTAKE_STEP_LIMIT);
+  if (!limit.ok) {
+    return { ok: false as const, error: RATE_LIMITED };
+  }
+
+  // Proves the submission exists before handing out write capabilities
+  // against its path, so a made-up id can't be used to park files in the
+  // bucket.
+  const submission = await getSubmission(submissionId);
+  if (!submission) {
+    return {
+      ok: false as const,
+      error: "We lost track of your answers — start again from the first step.",
+    };
+  }
+
+  try {
+    return await requestUploadSlots(submissionId, claims);
+  } catch (cause) {
+    console.error("Could not create upload slots:", cause);
+    return {
+      ok: false as const,
+      error: "We couldn't start the upload. Try again in a moment.",
+    };
   }
 }
 

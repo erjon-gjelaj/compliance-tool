@@ -32,7 +32,37 @@ type Resolved = {
   part: string;
   subpart: string;
   url: string;
+  /**
+   * True when the standard's own text says it does not cover construction.
+   *
+   * Retrieved, not asserted. 1910.147 and 1910.146 both exclude construction
+   * employment outright, which matters enormously to a scaffolding or
+   * mechanical subcontractor on a plant job — showing them a general industry
+   * standard with no note is close to misleading. Detected rather than
+   * hand-written because the whole point of this pipeline is that nobody
+   * types a regulatory fact from memory.
+   */
+  excludesConstruction: boolean;
 };
+
+/**
+ * Looks for exclusion language that specifically names construction.
+ *
+ * Deliberately narrow. 1910.1200 also contains "does not apply to", but about
+ * hazardous waste — a check for exclusion language alone would flag it
+ * wrongly, so the clause itself has to mention construction.
+ */
+function excludesConstruction(xml: string): boolean {
+  const text = xml
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ");
+
+  const clauses = text.match(
+    /(?:does not (?:cover|apply to)|shall not apply to)[^.]{0,200}/gi,
+  );
+
+  return (clauses ?? []).some((clause) => /construction/i.test(clause));
+}
 
 async function get(url: string): Promise<string | null> {
   const response = await fetch(url, {
@@ -114,6 +144,7 @@ async function resolve(
       part: partName,
       subpart: subpartName,
       url: `https://www.ecfr.gov/current/title-${title}/part-${part}/section-${section}`,
+      excludesConstruction: excludesConstruction(xml),
     },
   };
 }
@@ -135,7 +166,8 @@ for (const candidate of CITATION_CANDIDATES) {
 
   (verified[candidate.requirement] ??= []).push(result.value);
   console.log(
-    `  ok       ${candidate.section.padEnd(11)} ${result.value.title}`,
+    `  ok       ${candidate.section.padEnd(11)} ${result.value.title}` +
+      (result.value.excludesConstruction ? "   [excludes construction]" : ""),
   );
 }
 

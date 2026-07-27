@@ -318,6 +318,7 @@ function renderItems(items: Analysis["items"]): string[] {
         lines.push("  OSHA standards on this subject:");
         for (const citation of item.citations) {
           lines.push(`    ${citation.cfr} - ${citation.title}`);
+          if (citation.note) lines.push(`      ${citation.note}`);
         }
       }
 

@@ -246,6 +246,8 @@ export type VerifiedCitation = {
   part: string;
   subpart: string;
   url: string;
+  /** The standard's own text says it does not cover construction employment. */
+  excludesConstruction: boolean;
 };
 
 /** The eCFR edition the cached citations were taken from. */

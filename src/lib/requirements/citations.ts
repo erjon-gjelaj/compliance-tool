@@ -48,13 +48,20 @@ export type CitationCandidate = {
   part: string;
   section: string;
   /**
-   * Lower-case words that must appear in the retrieved subpart description or
-   * section heading. The guard against a plausible-looking wrong number: a
-   * section that exists but is about something else fails this and is dropped.
+   * Words that must ALL appear — this is a conjunction, not a list of
+   * alternatives — in the retrieved subpart description and section heading
+   * taken together, compared case-insensitively.
    *
-   * Needed because some headings are useless alone — 1910.132 is titled
-   * "General requirements", and only its subpart says it is about personal
-   * protective equipment.
+   * Both halves are searched because either alone is insufficient. 1910.132
+   * and 1926.1203 are both published as "General requirements", so the
+   * heading says nothing; and a subpart covers many sections, so the subpart
+   * alone would accept any of its siblings. Requiring every term across the
+   * pair is what makes a plausible-looking wrong section fail.
+   *
+   * Body text is deliberately NOT searched. A phrase can appear anywhere in a
+   * long regulation for reasons that have nothing to do with its subject —
+   * matching on that would accept almost anything and quietly defeat the
+   * point of checking at all.
    */
   expect: string[];
 };
@@ -72,14 +79,14 @@ export const CITATION_CANDIDATES: readonly CitationCandidate[] = [
     title: 29,
     part: "1910",
     section: "1910.147",
-    expect: ["hazardous energy"],
+    expect: ["control of hazardous energy", "lockout/tagout"],
   },
   {
     requirement: "confined-space",
     title: 29,
     part: "1910",
     section: "1910.146",
-    expect: ["confined space"],
+    expect: ["permit-required confined spaces"],
   },
   {
     // Construction has its own confined space rules, and a scaffolding or
@@ -89,21 +96,21 @@ export const CITATION_CANDIDATES: readonly CitationCandidate[] = [
     title: 29,
     part: "1926",
     section: "1926.1203",
-    expect: ["confined space"],
+    expect: ["general requirements", "confined spaces"],
   },
   {
     requirement: "fall-protection",
     title: 29,
     part: "1910",
     section: "1910.28",
-    expect: ["fall protection"],
+    expect: ["duty to have fall protection"],
   },
   {
     requirement: "fall-protection",
     title: 29,
     part: "1926",
     section: "1926.501",
-    expect: ["fall protection"],
+    expect: ["duty to have fall protection"],
   },
   {
     requirement: "respiratory-protection",
@@ -117,21 +124,21 @@ export const CITATION_CANDIDATES: readonly CitationCandidate[] = [
     title: 29,
     part: "1910",
     section: "1910.132",
-    expect: ["personal protective equipment"],
+    expect: ["general requirements", "personal protective equipment"],
   },
   {
     requirement: "ppe",
     title: 29,
     part: "1926",
     section: "1926.95",
-    expect: ["personal protective equipment"],
+    expect: ["criteria for personal protective equipment"],
   },
   {
     requirement: "emergency-action-plan",
     title: 29,
     part: "1910",
     section: "1910.38",
-    expect: ["emergency action plan"],
+    expect: ["emergency action plans"],
   },
   {
     requirement: "osha-logs",

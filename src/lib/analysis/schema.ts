@@ -44,6 +44,12 @@ export const citationSchema = z.object({
   title: z.string(),
   verifiedAt: z.string(),
   supportsClaim: z.boolean(),
+  /**
+   * A scope caveat taken from the standard's own text — currently only that
+   * it does not cover construction. Optional because most sections carry no
+   * such limit, and absent is not the same as "applies to everyone".
+   */
+  note: z.string().optional(),
 });
 
 export const analysisItemSchema = z.object({

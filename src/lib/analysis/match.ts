@@ -128,6 +128,15 @@ function itemFor(
         : citation.title,
       verifiedAt: CITATIONS_SOURCE_DATE,
       supportsClaim: true,
+      // 1910.147 and 1910.146 both exclude construction outright. A
+      // scaffolding or mechanical subcontractor on a plant turnaround may
+      // well be doing construction work, and showing them a general industry
+      // standard without saying so is close to misleading. Which part applies
+      // turns on the activity rather than the trade, so the caveat is stated
+      // and the judgement left with them.
+      note: citation.excludesConstruction
+        ? "This standard states it does not cover construction employment — Part 1926 covers construction."
+        : undefined,
     })),
     action: requirement.action,
   };

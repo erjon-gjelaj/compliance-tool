@@ -134,7 +134,10 @@ function itemBlock(item: AnalysisItem, asQuestion: boolean): string {
       ${item.citations
         .map(
           (c) =>
-            `<div style="font-family:${MONO_FONT};font-size:12px;line-height:1.5;color:${SLATE_WASH};padding-top:2px;">${esc(c.cfr)} &ndash; ${esc(c.title)}</div>`,
+            `<div style="font-family:${MONO_FONT};font-size:12px;line-height:1.5;color:${SLATE_WASH};padding-top:2px;">${esc(c.cfr)} &ndash; ${esc(c.title)}</div>` +
+            (c.note
+              ? `<div style="font-family:${BODY_FONT};font-size:12px;line-height:1.5;color:${RUST_FLAG};padding-top:1px;">${esc(c.note)}</div>`
+              : ""),
         )
         .join("")}
     </div>`;

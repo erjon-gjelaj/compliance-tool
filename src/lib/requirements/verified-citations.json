@@ -9,7 +9,8 @@
         "title": "Hazard communication.",
         "part": "Occupational Safety and Health Standards",
         "subpart": "",
-        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.1200"
+        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.1200",
+        "excludesConstruction": false
       }
     ],
     "lockout-tagout": [
@@ -18,7 +19,8 @@
         "title": "The control of hazardous energy (lockout/tagout).",
         "part": "Occupational Safety and Health Standards",
         "subpart": "General Environmental Controls",
-        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.147"
+        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.147",
+        "excludesConstruction": true
       }
     ],
     "confined-space": [
@@ -27,14 +29,16 @@
         "title": "Permit-required confined spaces.",
         "part": "Occupational Safety and Health Standards",
         "subpart": "General Environmental Controls",
-        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.146"
+        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.146",
+        "excludesConstruction": true
       },
       {
         "cfr": "29 CFR 1926.1203",
         "title": "General requirements.",
         "part": "Safety and Health Regulations for Construction",
         "subpart": "Confined Spaces in Construction",
-        "url": "https://www.ecfr.gov/current/title-29/part-1926/section-1926.1203"
+        "url": "https://www.ecfr.gov/current/title-29/part-1926/section-1926.1203",
+        "excludesConstruction": false
       }
     ],
     "fall-protection": [
@@ -43,14 +47,16 @@
         "title": "Duty to have fall protection and falling object protection.",
         "part": "Occupational Safety and Health Standards",
         "subpart": "Walking-Working Surfaces",
-        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.28"
+        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.28",
+        "excludesConstruction": false
       },
       {
         "cfr": "29 CFR 1926.501",
         "title": "Duty to have fall protection.",
         "part": "Safety and Health Regulations for Construction",
         "subpart": "Fall Protection",
-        "url": "https://www.ecfr.gov/current/title-29/part-1926/section-1926.501"
+        "url": "https://www.ecfr.gov/current/title-29/part-1926/section-1926.501",
+        "excludesConstruction": false
       }
     ],
     "respiratory-protection": [
@@ -59,7 +65,8 @@
         "title": "Respiratory protection.",
         "part": "Occupational Safety and Health Standards",
         "subpart": "Personal Protective Equipment",
-        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.134"
+        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.134",
+        "excludesConstruction": false
       }
     ],
     "ppe": [
@@ -68,14 +75,16 @@
         "title": "General requirements.",
         "part": "Occupational Safety and Health Standards",
         "subpart": "Personal Protective Equipment",
-        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.132"
+        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.132",
+        "excludesConstruction": false
       },
       {
         "cfr": "29 CFR 1926.95",
         "title": "Criteria for personal protective equipment.",
         "part": "Safety and Health Regulations for Construction",
         "subpart": "Personal Protective and Life Saving Equipment",
-        "url": "https://www.ecfr.gov/current/title-29/part-1926/section-1926.95"
+        "url": "https://www.ecfr.gov/current/title-29/part-1926/section-1926.95",
+        "excludesConstruction": false
       }
     ],
     "emergency-action-plan": [
@@ -84,7 +93,8 @@
         "title": "Emergency action plans.",
         "part": "Occupational Safety and Health Standards",
         "subpart": "Exit Routes and Emergency Planning",
-        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.38"
+        "url": "https://www.ecfr.gov/current/title-29/part-1910/section-1910.38",
+        "excludesConstruction": false
       }
     ],
     "osha-logs": [
@@ -93,14 +103,16 @@
         "title": "Recording criteria.",
         "part": "Recording and Reporting Occupational Injuries and Illnesses",
         "subpart": "Recordkeeping Forms and Recording Criteria",
-        "url": "https://www.ecfr.gov/current/title-29/part-1904/section-1904.4"
+        "url": "https://www.ecfr.gov/current/title-29/part-1904/section-1904.4",
+        "excludesConstruction": false
       },
       {
         "cfr": "29 CFR 1904.32",
         "title": "Annual summary.",
         "part": "Recording and Reporting Occupational Injuries and Illnesses",
         "subpart": "Other OSHA Injury and Illness Recordkeeping Requirements",
-        "url": "https://www.ecfr.gov/current/title-29/part-1904/section-1904.32"
+        "url": "https://www.ecfr.gov/current/title-29/part-1904/section-1904.32",
+        "excludesConstruction": false
       }
     ]
   }

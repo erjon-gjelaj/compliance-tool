@@ -39,6 +39,8 @@ export type SubmissionRow = {
   documents_held: string[] | null;
   documents_unsure: boolean;
   documents_consent_at: string | null;
+  analysis_status: "pending" | "ok" | "fallback" | null;
+  analysed_at: string | null;
 };
 
 /** Creates the row for step 1 and returns its id. */

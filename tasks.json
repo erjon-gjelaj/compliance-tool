@@ -184,9 +184,10 @@
     },
     {
       "id": "027",
-      "title": "Analysis pipeline",
-      "status": "todo",
-      "notes": "Scope B deliverable 3. Server-side text extraction from PDF and DOCX, Anthropic API call, schema-validated structured JSON, fallback to the generic explainer email on validation failure."
+      "title": "Analysis pipeline (deterministic, no LLM)",
+      "status": "in_progress",
+      "notes": "Scope B deliverable 3, on branch task/027-analysis-pipeline (on top of task/026). REVISED at the human's instruction: no language model anywhere in this project. The Anthropic SDK, the client, the prompt module, the API key and the prompt/token columns on the analyses table are all gone, and CLAUDE.md now carries a 'No language models' section so it is not reintroduced by accident. Extraction is libraries: unpdf (serverless pdf.js, no native binary), mammoth, word-extractor, with capped tesseract.js OCR as an images-only fallback marked so the output treats it as unreliable. The review itself is a deterministic text search (lib/analysis/match.ts) against lib/requirements. Everything reported is a fact about a file or about an answer they gave: same submission, same answer, every finding names the file and phrase, nothing can be invented. That fits the regulatory rules better than the model did - the guardrails became structural instead of instructions. lib/requirements is no longer a placeholder because the matcher needs it: twelve entries with recognition phrases, documented for a non-developer to edit, every one verified:false and reported as commonly-asked-for rather than required. Nothing is source osha and nothing may be until a citation is retrieved (task 032). Both layers were run against fixtures - first time this code has executed. PDF with a text layer extracts; the same PDF with text blanked comes back unreadable rather than empty, which is the distinction the design rests on; docx and empty docx behave; unknown MIME is unsupported. Four matcher scenarios pass their own schema validation. Two real bugs found that way and fixed: the price band said low when nothing had been read, and the summary counted the permanently-unknown hiring-client item in its denominator. MANUAL STEP: run migration 0004. There is no API key to set any more. Not tested end to end: no .env.local here, so no real submission has run through it. Build and lint clean.",
+      "needs_human_review": true
     },
     {
       "id": "028",
@@ -219,6 +220,6 @@
       "notes": "Scope B deliverable 8. Retrieval not recall: every proposed citation fetched from the eCFR API, confirmed to exist and to support the claim, stripped and downgraded to unknown otherwise, sections cached. Output separates OSHA requirements from ISN/Avetta contractual ones."
     }
   ],
-  "current_task_id": "026",
+  "current_task_id": "027",
   "blocked_on": null
 }

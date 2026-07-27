@@ -25,7 +25,9 @@ than code.
 >    under Dashboard > Project Settings > API, labelled `service_role`. It
 >    bypasses row level security, so it must never take a `NEXT_PUBLIC_`
 >    prefix and must never be committed.
-> 3. Set `ADMIN_SECRET` to a long random string, locally and in Vercel. It
+> 3. Run `0004_analyses.sql`. It adds the extracted-text columns, the
+>    `analyses` log table, and the analysis state on submissions.
+> 4. Set `ADMIN_SECRET` to a long random string, locally and in Vercel. It
 >    guards the submission hard-delete endpoint — without it, a deletion
 >    request cannot be honoured. Generate one with
 >    `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
@@ -55,10 +57,23 @@ than code.
 > is not the service-role key; the publishable key produces exactly this
 > message, because the migration revokes everything from `anon`.
 >
-> Until both are done, submitting the form shows the generic "something went
-> wrong" panel — the failure is caught and logged rather than crashing, but
-> nothing is saved. The old `leads` table is untouched and keeps its history;
-> nothing writes to it any more.
+> Until the migrations are run, submitting the form shows the generic
+> "something went wrong" panel — the failure is caught and logged rather than
+> crashing, but nothing is saved. The old `leads` table is untouched and keeps
+> its history; nothing writes to it any more.
+>
+> **Reading what actually went out.** Every review is in the `analyses` table
+> with its result, error, document counts, duration, and the version of
+> `lib/requirements` that produced it, written before the email goes out.
+> `status = 'ok'` means a review was sent; anything else means the contractor
+> got the generic explainer and somebody needs to look. Read the first thirty
+> closely — that is where you find out whether the rules hold, and it costs
+> nothing to look.
+>
+> There is no model and no API key. The review is a text search over the
+> extracted documents against `src/lib/requirements/index.ts`, so the same
+> submission produces the same answer every time and every finding names the
+> file and phrase it came from.
 
 ## Before you start
 

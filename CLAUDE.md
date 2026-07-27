@@ -27,25 +27,37 @@ In scope:
 - Document uploads into a private Supabase Storage bucket, signed URLs only,
   server-side MIME and size validation, explicit consent recorded at upload,
   and a hard-delete path so a deletion request can be honoured.
-- A server-side analysis pipeline: extract text from uploads, call the
-  Anthropic API, require structured JSON output validated against a schema,
-  and fall back to a safe generic explainer email if validation fails.
+- A server-side analysis pipeline: extract text from uploads with libraries
+  (never a language model), diff it against the reference data, validate the
+  result against a schema, and fall back to a safe generic explainer email if
+  validation fails.
 - An automated response email to the client plus an internal copy.
 - `lib/requirements/` — a typed, versioned reference data file of known
-  requirements by trade x platform, hand-editable by a non-developer. The
-  model prompt must prefer this data over its own knowledge.
+  requirements by trade x platform, hand-editable by a non-developer. It is
+  the only source of what a document is called and how it is recognised; if
+  it is silent, the output is a question rather than a claim.
 - Internal ops: notification on every submission, an internal-only
-  submissions page behind a shared secret in env, and a log of every model
-  input and output to the DB.
+  submissions page behind a shared secret in env, and a log of every review
+  produced to the DB, sent or not.
 
 Still out of scope: billing, auth, user accounts, and any redesign of the
 existing visual identity.
 
-Cost and abuse: every submission costs money. Rate-limit the submission
-endpoint and keep basic spam protection on it.
+Abuse: a submission no longer costs an API call, but it does cost storage,
+an email and a person's attention. Keep the submission endpoint rate-limited
+and keep basic spam protection on it.
+
+## No language models
+Text extraction and the review itself are deterministic: libraries pull the
+text out, and the review is a text search against `lib/requirements/`. No
+LLM is used anywhere in this project, and none should be added without an
+explicit decision to reverse this. The reasons are that the same submission
+must produce the same answer twice, every claim must point at a file and a
+phrase a person can check, and nothing may be invented — which is exactly
+what a model cannot promise about a contractor's safety paperwork.
 
 ## Regulatory output rules (Scope B — non-negotiable)
-These bind anything the model emits, not just page copy.
+These bind generated output, not just page copy.
 - Never invent a regulation, CFR citation, platform requirement, or
   deadline. If unsure, emit the item as `status: "unknown"` and put it in
   `questionsForClient`.
@@ -56,8 +68,8 @@ These bind anything the model emits, not just page copy.
   pass or fail. Prefer omission over speculation.
 - Every item cites its basis (a document reviewed, or the client's own
   checkbox answer). An item with no basis must be low confidence.
-- OSHA citations are retrieved, never recalled. Any CFR reference must be
-  fetched from the eCFR API (`https://www.ecfr.gov`, public, no key) at
+- OSHA citations are retrieved, never written by hand. Any CFR reference must
+  be fetched from the eCFR API (`https://www.ecfr.gov`, public, no key) at
   generation time and confirmed to exist and to support the stated claim.
   If it does not resolve or does not support the claim, strip the citation
   and downgrade the item to `unknown`. This check runs on every submission,
@@ -80,13 +92,12 @@ These bind anything the model emits, not just page copy.
 - Deploy target: Vercel
 - Lead and submission storage: Supabase (free tier); uploaded documents go
   in a private Supabase Storage bucket
-- Analysis: the Anthropic API, server-side only
+- Analysis: deterministic, server-side. No language model, no AI API.
 - Transactional email: SMTP via nodemailer (see `src/lib/notify.ts`)
 - No auth, no user accounts, no payments in this phase
 
-Secrets: `ANTHROPIC_API_KEY` and the Supabase service key live in
-`.env.local` only, are used server-side only, and must never take a
-`NEXT_PUBLIC_` prefix.
+Secrets: the Supabase service key and `ADMIN_SECRET` live in `.env.local`
+only, are used server-side only, and must never take a `NEXT_PUBLIC_` prefix.
 
 ## Naming
 Working name is "CertLoop" — not final, may still change. Store it in a

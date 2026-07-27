@@ -7,7 +7,9 @@ import {
   type MessageFormState,
   type MessageInput,
 } from "@/lib/messages";
+import { after } from "next/server";
 import { sendContactMessage, sendIntakeEmails } from "@/lib/notify";
+import { runAnalysis } from "@/lib/analysis/run";
 import { CONTACT_EMAIL } from "@/lib/constants";
 import {
   TOTAL_STEPS,
@@ -312,6 +314,22 @@ export async function submitIntakeStep(
         documents.map((document) => document.file_name),
       );
     }
+
+    /*
+     * The analysis runs after this response has gone out, not inside it.
+     *
+     * Reading several PDFs, running OCR over a photo and making a model call
+     * takes far longer than anyone will hold a form open for — the person who
+     * just tapped "Send my gap check" must not be the one waiting on it. Next
+     * keeps the invocation alive for this callback after the response is
+     * flushed, so the work still finishes on a serverless host.
+     *
+     * runAnalysis never throws and always ends by sending something, so
+     * nothing here can strand a submission with no reply.
+     */
+    after(async () => {
+      await runAnalysis(submissionId);
+    });
 
     return { status: "success", step: TOTAL_STEPS, submissionId };
   } catch (cause) {

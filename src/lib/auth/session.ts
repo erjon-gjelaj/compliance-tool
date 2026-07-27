@@ -2,7 +2,10 @@ import "server-only";
 
 import { cookies } from "next/headers";
 
-import { SESSION_HINT_COOKIE } from "@/lib/auth/cookie-names";
+import {
+  SESSION_COOKIE,
+  SESSION_HINT_COOKIE,
+} from "@/lib/auth/cookie-names";
 
 import {
   SESSION_TTL_SECONDS,
@@ -33,7 +36,7 @@ import {
  * case worth caring about.
  */
 
-const COOKIE = "certloop_session";
+const COOKIE = SESSION_COOKIE;
 
 /**
  * A second cookie that exists only so the navbar can say "Sign out".
@@ -52,10 +55,14 @@ const COOKIE = "certloop_session";
  * This costs nothing and leaks nothing: whether you are signed in is already
  * obvious to whoever is holding the browser.
  *
- * It can go stale — rotating AUTH_JWT_SECRET invalidates the session but
- * leaves this behind, so the header would offer "Sign out" to someone already
- * signed out. That heals itself on the click: signing out clears both and
- * lands on the sign-in page, which is where they needed to go anyway.
+ * It is written here so the header updates the instant someone signs in, but
+ * this is no longer the only place that maintains it, and it must not be
+ * treated as the authority on its own contents. proxy.ts re-derives it from
+ * the session on every request, which is what stops it drifting: set here and
+ * nowhere else, it had no way to become true for a session that already
+ * existed before it did — and every session minted before this cookie was
+ * introduced was in exactly that state, showing "Sign in" to people the
+ * server recognised perfectly well.
  *
  * The name lives in lib/auth/cookie-names.ts because the header needs it too
  * and this module is deliberately server-only.

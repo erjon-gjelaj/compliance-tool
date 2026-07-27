@@ -297,8 +297,12 @@ function renderItems(items: Analysis["items"]): string[] {
 
     for (const item of group) {
       lines.push(
+        // The label is a noun phrase, so it leads the line rather than being
+        // dropped into a sentence. "Confirm whether Training records for the
+        // crew applies to you" did not agree in number, and the hiring-client
+        // label made it read as nonsense.
         asQuestion
-          ? `- Confirm whether ${item.requirement} applies to you.`
+          ? `- ${item.requirement} - confirm whether this applies to you.`
           : `- ${item.requirement}${item.status === "present" ? " - looks present" : item.status === "likely_missing" ? " - looks missing" : " - not established"}`,
       );
       lines.push(`  ${label[item.source]}`);

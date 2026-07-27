@@ -67,8 +67,23 @@ export const analysisItemSchema = z.object({
   citations: z.array(citationSchema),
 });
 
+/**
+ * A limit of the review that the reader should know about.
+ *
+ * Keyed by a stable `code` so callers and tests depend on the behaviour
+ * rather than the wording, which will change as the prose is improved.
+ */
+export const analysisWarningSchema = z.object({
+  code: z.string(),
+  requirement: z.string(),
+  industry: z.string().optional(),
+  message: z.string(),
+});
+
 export const analysisSchema = z.object({
   summary: z.string(),
+  /** Declared gaps, e.g. a requirement we deliberately will not map. */
+  warnings: z.array(analysisWarningSchema),
   items: z.array(analysisItemSchema),
   questionsForClient: z.array(z.string()),
   priceBand: z.enum(PRICE_BANDS),

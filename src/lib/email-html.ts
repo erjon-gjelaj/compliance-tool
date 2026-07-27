@@ -313,6 +313,23 @@ ${paragraph(`${row.contact_name},`)}
 ${paragraph(analysis.summary, 14)}
 ${sections}
 ${unreadableBlock(unreadable)}
+${
+  analysis.warnings.length === 0
+    ? ""
+    : `${heading("Where we stop short")}
+<tr><td style="padding:6px 32px 8px 32px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border-left:3px solid ${ZINC_DUST};">
+    <tr><td style="padding:2px 0 2px 14px;">
+      ${analysis.warnings
+        .map(
+          (w) =>
+            `<div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};padding-bottom:4px;">${esc(w.message)}</div>`,
+        )
+        .join("")}
+    </td></tr>
+  </table>
+</td></tr>`
+}
 ${priceBlock(analysis.priceBand, priceCopy)}
 <tr><td style="padding:18px 32px 0 32px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="border-top:1px solid ${ZINC_DUST};font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>
 ${heading("Want us to take it further?")}

@@ -414,6 +414,18 @@ function renderAnalysis(
     );
   }
 
+  // Stated rather than buried. Someone acting on a lockout/tagout line needs
+  // to know we are declining to cite a construction standard, not assume the
+  // general industry one covers them.
+  if (analysis.warnings.length > 0) {
+    lines.push(
+      "",
+      "WHERE WE STOP SHORT",
+      "",
+      ...analysis.warnings.map((warning) => `- ${warning.message}`),
+    );
+  }
+
   lines.push(
     "",
     // The heading only promises a cost when there is one. "What this would

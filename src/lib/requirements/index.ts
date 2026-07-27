@@ -237,6 +237,11 @@ export function anyVerified(): boolean {
  * ---------------------------------------------------------------------- */
 
 import verifiedCitations from "./verified-citations.json";
+import {
+  CITATION_GAPS,
+  type CitationGap,
+  type WorkContext,
+} from "./citations";
 
 export type VerifiedCitation = {
   /** e.g. "29 CFR 1910.147". */
@@ -282,4 +287,62 @@ export function citationsFor(requirementId: string): VerifiedCitation[] {
     VerifiedCitation[] | undefined
   >;
   return table[requirementId] ?? [];
+}
+
+/**
+ * Citations for a requirement, resolved against the kind of work.
+ *
+ * Fails closed. A citation whose own text excludes an industry is never
+ * returned for that industry, and a declared gap returns no citation at all
+ * rather than the nearest available one. Both matter because the failure mode
+ * is silent: the tempting refactor is "we have exactly one lockout/tagout
+ * citation, use it", and that citation says in its own scope clause that it
+ * does not cover construction.
+ *
+ * `industry` is optional and callers mostly do not know it — a trade is not
+ * an industry, and the same scaffolding firm can be doing maintenance under
+ * Part 1910 one week and construction under 1926 the next. Omitting it
+ * returns everything with its caveats attached, which is what the review
+ * email does; passing it is for callers that genuinely know.
+ */
+export function resolveCitations({
+  requirement,
+  industry,
+}: {
+  requirement: string;
+  industry?: WorkContext;
+}): { citations: VerifiedCitation[]; gap: CitationGap | null } {
+  const gap =
+    CITATION_GAPS.find(
+      (entry) =>
+        entry.requirement === requirement && entry.industry === industry,
+    ) ?? null;
+
+  // A declared gap wins outright. Returning "the one we happen to have" is
+  // the exact over-mapping the declaration exists to prevent.
+  if (gap) return { citations: [], gap };
+
+  const all = citationsFor(requirement);
+
+  const citations =
+    industry === "construction"
+      ? all.filter((citation) => !citation.excludesConstruction)
+      : all;
+
+  return { citations, gap: null };
+}
+
+/**
+ * Whether a section is a verified universal counterpart for a requirement in
+ * an industry. False for anything not actually verified as such — including
+ * real, relevant sections that only cover part of the ground.
+ */
+export function isUniversalCounterpart(
+  section: string,
+  requirement: string,
+  industry: WorkContext,
+): boolean {
+  const { citations, gap } = resolveCitations({ requirement, industry });
+  if (gap) return false;
+  return citations.some((citation) => citation.cfr.endsWith(` ${section}`));
 }

@@ -155,3 +155,85 @@ export const CITATION_CANDIDATES: readonly CitationCandidate[] = [
     expect: ["annual summary"],
   },
 ];
+
+/* -------------------------------------------------------------------------
+ * Mappings we have deliberately NOT made
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Why a requirement has no citation for a given kind of work.
+ *
+ * An empty citation list is ambiguous in a way that matters: it could mean
+ * nobody researched it, that it was researched and nothing applies, or that
+ * it was dropped by accident. Those call for completely different responses,
+ * so the refusal is declared rather than inferred from absence.
+ */
+export type CitationMappingStatus =
+  /** A section was retrieved and checked. */
+  | "verified"
+  /** Researched; the regulations genuinely contain no counterpart. */
+  | "no-direct-counterpart"
+  /** Counterparts exist but depend on the equipment or activity. */
+  | "context-dependent"
+  /** Not yet researched. Distinct from a decision. */
+  | "unresolved";
+
+export type WorkContext = "general-industry" | "construction";
+
+export type CitationGap = {
+  requirement: string;
+  industry: WorkContext;
+  status: Exclude<CitationMappingStatus, "verified">;
+  /**
+   * Stable identifier for this class of gap. Callers and tests key off this
+   * rather than the prose, so the wording can be improved without breaking
+   * anything that depends on the behaviour.
+   */
+  code: string;
+  reason: string;
+};
+
+/**
+ * Declared gaps.
+ *
+ * Note the split this file maintains throughout. That 1910.147 excludes
+ * construction is a *retrieved fact* — scripts/verify-citations.mts reads it
+ * out of the regulation. That no Part 1926 section is a universal substitute
+ * is a *mapping decision* made here, and it is a much weaker claim than it
+ * might look: it says no validated one-to-one counterpart exists, not that
+ * construction has no energy-control rules. It plainly does. Which one
+ * applies depends on the equipment and the activity, which is exactly why
+ * this is refused rather than guessed.
+ */
+export const CITATION_GAPS: readonly CitationGap[] = [
+  {
+    requirement: "lockout-tagout",
+    industry: "construction",
+    status: "context-dependent",
+    code: "CONTEXT_DEPENDENT_CITATION",
+    reason:
+      "No universal Part 1926 counterpart to 29 CFR 1910.147 has been verified. " +
+      "Construction lockout/tagout requirements are context-dependent and may arise " +
+      "under electrical, equipment-specific, or process-specific provisions. No " +
+      "construction citation is given without more detail about the work.",
+  },
+];
+
+/**
+ * Citations that apply only in a named context.
+ *
+ * Empty, and that is the point of having it. 1926.417 ("Lockout and tagging
+ * of circuits") is a real construction provision, but it is about electrical
+ * circuits — offering it as *the* construction answer for lockout/tagout
+ * would be over-mapping of exactly the kind CITATION_GAPS exists to prevent.
+ * This shape lets a narrower, verified mapping be added later without anyone
+ * having to declare a universal counterpart to do it.
+ */
+export type ContextualCitationCandidate = CitationCandidate & {
+  industry: WorkContext;
+  /** e.g. "electrical-circuits". Callers must ask for it explicitly. */
+  context: string;
+};
+
+export const CONTEXTUAL_CITATION_CANDIDATES: readonly ContextualCitationCandidate[] =
+  [];

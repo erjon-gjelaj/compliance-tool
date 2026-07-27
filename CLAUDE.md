@@ -69,11 +69,31 @@ These bind generated output, not just page copy.
 - Every item cites its basis (a document reviewed, or the client's own
   checkbox answer). An item with no basis must be low confidence.
 - OSHA citations are retrieved, never written by hand. Any CFR reference must
-  be fetched from the eCFR API (`https://www.ecfr.gov`, public, no key) at
-  generation time and confirmed to exist and to support the stated claim.
-  If it does not resolve or does not support the claim, strip the citation
-  and downgrade the item to `unknown`. This check runs on every submission,
-  automatically — it is not a stand-in for manual review of early drafts.
+  be fetched from the eCFR API (`https://www.ecfr.gov`, public, no key) and
+  confirmed to exist and to match its subject. Anything that fails is dropped,
+  never shown with a caveat: an unverified citation is worse than none,
+  because it looks equally official and anyone in this industry can check it.
+
+  IMPLEMENTED AT BUILD TIME, NOT PER SUBMISSION, and deliberately so — do not
+  "fix" this by moving the fetch into the request path. Retrieval happens in
+  `npm run verify:citations`, which writes a committed cache that the app
+  reads. Fetching per submission would make an identical submission produce
+  different output depending on eCFR's uptime, put a third-party outage
+  between a contractor and their email, and add seconds to a function that has
+  already died twice on its wall clock. Re-run the script when candidates
+  change or to pick up amendments.
+- Where a mapping is refused, say so in data rather than leaving an empty
+  array. `CITATION_GAPS` records the requirement, the work context, a stable
+  code and a reason. An empty list cannot distinguish "not researched" from
+  "deliberately not mapped", and those need opposite responses. Refusing to
+  over-map is a feature: 1910.147 excludes construction, and no Part 1926
+  section has been verified as a universal counterpart, so construction
+  lockout/tagout returns nothing at all rather than the nearest guess.
+- Keep retrieved facts separate from mapping decisions. That a standard
+  excludes construction is retrieved from its own text. That no counterpart
+  exists is a judgement made in this repo, and a weaker claim than it looks —
+  it says no validated one-to-one mapping exists, not that construction has no
+  rules on the subject.
 - Do not conflate OSHA with ISNetworld. ISN and Avetta requirements are
   contractual, set by the platform and the hiring client; they overlap with
   OSHA but plenty of what ISN asks for has no OSHA basis at all. Output must
@@ -176,9 +196,14 @@ pricing section, and it does not license one on the site.
 
 ## Definition of done (per task)
 - Code committed on a task branch, PR opened
-- Build and lint pass
+- `npm run build`, `npm run lint` and `npm test` all pass
 - Manually described in logs/<date>.md
 - tasks.json updated
+
+Tests are `node:test` run through `tsx` — there is no framework and none is
+needed. Prefer negative tests: the failures worth catching here are the ones
+that look correct, like a real regulation shown to a contractor it does not
+cover.
 
 ## Framework notes
 This project runs Next.js 16, which has breaking changes from earlier

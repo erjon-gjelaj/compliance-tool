@@ -4,6 +4,7 @@ import {
   isReliable,
   type ExtractedDocument,
 } from "@/lib/analysis/documents";
+import { CITATION_GAPS } from "@/lib/requirements/citations";
 import {
   CITATIONS_SOURCE_DATE,
   REQUIREMENTS_VERSION,
@@ -135,7 +136,7 @@ function itemFor(
       // turns on the activity rather than the trade, so the caveat is stated
       // and the judgement left with them.
       note: citation.excludesConstruction
-        ? "This standard states it does not cover construction employment — Part 1926 covers construction."
+        ? "This standard states it does not cover construction employment. Construction work is covered by Part 1926."
         : undefined,
     })),
     action: requirement.action,
@@ -372,6 +373,17 @@ export function buildAnalysis({
 
   return {
     summary: summaryFor(submission, items, documents),
+    // Declared refusals to map, carried in the output rather than left in a
+    // log nobody reads. Only for requirements actually reported on, so a gap
+    // in something irrelevant to this contractor stays quiet.
+    warnings: CITATION_GAPS.filter((gap) =>
+      requirements.some((entry) => entry.id === gap.requirement),
+    ).map((gap) => ({
+      code: gap.code,
+      requirement: gap.requirement,
+      industry: gap.industry,
+      message: gap.reason,
+    })),
     items,
     questionsForClient: questionsFor(submission, items, documents),
     priceBand: priceBandFor(submission, items, documents),

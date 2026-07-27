@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify:citations": "tsx scripts/verify-citations.mts"
+    "verify:citations": "tsx scripts/verify-citations.mts",
+    "test": "tsx --test --conditions react-server \"src/**/*.test.mts\""
   },
   "dependencies": {
     "@fontsource/bricolage-grotesque": "^5.3.0",

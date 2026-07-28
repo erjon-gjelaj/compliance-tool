@@ -242,6 +242,7 @@ function SuccessPanel() {
  */
 export function IntakeForm({
   entryReason = DEFAULT_ENTRY_REASON,
+  initialState = initialIntakeState,
 }: {
   /**
    * Which door this form is serving. Posted on step 1 and recorded on the
@@ -249,10 +250,20 @@ export function IntakeForm({
    * for. Defaults to the gap check, which is the door that predates the rest.
    */
   entryReason?: EntryReason;
+  /**
+   * Where to start. Defaults to a blank step 1.
+   *
+   * Passed in by /dashboard/[id]/continue to resume an abandoned intake: it
+   * carries the row's id, the step they stopped on and the answers already
+   * stored, so someone picks up where they left off rather than retyping the
+   * form. Every step already posts `submission_id` and updates that row, so
+   * resuming needs no new server path — only a different starting state.
+   */
+  initialState?: IntakeFormState;
 } = {}) {
   const [state, formAction, isPending] = useActionState(
     submitIntakeStep,
-    initialIntakeState,
+    initialState,
   );
 
   const [trade, setTrade] = useEchoedState(echoed(state, "trade"));

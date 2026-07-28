@@ -114,7 +114,7 @@ test("an unfinished form outranks everything else", () => {
   });
 
   assert.match(workspace.next.title, /Finish the form/);
-  assert.equal(workspace.next.href, `/dashboard/${partial.id}`);
+  assert.equal(workspace.next.href, `/dashboard/${partial.id}/continue`);
 });
 
 test("a rejection with nothing attached asks for the notice", () => {
@@ -162,6 +162,92 @@ test("no submissions produces a start action, not an error state", () => {
 
   assert.match(workspace.next.title, /Tell us what you're up against/);
   assert.deepEqual(workspace.blockers, []);
+});
+
+test("the unfinished-form action points at the form, not the review page", () => {
+  // It used to point at /dashboard/<id>, which shows documents and a review —
+  // neither of which a partial submission has. The one instruction on the page
+  // led to a dead end.
+  const partial = submission({
+    id: "44444444-4444-4444-8444-444444444444",
+    status: "partial",
+    last_step: 1,
+    analysis_status: null,
+  });
+
+  const workspace = build({
+    submissions: [partial],
+    documents: [],
+    activeSubmission: null,
+    activeReview: null,
+  });
+
+  assert.equal(workspace.next.href, `/dashboard/${partial.id}/continue`);
+});
+
+test('"Both" becomes the two platform names rather than a third one', () => {
+  // Produced "Avetta, Both, ISNetworld" in the header: reads as three
+  // platforms, and names one of them twice.
+  const workspace = build({
+    submissions: [
+      submission({ id: "a", platform: "Both" }),
+      submission({ id: "b", platform: "ISNetworld" }),
+    ],
+    documents: [],
+    activeSubmission: null,
+    activeReview: null,
+  });
+
+  assert.deepEqual([...workspace.platforms].sort(), ["Avetta", "ISNetworld"]);
+});
+
+test('"Not sure" is not listed as a platform', () => {
+  // It is the absence of an answer. Printing it in a list of what someone is
+  // registered for states something they told us they did not know.
+  const workspace = build({
+    submissions: [submission({ platform: "Not sure" })],
+    documents: [],
+    activeSubmission: null,
+    activeReview: null,
+  });
+
+  assert.deepEqual(workspace.platforms, []);
+});
+
+test("a deadline that has passed is flagged rather than stated in the future", () => {
+  // "wants you approved by 24 July" three days after 24 July reads as though
+  // nothing has happened.
+  const workspace = build({
+    submissions: [submission({ deadline: "2020-01-01" })],
+    documents: [],
+    activeSubmission: null,
+    activeReview: null,
+  });
+
+  assert.equal(workspace.nextDeadline?.passed, true);
+});
+
+test("a passed deadline is kept, not filtered away", () => {
+  // It is the most urgent thing on the page, not the least.
+  const workspace = build({
+    submissions: [submission({ deadline: "2020-01-01" })],
+    documents: [],
+    activeSubmission: null,
+    activeReview: null,
+  });
+
+  assert.equal(workspace.nextDeadline?.date, "2020-01-01");
+});
+
+test("a future deadline is not flagged as passed", () => {
+  const workspace = build({
+    submissions: [submission({ deadline: "2099-01-01" })],
+    documents: [],
+    activeSubmission: null,
+    activeReview: null,
+  });
+
+  assert.equal(workspace.nextDeadline?.passed, false);
 });
 
 test("a deadline is only reported when one was actually given", () => {

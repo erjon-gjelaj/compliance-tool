@@ -346,23 +346,23 @@
     {
       "id": "055",
       "title": "Phase A: request state, derived from events",
-      "status": "todo",
-      "notes": "The reported bug: a request still read Waiting on us after a reply had been sent. Cause is that status is stored rather than derived, and replies happen in a mail client outside the product. Append-only request_events, state computed from them, in-product replies both ways, and an admin console that can actually act. See docs/release-one.md.",
-      "needs_human_review": false
+      "status": "done",
+      "notes": "Done. Append-only request_events plus deriveStatus(); no setStatus exists in the product now. Customer thread at /dashboard/requests, operator console at /internal/requests that can reply and move a request along, notifications both ways. awaits_reply is asked of whoever writes a reply because it cannot be derived. Existing rows backfilled with a submitted event only - deliberately not a reply event for old in_progress rows, since that column is the unreliable thing being replaced. 11 new tests. NEEDS MIGRATION 0008 RUN.",
+      "needs_human_review": true
     },
     {
       "id": "056",
       "title": "Phase B: dashboard as an application",
-      "status": "todo",
-      "notes": "Persistent left navigation, an operational overview, one status treatment used everywhere, mobile checked at width. The dashboard currently reads as a landing page.",
-      "needs_human_review": false
+      "status": "done",
+      "notes": "Done. Persistent nav (Overview/Requests/Documents/Company/Help), scrolling row on mobile rather than a hamburger. Overview is four tiles, one next action and short lists; request figures derive from the event log. Tiles on paper against galvanise with a full border, only the customer-action tile takes the warning treatment, zero renders as a dash. Status colour centralised in status-chip.tsx, four tones over six states. NOT visually verified - signed-in pages cannot render without Supabase credentials.",
+      "needs_human_review": true
     },
     {
       "id": "057",
       "title": "Phase C: plans, pricing and orders",
-      "status": "todo",
-      "notes": "Configurable pricing in one module, entitlements actually enforced at the call sites, one-time service orders carrying a quoted range, admin grants plans by hand. No Stripe and no fake checkout.",
-      "needs_human_review": false
+      "status": "done",
+      "notes": "Done. lib/pricing.ts is the single source; nothing outside hardcodes an amount. Ranges only, early-access labelled, with PRICING_NOTE travelling alongside. One-time services plus a maintenance plan. Public /pricing page in the nav, and the same ranges inside the help form. No checkout and no fake payment. Orders/quote recording per request is NOT built - service_requests captures intent but carries no agreed price yet.",
+      "needs_human_review": true
     },
     {
       "id": "058",
@@ -372,6 +372,6 @@
       "needs_human_review": false
     }
   ],
-  "current_task_id": "055",
+  "current_task_id": "058",
   "blocked_on": null
 }

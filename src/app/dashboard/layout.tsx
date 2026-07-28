@@ -6,6 +6,7 @@ import { SITE_NAME } from "@/lib/constants";
 import { currentClient } from "@/lib/auth/session";
 import { signOut } from "@/app/sign-in/actions";
 import { SubmitButton } from "@/components/submit-button";
+import { DashboardNav } from "@/components/dashboard-nav";
 
 /**
  * The gate on every signed-in page.
@@ -39,9 +40,9 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-galvanise">
       <div className="border-b border-zinc-dust bg-paper">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-4">
           <Link href="/dashboard" className="type-label text-millscale">
-            Your {SITE_NAME} file
+            {SITE_NAME}
           </Link>
 
           <div className="flex items-center gap-4 text-sm text-slate-wash">
@@ -59,7 +60,16 @@ export default async function DashboardLayout({
         </div>
       </div>
 
-      {children}
+      {/*
+        Navigation beside the content on a wide screen, above it on a narrow
+        one. The section is an application now rather than a page, and the
+        thing that makes it read as one is that the same chrome is present
+        everywhere in it.
+      */}
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-6 lg:flex-row lg:gap-10 lg:py-10">
+        <DashboardNav />
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
     </div>
   );
 }

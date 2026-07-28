@@ -6,6 +6,7 @@
  * The home page is deliberately not listed — the wordmark links there.
  */
 export const NAV_LINKS = [
+  { href: "/pricing", label: "Pricing" },
   { href: "/about", label: "About" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },

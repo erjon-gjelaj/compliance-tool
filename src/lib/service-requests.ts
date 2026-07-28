@@ -5,6 +5,7 @@ import {
   MAX_SERVICE_NOTE,
   type ServiceKind,
 } from "@/lib/service-kinds";
+import { recordEvent } from "@/lib/requests/store";
 
 /**
  * Work someone has asked for that a person currently does by hand.
@@ -45,39 +46,37 @@ export async function recordServiceRequest({
   note: string | null;
   companyId?: string | null;
   submissionId?: string | null;
-}): Promise<void> {
-  const supabase = getSupabaseAdminClient();
-
-  const { error } = await supabase.from("service_requests").insert({
-    email,
-    kind,
-    note: note?.slice(0, MAX_SERVICE_NOTE) || null,
-    company_id: companyId ?? null,
-    submission_id: submissionId ?? null,
-  });
-
-  if (error) {
-    throw new Error(`Could not record that request: ${error.message}`);
-  }
-}
-
-/** Everything this address has asked for, newest first. */
-export async function listServiceRequests(
-  email: string,
-): Promise<ServiceRequestRow[]> {
+}): Promise<string> {
   const supabase = getSupabaseAdminClient();
 
   const { data, error } = await supabase
     .from("service_requests")
-    .select("*")
-    .ilike("email", email.replace(/[\\%_]/g, (character) => `\\${character}`))
-    .order("created_at", { ascending: false })
-    .limit(50);
+    .insert({
+      email,
+      kind,
+      note: note?.slice(0, MAX_SERVICE_NOTE) || null,
+      company_id: companyId ?? null,
+      submission_id: submissionId ?? null,
+    })
+    .select("id")
+    .single();
 
   if (error) {
-    console.warn(`Could not list service requests: ${error.message}`);
-    return [];
+    throw new Error(`Could not record that request: ${error.message}`);
   }
 
-  return (data ?? []) as ServiceRequestRow[];
+  /*
+   * Opens the log. The request's state is computed from these events, so a
+   * request with no 'submitted' event would render from the empty-log
+   * fallback rather than from what actually happened - and its note would not
+   * appear in the conversation at all.
+   */
+  await recordEvent({
+    requestId: data.id as string,
+    actor: "customer",
+    kind: "submitted",
+    body: note,
+  });
+
+  return data.id as string;
 }

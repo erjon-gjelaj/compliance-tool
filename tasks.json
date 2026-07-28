@@ -297,9 +297,9 @@
     {
       "id": "048",
       "title": "Stage 3: reusable company profile",
-      "status": "todo",
-      "notes": "A companies table keyed by email so trade, states, headcount, platforms and hiring clients are entered once. Inferred values render for confirmation, never as fact.",
-      "needs_human_review": false
+      "status": "done",
+      "notes": "On branch task/048-company-profile. Migration 0006 adds companies keyed by email (same identity as everywhere else - no accounts table), plus /dashboard/company and a company name in the dashboard header. field_sources records provenance per field: anything not typed by the contractor renders as a question rather than a value, and the dashboard prompts about unconfirmed ones where they actually are. Structural rather than conventional because the trade on the profile decides which requirements someone is measured against, and a company name reveals nothing about how a crew works. Confirming keeps the entry with a timestamp - inferred-then-confirmed is weaker than volunteered. Nothing infers anything yet; the seam is there so the first thing that does cannot skip it. Only name is required. company_id on submissions is nullable and ownership is still the email on the row. The save action uses the session address, never one from the form, since the table is keyed by email. 6 new tests, 76 total. MIGRATION 0006 MUST BE RUN before the page works.",
+      "needs_human_review": true
     },
     {
       "id": "049",

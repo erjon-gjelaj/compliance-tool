@@ -21,6 +21,7 @@ import {
   type LibraryDocument,
 } from "@/lib/dashboard";
 import { buildWorkspace, submissionHeadline, type Workspace } from "@/lib/workspace";
+import { getCompanyForEmail, unconfirmedFields } from "@/lib/companies";
 import { DocumentDownload } from "@/components/document-download";
 
 export const metadata = pageMetadata({
@@ -184,10 +185,15 @@ export default async function DashboardPage() {
   const session = await currentClient();
   if (!session) redirect("/sign-in");
 
-  const [submissions, documents] = await Promise.all([
+  const [submissions, documents, company] = await Promise.all([
     listSubmissionsForEmail(session.email),
     listDocumentsForEmail(session.email),
+    getCompanyForEmail(session.email),
   ]);
+
+  // Anything we inferred and they have not confirmed. Rendered as a prompt
+  // rather than shown as fact — see lib/companies.
+  const toConfirm = company ? unconfirmedFields(company) : [];
 
   /*
    * The workspace leads on the most recent finished request. Blockers and
@@ -211,7 +217,18 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
-      <h1 className="type-h2 text-millscale">Your workspace</h1>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <h1 className="type-h2 text-millscale">
+          {company?.name ?? "Your workspace"}
+        </h1>
+        <Link
+          href="/dashboard/company"
+          className="text-sm font-medium text-verdigris underline-offset-4 hover:underline"
+        >
+          {company ? "Edit company details" : "Add your company details"}
+        </Link>
+      </div>
+
       <p className="type-body mt-2">
         Signed in as <span className="text-millscale">{session.email}</span>
         {workspace.platforms.length > 0 ? (
@@ -249,6 +266,28 @@ export default async function DashboardPage() {
           <div className="mt-8">
             <NextAction next={workspace.next} />
           </div>
+
+          {/*
+           * Anything we filled in for them and they have not confirmed. It sits
+           * here rather than on the profile page because the whole point is
+           * that they should not have to go looking for it: an unconfirmed
+           * value is one we guessed, and a guess underneath a compliance review
+           * has to be visible where they actually are.
+           */}
+          {toConfirm.length > 0 ? (
+            <p className="mt-4 border-l-2 border-rust-flag bg-paper px-4 py-3 text-sm text-millscale">
+              We filled in {toConfirm.length}{" "}
+              {toConfirm.length === 1 ? "detail" : "details"} about your company
+              that you haven&rsquo;t confirmed.{" "}
+              <Link
+                href="/dashboard/company"
+                className="text-verdigris underline underline-offset-4"
+              >
+                Check them
+              </Link>{" "}
+              &mdash; we&rsquo;d rather not build a review on a guess.
+            </p>
+          ) : null}
 
           {workspace.blockers.length > 0 ? (
             <Panel

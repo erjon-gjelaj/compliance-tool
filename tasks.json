@@ -241,8 +241,8 @@
     {
       "id": "040",
       "title": "Generate a safety manual from a client's documents",
-      "status": "blocked",
-      "notes": "Requested with task 039 and deliberately separated from it. BLOCKED on a content decision that is not mine to make. lib/requirements holds recognition phrases and a one-line action per requirement - there is no manual prose anywhere in this project to assemble a manual from, and CLAUDE.md forbids a language model without an explicit reversal. The three options put to the human: (a) a human-authored, versioned template library that the pipeline selects from per trade x platform and fills with company details, output marked DRAFT - deterministic, inside the existing rules, needs someone to write the source prose; (b) a structural skeleton naming the sections their manual needs and what each must cover, with no regulatory prose written by us at all - lowest risk, ships soonest; (c) reverse the no-LLM decision, which gives up reproducibility and citability on the one document a contractor hands their hiring client as their actual safety program. Note this artifact is a large step up in stakes from the gap review: the review says what might be missing, a manual IS the deliverable, and the regulatory output rules that forbid asserting compliance apply to it with more force rather than less. Do not start until the human picks a source.",
+      "status": "superseded",
+      "notes": "Requested with task 039 and deliberately separated from it. BLOCKED on a content decision that is not mine to make. lib/requirements holds recognition phrases and a one-line action per requirement - there is no manual prose anywhere in this project to assemble a manual from, and CLAUDE.md forbids a language model without an explicit reversal. The three options put to the human: (a) a human-authored, versioned template library that the pipeline selects from per trade x platform and fills with company details, output marked DRAFT - deterministic, inside the existing rules, needs someone to write the source prose; (b) a structural skeleton naming the sections their manual needs and what each must cover, with no regulatory prose written by us at all - lowest risk, ships soonest; (c) reverse the no-LLM decision, which gives up reproducibility and citability on the one document a contractor hands their hiring client as their actual safety program. Note this artifact is a large step up in stakes from the gap review: the review says what might be missing, a manual IS the deliverable, and the regulatory output rules that forbid asserting compliance apply to it with more force rather than less. Do not start until the human picks a source. SUPERSEDED by 058: the brief of 2026-07-28 chose option (a), controlled templates with conditional sections, which was the decision this was blocked on. The remaining constraint is not architectural - it is that the programme prose itself must be written or reviewed by a qualified person before a customer sees it, which 058 enforces with a per-programme flag rather than a note.",
       "needs_human_review": true
     },
     {
@@ -342,8 +342,36 @@
       "status": "done",
       "needs_human_review": true,
       "notes": "On branch task/054-resume-and-header-facts. Three faults found by one screenshot of the live dashboard with real rows, none catchable by fixtures. (1) The primary action was a dead end - Finish the form you started linked to the submission page, which shows documents and a review, and a partial submission has neither. Added /dashboard/[id]/continue, resuming at the step after last_step with rowToValues seeding the form; no new server path since every step already posts submission_id and updates that row. Ownership checked in the query because the id handed to the form is a write capability, and a complete submission redirects to its review rather than reopening. (2) Header read Avetta, Both, ISNetworld - Both is a form answer, not a platform, and now expands to the two names; Not sure is dropped as the absence of an answer. (3) Header stated a passed deadline in the present tense; the date is kept because it is the most urgent thing on the page, but is now past tense and in the warning colour. 6 new tests, 68 total, build and lint clean. Resuming a real abandoned intake through to a review still needs confirming on production."
+    },
+    {
+      "id": "055",
+      "title": "Phase A: request state, derived from events",
+      "status": "todo",
+      "notes": "The reported bug: a request still read Waiting on us after a reply had been sent. Cause is that status is stored rather than derived, and replies happen in a mail client outside the product. Append-only request_events, state computed from them, in-product replies both ways, and an admin console that can actually act. See docs/release-one.md.",
+      "needs_human_review": false
+    },
+    {
+      "id": "056",
+      "title": "Phase B: dashboard as an application",
+      "status": "todo",
+      "notes": "Persistent left navigation, an operational overview, one status treatment used everywhere, mobile checked at width. The dashboard currently reads as a landing page.",
+      "needs_human_review": false
+    },
+    {
+      "id": "057",
+      "title": "Phase C: plans, pricing and orders",
+      "status": "todo",
+      "notes": "Configurable pricing in one module, entitlements actually enforced at the call sites, one-time service orders carrying a quoted range, admin grants plans by hand. No Stripe and no fake checkout.",
+      "needs_human_review": false
+    },
+    {
+      "id": "058",
+      "title": "Phase D: document generation",
+      "status": "todo",
+      "notes": "Template model, section classification (confirmed fact / standard language / needs confirmation / evidence we cannot create / needs qualified review), Word and PDF output, versions, library. Ships behind a per-programme flag: the pipeline is not blocked, showing its prose to a customer is, until a qualified person has reviewed that programme text. Supersedes the blocked task 040.",
+      "needs_human_review": false
     }
   ],
-  "current_task_id": "053",
+  "current_task_id": "055",
   "blocked_on": null
 }

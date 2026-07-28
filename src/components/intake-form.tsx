@@ -19,6 +19,11 @@ import { Spinner } from "@/components/spinner";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { HONEYPOT_FIELD } from "@/lib/messages";
 import {
+  DEFAULT_ENTRY_REASON,
+  MAX_REJECTION_NOTES,
+  type EntryReason,
+} from "@/lib/entry-points";
+import {
   ACCEPT_ATTRIBUTE,
   MAX_FILES,
   MAX_TOTAL_BYTES,
@@ -235,7 +240,16 @@ function SuccessPanel() {
  * which is why TOTAL_STEPS lives in lib/intake rather than being written out
  * here.
  */
-export function IntakeForm() {
+export function IntakeForm({
+  entryReason = DEFAULT_ENTRY_REASON,
+}: {
+  /**
+   * Which door this form is serving. Posted on step 1 and recorded on the
+   * row, so the review and the dashboard can lead with what the person came
+   * for. Defaults to the gap check, which is the door that predates the rest.
+   */
+  entryReason?: EntryReason;
+} = {}) {
   const [state, formAction, isPending] = useActionState(
     submitIntakeStep,
     initialIntakeState,
@@ -419,6 +433,45 @@ export function IntakeForm() {
 
       {step === 1 && (
         <div className="grid gap-5 sm:grid-cols-2">
+          {/* Which door this is. Step 1 only — later steps update a row that
+           * already has it, and re-posting it would let a later step change
+           * what kind of submission this is. */}
+          <input type="hidden" name="entry_reason" value={entryReason} />
+
+          {/*
+           * Rendered only on the rejection door, and not merely hidden there:
+           * a disabled or hidden field can still post, and a paste left behind
+           * by someone who changed their mind must not ride onto a submission
+           * that is not about a rejection. Same reasoning as trade_other
+           * below.
+           */}
+          {entryReason === "rejection" && (
+            <div className="sm:col-span-2">
+              <label className={labelClass} htmlFor="rejection_notes">
+                What did they send back?
+              </label>
+              <p className="mt-1.5 mb-2 text-sm leading-relaxed text-slate-wash">
+                Paste the reviewer&apos;s comments or the deficiency notice,
+                exactly as they wrote it. If you only have a screenshot or the
+                document itself, leave this and attach it at the last step.
+              </p>
+              <textarea
+                key={fieldKey(state, "rejection_notes")}
+                id="rejection_notes"
+                name="rejection_notes"
+                rows={5}
+                maxLength={MAX_REJECTION_NOTES}
+                placeholder="&quot;Lockout/tagout program does not include periodic inspection requirements…&quot;"
+                disabled={isPending}
+                {...fieldProps(state, "rejection_notes")}
+              />
+              <FieldError
+                id="rejection_notes-error"
+                message={state.errors?.rejection_notes}
+              />
+            </div>
+          )}
+
           <div>
             <label className={labelClass} htmlFor="trade">
               Your trade

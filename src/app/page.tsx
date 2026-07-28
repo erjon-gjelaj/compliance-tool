@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EntryPointsSection } from "@/components/entry-points-section";
 import { GapCheck } from "@/components/gap-check";
 import { Hero } from "@/components/hero";
 import { HowItWorks } from "@/components/how-it-works";
@@ -56,6 +57,7 @@ export default function Home() {
       <OrganizationSchema />
       <main className="flex-1">
         <Hero />
+        <EntryPointsSection />
         <HowItWorks />
         <GapCheck />
       </main>

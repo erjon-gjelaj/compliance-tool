@@ -8,6 +8,7 @@ import {
   type StepThreeValue,
   type StepTwoValue,
 } from "@/lib/intake";
+import type { EntryReason } from "@/lib/entry-points";
 
 /**
  * Database access for Scope B intakes.
@@ -24,6 +25,10 @@ export type SubmissionRow = {
   updated_at: string;
   status: "partial" | "complete";
   last_step: number;
+  /** Which of the four doors this came in through. See lib/entry-points. */
+  entry_reason: EntryReason;
+  /** What the reviewer sent back, pasted by the contractor. Rejections only. */
+  rejection_notes: string | null;
   trade: string;
   hiring_client: string;
   platform: string;
@@ -177,6 +182,7 @@ export function rowToValues(row: SubmissionRow): IntakeValues {
   const isOther = row.trade.startsWith(`${OTHER_TRADE}: `);
 
   return {
+    rejection_notes: row.rejection_notes ?? "",
     trade: isOther ? OTHER_TRADE : row.trade,
     trade_other: isOther ? row.trade.slice(OTHER_TRADE.length + 2) : "",
     hiring_client: row.hiring_client,

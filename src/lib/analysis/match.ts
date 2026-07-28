@@ -13,7 +13,12 @@ import {
   requirementsFor,
   type Requirement,
 } from "@/lib/requirements";
-import type { Analysis, AnalysisItem } from "@/lib/analysis/schema";
+import type {
+  Analysis,
+  AnalysisItem,
+  RejectionReading,
+} from "@/lib/analysis/schema";
+import { readRejection, rejectionQuestions } from "@/lib/analysis/rejection";
 
 /**
  * Builds the review by reading the documents, with no model involved.
@@ -261,8 +266,38 @@ function summaryFor(
   submission: SubmissionRow,
   items: AnalysisItem[],
   documents: ExtractedDocument[],
+  rejection: RejectionReading | null,
 ): string {
   const searched = readable(documents);
+
+  /*
+   * On a rejection, say what we read their notes as being about before
+   * anything else — and attribute it to the notes, every time.
+   *
+   * "Your notes mention lockout/tagout" is a fact about a paragraph they gave
+   * us. "They rejected your lockout/tagout programme" is a claim about a
+   * portal we cannot see. The first sentence of the review is where that
+   * distinction is most likely to be lost and most costly to lose, so the
+   * attribution is built into the sentence rather than left to a caveat
+   * further down.
+   */
+  const rejectionOpening = (() => {
+    if (!rejection) return "";
+
+    if (!rejection.notesProvided) {
+      return "You told us something came back rejected, but we don't have the wording, so this is a general read of your file rather than an answer about that rejection. ";
+    }
+
+    if (rejection.subjects.length === 0) {
+      return "We read the notes you pasted and they don't name a document type we recognise, so this is a general read of your file rather than an answer about that rejection. ";
+    }
+
+    const named = rejection.subjects
+      .map((subject) => subject.requirement.toLowerCase())
+      .join(", ");
+
+    return `The notes you pasted mention ${named}, so that comes first below. What the reviewer actually wants changed is in their words, not ours — we only see what you sent us. `;
+  })();
 
   // The hiring-client item is left out of the denominator: it is permanently
   // unknown by design, so counting it would quietly drag every ratio down and
@@ -288,7 +323,7 @@ function summaryFor(
       ? ` ${missing} ${missing === 1 ? "was" : "were"} not mentioned anywhere we looked.`
       : "";
 
-  return `${opening}${found}${gap} This is a text search, not a judgement about whether a document is good enough — a programme can mention a subject and still come back for revision.`;
+  return `${rejectionOpening}${opening}${found}${gap} This is a text search, not a judgement about whether a document is good enough — a programme can mention a subject and still come back for revision.`;
 }
 
 function questionsFor(
@@ -353,9 +388,31 @@ export function buildAnalysis({
     platform: submission.platform,
   });
 
+  const rejection = readRejection(submission, requirements);
+
   const items = requirements.map((requirement) =>
     itemFor(requirement, submission, documents),
   );
+
+  /*
+   * On a rejection, the subject their notes named goes first.
+   *
+   * Someone who has just been turned down is reading for one thing, and
+   * leaving it eighth in a list ordered by our reference data makes them hunt
+   * for it. This reorders and changes nothing else: no item is added, removed,
+   * restated or re-scored by having arrived through the rejection door, and
+   * the status of the subject they were rejected on is still whatever the
+   * documents actually support — including "present", which is a real and
+   * useful answer here. It means the subject is covered somewhere in the file
+   * and the reviewer wanted something else about it, which is a different
+   * problem from not having the programme at all.
+   */
+  if (rejection && rejection.subjects.length > 0) {
+    const named = new Set(rejection.subjects.map((entry) => entry.requirement));
+    const first = items.filter((item) => named.has(item.requirement));
+    const rest = items.filter((item) => !named.has(item.requirement));
+    items.splice(0, items.length, ...first, ...rest);
+  }
 
   // What their specific hiring client requires is not in this file and never
   // will be — it lives in a portal we cannot see. It is reported as unknown,
@@ -372,7 +429,8 @@ export function buildAnalysis({
   });
 
   return {
-    summary: summaryFor(submission, items, documents),
+    summary: summaryFor(submission, items, documents, rejection),
+    ...(rejection ? { rejection } : {}),
     // Declared refusals to map, carried in the output rather than left in a
     // log nobody reads. Only for requirements actually reported on, so a gap
     // in something irrelevant to this contractor stays quiet.
@@ -385,7 +443,12 @@ export function buildAnalysis({
       message: gap.reason,
     })),
     items,
-    questionsForClient: questionsFor(submission, items, documents),
+    // Rejection questions first: they are about the thing that already has a
+    // client waiting on it, and they are the ones we cannot proceed without.
+    questionsForClient: [
+      ...rejectionQuestions(rejection, submission, readable(documents).length),
+      ...questionsFor(submission, items, documents),
+    ],
     priceBand: priceBandFor(submission, items, documents),
     unreadableFiles: unreadableNames(documents),
     referenceVersion: REQUIREMENTS_VERSION,

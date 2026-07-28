@@ -9,9 +9,8 @@ const PAGE_TITLE = "About";
 
 const PAGE_DESCRIPTION =
   `What ${SITE_NAME} does for small industrial subcontractors trying to get ` +
-  "through ISNetworld or Avetta prequalification, what it deliberately " +
-  "doesn't do, and why the gap check is free while the work is still done " +
-  "by hand.";
+  "through ISNetworld or Avetta prequalification, how the review is " +
+  "produced, and what it deliberately doesn't do.";
 
 export const metadata: Metadata = pageMetadata({
   title: PAGE_TITLE,
@@ -25,7 +24,7 @@ export default function AboutPage() {
       <PageIntro
         tag="About"
         tickId="tick-about"
-        title="What this is, and what it isn't yet"
+        title="What this is"
       >
         <p>
           {SITE_NAME} tells a small industrial subcontractor what their
@@ -58,21 +57,37 @@ export default function AboutPage() {
         </p>
       </PageSection>
 
-      <PageSection heading="What you get today" headingId="today">
+      <PageSection heading="What you get" headingId="today">
         <p className="type-body">
-          You tell us your trade, who is asking you to register, and roughly how
-          many people you run. Someone here reads it and sends back a written
-          list of what your file still looks short on, ordered so the things
-          most likely to hold up approval come first. No charge, no account,
-          nothing to install.
+          You tell us your trade, who is asking you to register, and which
+          platform. You can attach the documents you already have. Within a
+          minute or two you get an email listing what looks present, what looks
+          missing, and what needs confirming with your hiring client — ordered
+          so the things most likely to hold up approval come first.
         </p>
         <p className="type-body">
-          Being straight about the machinery: there is no dashboard behind this
-          page and nothing is scoring your file. The comparison is done by hand.
-          That is slower than a form that answers instantly, and it is the
-          reason the answer is worth reading — it was written by a person who
-          looked at your specific situation rather than matched you to a
-          template.
+          The review stays in your dashboard afterwards, with the documents you
+          uploaded, so you are not going back through your inbox to find it.
+        </p>
+      </PageSection>
+
+      <PageSection heading="How the review is produced" headingId="how">
+        <p className="type-body">
+          Software reads the text of the documents you attach and compares it
+          against a reference list of what your trade is normally asked to hold
+          for that platform. It is not a language model, and nothing about your
+          file is generated or guessed at. The same submission produces the same
+          answer twice, and every item points at the file and the phrase behind
+          it.
+        </p>
+        <p className="type-body">
+          The limits of that are stated in the review itself rather than left
+          for you to discover. A file we could not open is listed as unread, not
+          skipped quietly. Anything the reference list is silent on comes back
+          as a question rather than a claim. Where we cite an OSHA standard, the
+          citation was retrieved from the eCFR and checked against its subject —
+          if it does not check out, it is dropped rather than shown with a
+          caveat.
         </p>
       </PageSection>
 
@@ -123,39 +138,20 @@ export default function AboutPage() {
         </ul>
       </PageSection>
 
-      <PageSection heading="Why the gap check is free" headingId="free">
+      <PageSection heading="What it costs" headingId="free">
         <p className="type-body">
-          Because at this stage, knowing what actually trips people up is worth
-          more to us than charging for it. Every gap check tells us something
-          concrete — which trades get stuck, which hiring clients ask for
-          something unusual, which documents come back for revision. That is the
-          thing worth having right now.
-        </p>
-        <p className="type-body">
-          If we later offer paid help actually assembling the documents with
-          you, it will be a separate decision you make on purpose. Nothing here
-          starts a trial that turns into a bill.
-        </p>
-      </PageSection>
-
-      <PageSection heading="Where this goes next" headingId="next">
-        <p className="type-body">
-          The comparison should eventually be automatic: pick your trade and
-          your hiring client, get the list back in seconds. We are not going to
-          fake that step in the meantime by having software guess at safety
-          requirements. Getting this wrong does not produce a bad user
-          experience — it produces a small business owner who believes they are
-          covered when they are not. So the manual version runs until the
-          automatic one is genuinely right.
+          The gap check is free. There is no card, no account to create, and
+          nothing that turns into a subscription. Paid help assembling the
+          documents is a separate thing you would ask for on purpose.
         </p>
         <p className="type-body">
           <Link
             href={GAP_CHECK_HREF}
             className="text-verdigris underline decoration-zinc-dust underline-offset-4 transition-colors hover:decoration-verdigris"
           >
-            Ask for a gap check
+            Start a gap check
           </Link>{" "}
-          if you want to see what that looks like in practice.
+          to see what comes back.
         </p>
       </PageSection>
     </main>

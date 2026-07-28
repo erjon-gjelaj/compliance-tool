@@ -119,10 +119,9 @@ export default function ContactPage() {
 
       <PageSection heading="What to expect" headingId="expect">
         <p className="type-body">
-          {SITE_NAME} is small and early. Email reaches a person, usually within
-          a few business days. There is no phone line and no office to visit yet
-          — when that changes it will be listed here, rather than putting an
-          address on the page that goes nowhere.
+          A message here reaches a person, usually within a few business days.
+          There is no phone line yet; when there is, it will be listed on this
+          page.
         </p>
       </PageSection>
     </main>

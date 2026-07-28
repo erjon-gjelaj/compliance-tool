@@ -39,9 +39,9 @@ export function Hero() {
             </h1>
             <p className="type-lede mt-6 max-w-xl">
               A plant told your crew to get prequalified before the next
-              shutdown. Tell us your trade and who&apos;s asking, and we&apos;ll
-              come back with a plain list of the paperwork you still need to
-              put together — no charge for the list.
+              shutdown. Tell us your trade and who&apos;s asking, attach what
+              you already have, and get back a plain list of the paperwork
+              still to put together. Free, and it takes about a minute.
             </p>
 
             {/*

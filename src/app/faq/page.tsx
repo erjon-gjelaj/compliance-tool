@@ -33,22 +33,29 @@ const FAQS: { question: string; answer: string[] }[] = [
   {
     question: "What do I actually get back?",
     answer: [
-      "An email written by a person, listing what your prequalification file still looks short on. It is grouped the way these platforms ask for things — written programs, training records, insurance documents — and ordered so whatever is most likely to hold up approval sits at the top.",
-      "It is plain writing, not a generated PDF with a score on it. If part of your file already looks fine, we say that too, because knowing what you can leave alone saves you as much time as knowing what is missing.",
+      "An email listing what your prequalification file still looks short on. It is grouped the way these platforms ask for things — written programs, training records, insurance documents — and ordered so whatever is most likely to hold up approval sits at the top.",
+      "If part of your file already looks fine, it says that too, because knowing what you can leave alone saves you as much time as knowing what is missing. Anything we could not open, or could not assess, is listed as such rather than left out.",
+      "The same review stays in your dashboard, alongside the documents you uploaded.",
     ],
   },
   {
     question: "How long does it take?",
     answer: [
-      "Longer than something instant, because a person reads every one. We aim to come back within a few business days, and if yours is going to take longer than that we would rather tell you than leave you refreshing your inbox.",
-      "If you are working towards a fixed date, email us and say what it is. We will tell you honestly whether we can be useful in time, including when the answer is no.",
+      "A minute or two. The review is produced by software as soon as you submit, so there is nothing to wait on and no queue.",
+    ],
+  },
+  {
+    question: "Is it AI?",
+    answer: [
+      "No. There is no language model anywhere in this product, deliberately. The review is text extracted from your documents, compared against a reference list of what your trade is normally asked to hold for that platform.",
+      "That choice costs some polish and buys three things: the same submission produces the same answer twice, every item points at a file and a phrase you can check, and nothing about your paperwork can be invented.",
     ],
   },
   {
     question: "What does it cost?",
     answer: [
       "The gap check is free. There is no card, no account, and nothing that turns into a subscription later.",
-      "We may eventually charge for the heavier job of actually assembling the documents with you. That would be a separate thing you choose on purpose, not a trial quietly converting.",
+      "Paid help assembling the documents with you is a separate thing you would ask for on purpose. Nothing here starts a trial that becomes a bill.",
     ],
   },
   {
@@ -67,8 +74,8 @@ const FAQS: { question: string; answer: string[] }[] = [
   {
     question: "Is a gap check a compliance determination?",
     answer: [
-      "No, and this is the one worth reading twice. A gap check is guidance to help you prepare your own submission. It is not legal advice, and it is not a ruling on whether you meet any particular regulation.",
-      "If you need something authoritative — because a client, an insurer, or a regulator is asking — that is a qualified safety professional, or the platform's own requirements documentation. We will say so when that is the honest answer.",
+      "No. A gap check is preliminary, and it exists to help you prepare your own submission. It is not legal advice, and it is not a ruling on whether you meet any particular regulation.",
+      "If you need something authoritative — because a client, an insurer, or a regulator is asking — that is a qualified safety professional, or the platform's own requirements documentation.",
     ],
   },
   {
@@ -103,8 +110,7 @@ const FAQS: { question: string; answer: string[] }[] = [
   {
     question: "Who is behind this?",
     answer: [
-      "A small and genuinely early operation — early enough that a person still reads every submission by hand. There is no team page here because inventing one would be the first dishonest thing on the site.",
-      "If it matters to you who you are dealing with before you send anything over, email and ask. That is a fair question and you will get a straight answer.",
+      `${SITE_NAME} is independent — not a partner, reseller, or agent of ISNetworld or Avetta. If you want to know who you are dealing with before you send documents over, email ${CONTACT_EMAIL} and ask; you will get a direct answer.`,
     ],
   },
 ];
@@ -148,8 +154,8 @@ export default function FaqPage() {
         title="Before you fill anything in"
       >
         <p>
-          The questions worth answering up front — including the ones where the
-          honest answer is that we are not the right people to ask.
+          What you get, how long it takes, what it costs, and where the limits
+          are.
         </p>
       </PageIntro>
 

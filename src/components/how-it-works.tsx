@@ -8,13 +8,13 @@ const STEPS = [
   },
   {
     icon: FileSearch,
-    title: "Someone reads it",
-    body: "Right now a person on our side does the comparison by hand rather than a script guessing at it. That's slower, and it's the reason the answer is worth reading.",
+    title: "We read your documents",
+    body: "Whatever you attach is read for the programs and records these platforms ask for, and compared against what your trade is normally asked to hold. Anything we couldn't open is listed as unread rather than passed over.",
   },
   {
     icon: ListChecks,
     title: "You get the list",
-    body: "One email: what's missing from your file, in the order worth tackling. No call to book, nothing to install.",
+    body: "An email within a minute or two: what looks present, what looks missing, and what needs confirming with your hiring client. It stays in your dashboard afterwards.",
   },
 ];
 
@@ -30,7 +30,7 @@ export function HowItWorks() {
           id="how-it-works-heading"
           className="type-h2 mt-4 max-w-2xl"
         >
-          Three steps, and the slow one is on us
+          Three steps, and none of them need a phone call
         </h2>
 
         <ol className="mt-12 grid gap-px border border-zinc-dust bg-zinc-dust md:grid-cols-3">

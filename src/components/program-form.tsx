@@ -11,12 +11,8 @@ import {
 } from "@/app/dashboard/programs/actions";
 import { SubmitButton } from "@/components/submit-button";
 import { visibleQuestions } from "@/lib/programs/validate";
-import type {
-  Answers,
-  CompanyContext,
-  ProgramTemplate,
-  Question,
-} from "@/lib/programs/types";
+import { programById } from "@/lib/programs/registry";
+import type { Answers, CompanyContext, Question } from "@/lib/programs/types";
 
 /**
  * The questionnaire.
@@ -105,13 +101,28 @@ function Field({
   );
 }
 
+/**
+ * Takes the programme's ID, not the programme.
+ *
+ * A `ProgramTemplate` carries functions — `showWhen`, `build`, `matchesLabel`
+ * — and functions cannot cross the server/client boundary. Passing the whole
+ * template as a prop threw "Functions cannot be passed directly to Client
+ * Components" on every render of this page.
+ *
+ * Looking it up here instead works because the registry is *imported* into the
+ * client bundle rather than serialised into it, and that keeps the property
+ * that mattered: the branching a customer sees comes from the same definition
+ * the server validates against, not a second copy.
+ */
 export function ProgramForm({
-  template,
+  programId,
   context,
 }: {
-  template: ProgramTemplate;
+  programId: string;
   context: CompanyContext;
 }) {
+  const template = programById(programId);
+
   const [state, formAction, isPending] = useActionState<ProgramFormState, FormData>(
     answerProgramStep,
     initialProgramState,
@@ -124,6 +135,10 @@ export function ProgramForm({
    * and seeding from the server would fight the user mid-edit.
    */
   const [answers, setAnswers] = useState<Answers>({});
+
+  // Only reachable if a route and the registry disagree, which is a bug rather
+  // than a state a customer can reach. Rendering nothing beats throwing.
+  if (!template) return null;
 
   if (state.status === "generated" && state.documentId) {
     return (

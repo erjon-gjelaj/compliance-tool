@@ -77,7 +77,7 @@ export default async function ProgramPage({
       </p>
 
       <div className="mt-8">
-        <ProgramForm template={template} context={context} />
+        <ProgramForm programId={template.id} context={context} />
       </div>
     </main>
   );

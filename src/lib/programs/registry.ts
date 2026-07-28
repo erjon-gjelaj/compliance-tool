@@ -8,9 +8,11 @@ import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/ty
  * template file and a line here, with no change to the questionnaire, the
  * validator, the renderers, the storage, or the library UI.
  *
- * Client-safe. The templates are data and pure functions, so a questionnaire
- * rendered in the browser reads the same definitions the server assembles
- * from — there is no second copy of the question list to fall out of step.
+ * Safe to IMPORT from a client component, which is how the questionnaire
+ * reads the same definitions the server validates against. It is NOT safe to
+ * pass a template through a server/client boundary as a prop: the templates
+ * carry functions, and functions cannot be serialised. Pass an id and look it
+ * up on the far side.
  */
 export const PROGRAMS: ProgramTemplate[] = [HAZCOM];
 

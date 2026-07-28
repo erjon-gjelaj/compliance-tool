@@ -304,9 +304,9 @@
     {
       "id": "049",
       "title": "Stage 4: dashboard as a compliance workspace",
-      "status": "todo",
-      "notes": "Next action, blockers, document library, questions outstanding, upcoming expirations. Direct actions, not charts.",
-      "needs_human_review": false
+      "status": "done",
+      "notes": "On branch task/049-workspace. Replaced the submission list with a derived next action, blockers, unreadable files, open questions, a single cross-request document library and the request list; sections render only when they have something real. lib/workspace.ts is pure and takes rows rather than fetching, so there is no path in it that can read a row without the caller email filter. Unknown items are deliberately not blockers - an unknown means nothing was read, and calling it a gap asserts a document is missing when what was established is that none was looked at. No expiry panel: nothing in this product knows a renewal date, and an empty one would read as nothing is expiring. That belongs to 053 once a real source exists. 8 new tests, 70 total, build and lint clean. NOT verified against a database - no Supabase credentials here, so the populated workspace has never rendered against real rows.",
+      "needs_human_review": true
     },
     {
       "id": "050",
@@ -337,6 +337,6 @@
       "needs_human_review": false
     }
   ],
-  "current_task_id": "049",
+  "current_task_id": "050",
   "blocked_on": null
 }

@@ -1,4 +1,11 @@
-import { AlertTriangle, HelpCircle, Info, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  HelpCircle,
+  Info,
+  ShieldCheck,
+} from "lucide-react";
 
 import { SITE_NAME } from "@/lib/constants";
 import type { Analysis, AnalysisItem } from "@/lib/analysis/schema";
@@ -89,6 +96,47 @@ function Basis({ item }: { item: AnalysisItem }) {
   );
 }
 
+/**
+ * The reasoning behind an item, folded away until asked for.
+ *
+ * Everything traceable stays in the page and in the DOM — the basis, the
+ * source, the standards — but a contractor should not have to read a CFR
+ * heading to find out whether they are missing a document. Native <details>,
+ * so it costs no JavaScript, works with a keyboard, and stays selectable and
+ * searchable in the page while closed.
+ *
+ * What is deliberately NOT in here: the requirement, the status and the
+ * action. Those are the answer, and folding the answer away would be a
+ * different product.
+ */
+function Reasoning({ item }: { item: AnalysisItem }) {
+  return (
+    <details className="mt-3 border-t border-zinc-dust pt-3">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm text-slate-wash select-none hover:text-verdigris [&::-webkit-details-marker]:hidden">
+        {/* Two icons swapped by display, not one rotated: a transform on a
+            descendant of <summary> does not apply. See globals.css. */}
+        <ChevronRight
+          aria-hidden
+          className="disclosure-icon-closed h-3.5 w-3.5 shrink-0"
+        />
+        <ChevronDown
+          aria-hidden
+          className="disclosure-icon-open h-3.5 w-3.5 shrink-0"
+        />
+        Why we say this
+      </summary>
+
+      <div className="mt-2.5">
+        <p className="text-xs tracking-wide text-slate-wash uppercase">
+          {SOURCE_LABEL[item.source]}
+        </p>
+        <Basis item={item} />
+        <Citations item={item} />
+      </div>
+    </details>
+  );
+}
+
 /** A finding we are willing to state. Statuses only ever appear here. */
 function Finding({ item }: { item: AnalysisItem }) {
   return (
@@ -100,18 +148,13 @@ function Finding({ item }: { item: AnalysisItem }) {
         </span>
       </div>
 
-      <p className="mt-1 text-xs tracking-wide text-slate-wash uppercase">
-        {SOURCE_LABEL[item.source]}
-      </p>
-
-      <Basis item={item} />
       {item.action ? (
         <p className="mt-2 text-sm text-slate-wash">
           <span className="text-millscale">Next:</span> {item.action}
         </p>
       ) : null}
 
-      <Citations item={item} />
+      <Reasoning item={item} />
     </li>
   );
 }
@@ -129,16 +172,12 @@ function Question({ item }: { item: AnalysisItem }) {
       <h4 className="type-label text-millscale">
         {item.requirement} &mdash; does this apply to you?
       </h4>
-      <p className="mt-1 text-xs tracking-wide text-slate-wash uppercase">
-        {SOURCE_LABEL[item.source]}
-      </p>
-      <Basis item={item} />
       {item.action ? (
         <p className="mt-2 text-sm text-slate-wash">
           <span className="text-millscale">Next:</span> {item.action}
         </p>
       ) : null}
-      <Citations item={item} />
+      <Reasoning item={item} />
     </li>
   );
 }
@@ -172,9 +211,33 @@ export function ReviewPanel({
    */
   unreadableFiles: string[];
 }) {
-  const confident = review.items.filter((item) => item.confidence === "high");
-  const probable = review.items.filter((item) => item.confidence === "medium");
-  const uncertain = review.items.filter((item) => item.confidence === "low");
+  /*
+   * Grouped by what the reader needs, not by how sure we are.
+   *
+   * The old grouping was three confidence bands — reasonably sure, likely,
+   * couldn't establish — which is how the review is produced rather than how
+   * it is read. Someone opening this wants "what am I missing" first and
+   * "what's fine" second, and had to work that out by reading every card in
+   * all three bands.
+   *
+   * The one rule that could not be dropped in the reshuffle: a low-confidence
+   * item is never stated as a fact. It is preserved structurally rather than
+   * by convention — anything low goes to `Question`, whatever its status, and
+   * that component has no access to STATUS_LABEL, so a status cannot be
+   * printed there even by mistake. This filter is therefore ordered with the
+   * confidence test FIRST, so a low-confidence "present" cannot slip into the
+   * covered group by matching on status alone.
+   */
+  const stated = review.items.filter((item) => item.confidence !== "low");
+
+  const missing = stated.filter((item) => item.status === "likely_missing");
+  const covered = stated.filter((item) => item.status === "present");
+
+  // Everything we are not willing to assert: low confidence at any status,
+  // plus the unknowns, which have nothing behind them by definition.
+  const unresolved = review.items.filter(
+    (item) => item.confidence === "low" || item.status === "unknown",
+  );
 
   // Nothing readable came back, so every item is an unknown and expanding all
   // of them is the whole catalogue printed at someone — it reads as though the
@@ -183,9 +246,36 @@ export function ReviewPanel({
     review.items.length > 0 &&
     review.items.every((item) => item.status === "unknown");
 
+  /*
+   * The conclusion, in one line, before anything else.
+   *
+   * A count is the fastest true thing that can be said here. It states what
+   * was searched for and not found — it does not say the contractor is
+   * non-compliant or that these are required of them, which are claims this
+   * product does not make anywhere.
+   */
+  const headline =
+    missing.length > 0
+      ? `${missing.length} of the ${stated.length} document types we checked ${missing.length === 1 ? "wasn't" : "weren't"} mentioned in what you sent.`
+      : covered.length > 0
+        ? "Everything we could check was mentioned somewhere in what you sent."
+        : "We couldn't check anything against your file yet.";
+
   return (
     <div>
-      <div className="flex gap-3 border border-zinc-dust bg-paper p-5">
+      <div className="border border-verdigris bg-paper p-5 md:p-6">
+        <p className="tag">The short version</p>
+        <p className="type-h3 mt-3 text-millscale">{headline}</p>
+        <p className="type-body mt-3">{review.summary}</p>
+      </div>
+
+      {/*
+       * The standing limitation, once, under the conclusion rather than above
+       * it. It has to be on the page and it has to be unmissable, but leading
+       * with it meant the first thing a contractor read was a disclaimer
+       * rather than their answer.
+       */}
+      <div className="mt-4 flex gap-3 border border-zinc-dust bg-paper p-5">
         <Info aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-slate-wash" />
         <div>
           <p className="type-label text-millscale">
@@ -200,8 +290,6 @@ export function ReviewPanel({
           </p>
         </div>
       </div>
-
-      <p className="type-body mt-6 text-millscale">{review.summary}</p>
 
       {unreadableFiles.length > 0 ? (
         <div className="mt-6 flex gap-3 border border-rust-flag bg-paper p-5">
@@ -257,28 +345,34 @@ export function ReviewPanel({
         </Section>
       ) : (
         <>
-          {confident.length > 0 ? (
-            <Section title="What we're reasonably sure of">
-              {confident.map((item) => (
-                <Finding key={item.requirement} item={item} />
-              ))}
-            </Section>
-          ) : null}
-
-          {probable.length > 0 ? (
-            <Section title="What looks likely, but worth checking">
-              {probable.map((item) => (
-                <Finding key={item.requirement} item={item} />
-              ))}
-            </Section>
-          ) : null}
-
-          {uncertain.length > 0 ? (
+          {missing.length > 0 ? (
             <Section
-              title="Things we couldn't establish"
-              blurb="Check these yourself — we don't have enough to say either way."
+              title="What looks missing"
+              blurb="Not mentioned anywhere in what you sent. Start here."
             >
-              {uncertain.map((item) => (
+              {missing.map((item) => (
+                <Finding key={item.requirement} item={item} />
+              ))}
+            </Section>
+          ) : null}
+
+          {covered.length > 0 ? (
+            <Section
+              title="What looks covered"
+              blurb="Found in your documents. That the subject is covered doesn't mean the document is good enough — a programme can mention something and still come back for revision."
+            >
+              {covered.map((item) => (
+                <Finding key={item.requirement} item={item} />
+              ))}
+            </Section>
+          ) : null}
+
+          {unresolved.length > 0 ? (
+            <Section
+              title="Worth checking yourself"
+              blurb="We don't have enough to say either way on these."
+            >
+              {unresolved.map((item) => (
                 <Question key={item.requirement} item={item} />
               ))}
             </Section>

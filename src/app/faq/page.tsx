@@ -187,17 +187,17 @@ export default function FaqPage() {
                   <h3 className="type-h3 max-w-2xl">{question}</h3>
                   {/* Two icons swapped by display rather than one rotated:
                       a transform on a descendant of <summary> doesn't
-                      apply. See the .faq-icon-* rules in globals.css. */}
+                      apply. See the .disclosure-icon-* rules in globals.css. */}
                   <span className="mt-0.5 shrink-0 text-verdigris">
                     <ChevronDown
                       aria-hidden="true"
                       strokeWidth={1.5}
-                      className="faq-icon-closed h-5 w-5"
+                      className="disclosure-icon-closed h-5 w-5"
                     />
                     <ChevronUp
                       aria-hidden="true"
                       strokeWidth={1.5}
-                      className="faq-icon-open h-5 w-5"
+                      className="disclosure-icon-open h-5 w-5"
                     />
                   </span>
                 </summary>

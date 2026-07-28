@@ -866,3 +866,63 @@ export async function sendContactMessage(
     transport.close();
   }
 }
+
+/**
+ * Tells the inbox that somebody asked for work done by hand.
+ *
+ * Internal only, and no auto-reply to the requester: the page they sent it
+ * from already told them a person will answer, and a second machine-written
+ * email saying the same thing adds nothing.
+ *
+ * Failures are logged rather than surfaced. The request is already stored in
+ * `service_requests` by the time this runs, so a bounced notification costs a
+ * prompt, not the record — and telling someone their request did not go
+ * through, while it sits in the table, is the worse of the two errors.
+ */
+export async function notifyServiceRequest({
+  email,
+  kind,
+  note,
+}: {
+  email: string;
+  kind: string;
+  note: string | null;
+}): Promise<void> {
+  const config = readSmtpConfig();
+  if (!config) return;
+
+  let transport;
+  try {
+    transport = buildTransport(config);
+  } catch (cause) {
+    console.error("Could not create the mail transport:", cause);
+    return;
+  }
+
+  try {
+    await transport.sendMail({
+      from: config.from,
+      to: config.to,
+      replyTo: email,
+      subject: `${SITE_NAME}: ${email} asked for help (${kind})`,
+      text: [
+        "Someone asked for work that is done by hand.",
+        "",
+        `Address: ${email}`,
+        `Wants:   ${kind}`,
+        "",
+        "What they said:",
+        "",
+        note ?? "(nothing written)",
+        "",
+        "---",
+        "It is recorded in the service_requests table. Reply straight to this",
+        "email to answer them.",
+      ].join("\n"),
+    });
+  } catch (cause) {
+    console.error("Service-request notification failed to send:", cause);
+  } finally {
+    transport.close();
+  }
+}

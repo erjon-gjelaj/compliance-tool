@@ -45,9 +45,43 @@ export type Workspace = {
   /** The submission the blockers and questions came from, if any. */
   activeSubmission: DashboardSubmission | null;
   platforms: string[];
-  /** Soonest deadline given to us, if any was. */
-  nextDeadline: { date: string; hiringClient: string } | null;
+  /**
+   * Soonest deadline we were actually given, if any.
+   *
+   * `passed` is carried rather than filtered out. A date that has gone by is
+   * the most urgent thing on the page, not the least, and dropping it would
+   * silently remove the one fact the person most needs to see. What it must
+   * not do is keep the future tense — "wants you approved by 24 July" three
+   * days after 24 July reads as though nothing has happened.
+   */
+  nextDeadline: { date: string; hiringClient: string; passed: boolean } | null;
 };
+
+/**
+ * The platform names behind an answer.
+ *
+ * "Both" and "Not sure" are answers on a form, not platforms. Listing them
+ * alongside real names produced "Avetta, Both, ISNetworld" in the header,
+ * which reads as three platforms and names one thing twice. "Not sure"
+ * contributes nothing — it is the absence of an answer, and printing it in a
+ * list of what someone is registered for states something they told us they
+ * did not know.
+ */
+function platformNames(answer: string): string[] {
+  if (answer === "Both") return ["ISNetworld", "Avetta"];
+  if (answer === "Not sure") return [];
+  return [answer];
+}
+
+/** Today as YYYY-MM-DD, to compare against a stored date column. */
+function todayIso(): string {
+  const now = new Date();
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+}
 
 /** A submission that was started and never finished. */
 function unfinished(submissions: DashboardSubmission[]) {
@@ -83,7 +117,10 @@ function decideNext(
     return {
       title: "Finish the form you started",
       detail: `You stopped at step ${partial.last_step} of 4 on the ${partial.platform} request for ${partial.hiring_client}. Finishing it is what produces the review.`,
-      href: `/dashboard/${partial.id}`,
+      // The form itself, not the submission page. That page shows documents and
+      // a review, neither of which a partial submission has, so it used to send
+      // people to a dead end from the one instruction on the page.
+      href: `/dashboard/${partial.id}/continue`,
       cta: "Pick it up",
     };
   }
@@ -177,11 +214,20 @@ export function buildWorkspace({
   const blockers =
     activeReview?.items.filter((item) => item.status === "likely_missing") ?? [];
 
-  const platforms = [...new Set(submissions.map((row) => row.platform))];
+  const platforms = [
+    ...new Set(submissions.flatMap((row) => platformNames(row.platform))),
+  ];
 
+  /*
+   * Soonest first, so an upcoming date wins over a distant one. Past dates
+   * stay in the list and therefore sort to the front, which is right: a
+   * deadline that has gone by is the most urgent thing here.
+   */
   const dated = submissions
     .filter((row) => row.deadline)
     .sort((a, b) => (a.deadline! < b.deadline! ? -1 : 1));
+
+  const soonest = dated[0];
 
   return {
     next: decideNext(submissions, activeSubmission, activeReview, blockers),
@@ -192,8 +238,12 @@ export function buildWorkspace({
     submissions,
     activeSubmission,
     platforms,
-    nextDeadline: dated[0]
-      ? { date: dated[0].deadline!, hiringClient: dated[0].hiring_client }
+    nextDeadline: soonest
+      ? {
+          date: soonest.deadline!,
+          hiringClient: soonest.hiring_client,
+          passed: soonest.deadline! < todayIso(),
+        }
       : null,
   };
 }

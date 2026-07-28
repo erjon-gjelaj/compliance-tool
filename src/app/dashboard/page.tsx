@@ -220,10 +220,22 @@ export default async function DashboardPage() {
         {workspace.nextDeadline ? (
           <>
             {" "}
-            &middot; {workspace.nextDeadline.hiringClient} wants you approved by{" "}
-            <span className="text-millscale">
-              {formatDate(workspace.nextDeadline.date)}
-            </span>
+            &middot;{" "}
+            {workspace.nextDeadline.passed ? (
+              <>
+                {workspace.nextDeadline.hiringClient} wanted you approved by{" "}
+                <span className="text-rust-flag">
+                  {formatDate(workspace.nextDeadline.date)}
+                </span>
+              </>
+            ) : (
+              <>
+                {workspace.nextDeadline.hiringClient} wants you approved by{" "}
+                <span className="text-millscale">
+                  {formatDate(workspace.nextDeadline.date)}
+                </span>
+              </>
+            )}
           </>
         ) : null}
       </p>

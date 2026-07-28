@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { CheckCircle2, FileDown } from "lucide-react";
 
+import { answerProgramStep } from "@/app/dashboard/programs/actions";
 import {
-  answerProgramStep,
   initialProgramState,
   type ProgramFormState,
-} from "@/app/dashboard/programs/actions";
+} from "@/lib/programs/form-state";
 import { SubmitButton } from "@/components/submit-button";
 import { visibleQuestions } from "@/lib/programs/validate";
 import { programById } from "@/lib/programs/registry";

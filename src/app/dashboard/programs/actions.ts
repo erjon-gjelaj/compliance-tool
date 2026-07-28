@@ -13,6 +13,10 @@ import {
 } from "@/lib/programs/store";
 import { nextUnanswered, visibleQuestions } from "@/lib/programs/validate";
 import type { Answers } from "@/lib/programs/types";
+import type {
+  ProgramFormState,
+  RevisionState,
+} from "@/lib/programs/form-state";
 
 /**
  * The questionnaire and the generate step.
@@ -23,20 +27,6 @@ import type { Answers } from "@/lib/programs/types";
  * stored on the version when one is produced. That also means a revision can
  * start from exactly what was answered last time.
  */
-
-export type ProgramFormState = {
-  status: "asking" | "generated" | "error";
-  answers: Answers;
-  /** Set once a document exists, so the page can link to it. */
-  documentId?: string;
-  version?: number;
-  error?: string;
-};
-
-export const initialProgramState: ProgramFormState = {
-  status: "asking",
-  answers: {},
-};
 
 function readAnswers(formData: FormData, programId: string): Answers {
   const template = programById(programId);
@@ -124,8 +114,6 @@ export async function answerProgramStep(
     version: outcome.version,
   };
 }
-
-export type RevisionState = { status: "editing" | "sent"; error?: string };
 
 /**
  * A revision after a hiring client sent the document back.

@@ -3,10 +3,9 @@
 import { useActionState } from "react";
 import { Check } from "lucide-react";
 
-import { reviseDocument, type RevisionState } from "@/app/dashboard/programs/actions";
+import { reviseDocument } from "@/app/dashboard/programs/actions";
+import { initialRevisionState } from "@/lib/programs/form-state";
 import { SubmitButton } from "@/components/submit-button";
-
-const initial: RevisionState = { status: "editing" };
 
 /**
  * Asking for a revision after a hiring client sent the document back.
@@ -16,7 +15,7 @@ const initial: RevisionState = { status: "editing" };
  * through a questionnaire for a document they have already described.
  */
 export function ReviseForm({ documentId }: { documentId: string }) {
-  const [state, formAction] = useActionState(reviseDocument, initial);
+  const [state, formAction] = useActionState(reviseDocument, initialRevisionState);
 
   if (state.status === "sent") {
     return (

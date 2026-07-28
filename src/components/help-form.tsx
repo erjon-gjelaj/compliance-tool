@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import { requestHelp, type HelpState } from "@/app/dashboard/help/actions";
 import { SubmitButton } from "@/components/submit-button";
 import { SERVICE_KINDS, SERVICE_LABELS } from "@/lib/service-kinds";
+import { ONE_TIME_SERVICES, PRICING_NOTE, formatMoney } from "@/lib/pricing";
 
 /**
  * Asking for work that a person does by hand.
@@ -96,6 +97,29 @@ export function HelpForm({ submissionId }: { submissionId?: string }) {
       <SubmitButton pendingLabel="Sending…" className="btn-primary mt-6">
         Send it
       </SubmitButton>
+
+      {/*
+        The ranges are shown here, next to the ask, rather than only on the
+        pricing page. Someone deciding whether to send this wants to know
+        roughly what they are getting into, and making them open another tab
+        to find out is how a request gets abandoned. Read from lib/pricing, so
+        these cannot drift from the pricing page.
+      */}
+      <div className="mt-6 border-t border-zinc-dust pt-5">
+        <p className="type-label text-millscale">Roughly what paid work costs</p>
+        <ul className="mt-3 grid gap-1.5">
+          {ONE_TIME_SERVICES.map((offer) => (
+            <li
+              key={offer.id}
+              className="flex justify-between gap-4 text-sm text-slate-wash"
+            >
+              <span>{offer.name}</span>
+              <span className="text-millscale">{formatMoney(offer.price)}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-sm text-slate-wash">{PRICING_NOTE}</p>
+      </div>
 
       <p className="mt-4 text-sm text-slate-wash">
         This asks a person to get in touch. There is no payment step, and

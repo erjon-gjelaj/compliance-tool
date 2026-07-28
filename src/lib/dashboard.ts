@@ -136,6 +136,60 @@ export async function listDocumentsForSubmission(
 }
 
 /**
+ * Every document this address has ever sent, newest first.
+ *
+ * The workspace shows one document library rather than a folder per
+ * submission, because that is how the person thinks about it: they sent us
+ * their safety manual once, and which intake it happened to ride in on is our
+ * bookkeeping, not theirs.
+ *
+ * Filtered by joining through to the submission's email, exactly as
+ * getDocumentForEmail does. The join is the access control — a document id
+ * alone is never enough, and there is no path here that fetches first and
+ * checks ownership afterwards.
+ */
+export type LibraryDocument = DocumentView & {
+  submission_id: string;
+  submission_trade: string;
+};
+
+export async function listDocumentsForEmail(
+  email: string,
+): Promise<LibraryDocument[]> {
+  const supabase = getSupabaseAdminClient();
+
+  const { data, error } = await supabase
+    .from("submission_documents")
+    .select(
+      "id, storage_path, file_name, mime_type, size_bytes, created_at, text_status, submission_id, submissions!inner(email, trade)",
+    )
+    .ilike("submissions.email", emailPattern(email))
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) {
+    throw new Error(`Could not list your documents: ${error.message}`);
+  }
+
+  // supabase-js types an embedded relation as an array even when the foreign
+  // key makes it at most one row, so this matches what actually arrives rather
+  // than what reads naturally.
+  type Row = StoredDocument & {
+    text_status: string | null;
+    submission_id: string;
+    submissions: { email: string; trade: string }[] | null;
+  };
+
+  return ((data ?? []) as unknown as Row[]).map(({ submissions, ...row }) => ({
+    ...row,
+    readable: row.text_status === "ok" || row.text_status === "ocr",
+    // The joined email was only ever there to filter on, and is dropped so an
+    // owner's address cannot ride along into a caller that never asked.
+    submission_trade: submissions?.[0]?.trade ?? "",
+  }));
+}
+
+/**
  * The document row behind a download, confirmed to belong to this address.
  *
  * Joins through to the submission's email rather than trusting a document id

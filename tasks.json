@@ -311,9 +311,9 @@
     {
       "id": "050",
       "title": "Stage 5: review page hierarchy",
-      "status": "todo",
-      "notes": "Conclusion, blockers, next actions, present, questions, then standards behind progressive disclosure. Citations preserved, moved not dropped.",
-      "needs_human_review": false
+      "status": "done",
+      "notes": "On branch task/050-review-hierarchy. Regrouped the review from three confidence bands to conclusion, what looks missing, what looks covered, worth checking yourself - the bands described how the review is produced rather than how it is read. Basis, source label and citations move into a Why we say this disclosure per card; native details, still in the DOM, nothing dropped. The standing limitation moved below the conclusion: it must be unmissable but leading with it put a disclaimer before the answer. The rule at risk in the reshuffle was low-confidence present items (ticked but not found) landing in the covered group with a green Looks present; the confidence filter now runs first and anything low still goes through Question, which cannot print a status. Two new tests cover that and the conclusion count. Also generalised .faq-icon-* to .disclosure-icon-* since the transform-inside-summary quirk applies to both. 12 UI and 58 lib tests pass. Needs a look on production against a real review.",
+      "needs_human_review": true
     },
     {
       "id": "051",

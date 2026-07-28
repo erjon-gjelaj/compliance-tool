@@ -5,8 +5,9 @@ import { ArrowLeft } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
 import { currentClient } from "@/lib/auth/session";
-import { listServiceRequests } from "@/lib/service-requests";
+import { listRequestsForEmail } from "@/lib/requests/store";
 import { SERVICE_LABELS } from "@/lib/service-kinds";
+import { StatusChip } from "@/components/status-chip";
 import { HelpForm } from "@/components/help-form";
 
 export const metadata = pageMetadata({
@@ -18,12 +19,6 @@ export const metadata = pageMetadata({
 
 export const dynamic = "force-dynamic";
 
-const STATUS_COPY: Record<string, string> = {
-  new: "Waiting on us",
-  in_progress: "Being worked on",
-  closed: "Closed",
-};
-
 export default async function HelpPage({
   searchParams,
 }: {
@@ -33,7 +28,7 @@ export default async function HelpPage({
   if (!session) redirect("/sign-in");
 
   const { submission } = await searchParams;
-  const existing = await listServiceRequests(session.email);
+  const existing = await listRequestsForEmail(session.email);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
@@ -64,7 +59,7 @@ export default async function HelpPage({
             {existing.map((request) => (
               <li
                 key={request.id}
-                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border border-zinc-dust bg-paper p-4"
+                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border border-zinc-dust bg-paper p-4"
               >
                 <div>
                   <p className="text-sm font-medium text-millscale">
@@ -78,9 +73,7 @@ export default async function HelpPage({
                     })}
                   </p>
                 </div>
-                <span className="text-sm text-slate-wash">
-                  {STATUS_COPY[request.status] ?? request.status}
-                </span>
+                <StatusChip state={request.status.state} />
               </li>
             ))}
           </ul>

@@ -926,3 +926,107 @@ export async function notifyServiceRequest({
     transport.close();
   }
 }
+
+/**
+ * Tells a customer that we replied on one of their requests.
+ *
+ * Sent because they will not be sitting on the dashboard waiting. The body is
+ * included rather than only a "you have a message" nudge — making somebody
+ * sign in to read one sentence is the pattern this product exists to avoid.
+ *
+ * No link to the thread is signed here: the dashboard already requires
+ * sign-in, and minting a magic link into an email about something else would
+ * make every reply a credential.
+ */
+export async function notifyCertLoopReply({
+  email,
+  requestId,
+  body,
+  awaitsReply,
+}: {
+  email: string;
+  requestId: string;
+  body: string;
+  awaitsReply: boolean;
+}): Promise<void> {
+  const config = readSmtpConfig();
+  if (!config) return;
+
+  let transport;
+  try {
+    transport = buildTransport(config);
+  } catch (cause) {
+    console.error("Could not create the mail transport:", cause);
+    return;
+  }
+
+  try {
+    await transport.sendMail({
+      from: config.from,
+      to: email,
+      replyTo: config.to,
+      subject: awaitsReply
+        ? `${SITE_NAME}: we need something from you`
+        : `${SITE_NAME}: an update on your request`,
+      text: [
+        awaitsReply
+          ? "We've replied and there's something we need back from you:"
+          : "We've replied on your request:",
+        "",
+        body,
+        "",
+        "---",
+        `Reply to this email, or open ${SITE_URL}/dashboard/requests/${requestId}`,
+        "to answer in your dashboard.",
+      ].join("\n"),
+    });
+  } catch (cause) {
+    console.error("Reply notification failed to send:", cause);
+  } finally {
+    transport.close();
+  }
+}
+
+/** Tells our inbox that a customer added something to a request. */
+export async function notifyCustomerReply({
+  email,
+  requestId,
+  body,
+}: {
+  email: string;
+  requestId: string;
+  body: string;
+}): Promise<void> {
+  const config = readSmtpConfig();
+  if (!config) return;
+
+  let transport;
+  try {
+    transport = buildTransport(config);
+  } catch (cause) {
+    console.error("Could not create the mail transport:", cause);
+    return;
+  }
+
+  try {
+    await transport.sendMail({
+      from: config.from,
+      to: config.to,
+      replyTo: email,
+      subject: `${SITE_NAME}: ${email} replied on a request`,
+      text: [
+        `${email} added something to a request.`,
+        "",
+        body,
+        "",
+        "---",
+        `It is back with us: ${SITE_URL}/internal/requests`,
+        `Request ${requestId}.`,
+      ].join("\n"),
+    });
+  } catch (cause) {
+    console.error("Customer-reply notification failed to send:", cause);
+  } finally {
+    transport.close();
+  }
+}

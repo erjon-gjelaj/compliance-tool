@@ -9,7 +9,7 @@ import {
   Paperclip,
 } from "lucide-react";
 
-import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
+import { SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
 import { formatBytes } from "@/lib/uploads";
 import { currentClient } from "@/lib/auth/session";
@@ -396,17 +396,23 @@ export default async function DashboardPage() {
             </ul>
           </Panel>
 
-          <p className="type-body mt-10 border-t border-zinc-dust pt-6">
-            Need something that isn&rsquo;t here &mdash; a program prepared, a
-            second opinion, a hand with a resubmission? Email{" "}
-            <a
-              href={`mailto:${CONTACT_EMAIL}`}
-              className="text-verdigris underline underline-offset-4"
+          <section className="mt-12 border border-zinc-dust bg-paper p-6">
+            <h2 className="type-h3 text-millscale">
+              Need something done rather than checked?
+            </h2>
+            <p className="type-body mt-2 max-w-xl">
+              A program written, a rejection sorted out, a qualified person to
+              look over it. That part is done by hand &mdash; tell us what you
+              need and someone will reply with what it involves.
+            </p>
+            <Link
+              href="/dashboard/help"
+              className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-verdigris underline-offset-4 hover:underline"
             >
-              {CONTACT_EMAIL}
-            </a>{" "}
-            and say what you need.
-          </p>
+              Ask for help
+              <ArrowRight aria-hidden className="h-4 w-4" />
+            </Link>
+          </section>
         </>
       )}
     </main>

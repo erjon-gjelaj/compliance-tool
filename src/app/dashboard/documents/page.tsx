@@ -7,6 +7,8 @@ import { pageMetadata } from "@/lib/metadata";
 import { formatBytes } from "@/lib/uploads";
 import { currentClient } from "@/lib/auth/session";
 import { listDocumentsForEmail, type LibraryDocument } from "@/lib/dashboard";
+import { listDocumentsForEmail as listGenerated } from "@/lib/programs/store";
+import { offerablePrograms, programById } from "@/lib/programs/registry";
 import { DocumentDownload } from "@/components/document-download";
 
 export const metadata = pageMetadata({
@@ -65,7 +67,14 @@ export default async function DocumentsPage() {
   const session = await currentClient();
   if (!session) redirect("/sign-in");
 
-  const documents = await listDocumentsForEmail(session.email);
+  const [documents, generated] = await Promise.all([
+    listDocumentsForEmail(session.email),
+    listGenerated(session.email),
+  ]);
+
+  // Programmes we can prepare that this company does not already hold.
+  const held = new Set(generated.map((entry) => entry.program_id));
+  const available = offerablePrograms().filter((program) => !held.has(program.id));
 
   const unreadable = documents.filter((entry) => !entry.readable);
 
@@ -73,8 +82,71 @@ export default async function DocumentsPage() {
     <main className="max-w-3xl">
       <h1 className="type-h2 text-millscale">Documents</h1>
 
+      {/*
+        Programmes first. They are the thing a contractor came to get, and
+        putting the library of their own uploads above them would bury the
+        action under the archive.
+      */}
+      {generated.length > 0 || available.length > 0 ? (
+        <section aria-labelledby="programs-heading" className="mt-8">
+          <h2 id="programs-heading" className="type-label text-millscale">
+            Safety programs
+          </h2>
+
+          <ul className="mt-3 grid gap-2">
+            {generated.map((entry) => {
+              const template = programById(entry.program_id);
+              return (
+                <li key={entry.id}>
+                  <Link
+                    href={`/dashboard/documents/${entry.id}`}
+                    className="flex items-center justify-between gap-4 border border-zinc-dust bg-paper p-4 transition-colors hover:border-verdigris"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-millscale">
+                        {template?.title ?? entry.program_id}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-wash">
+                        Version {entry.current?.version ?? 1} &middot; ready to
+                        download
+                      </p>
+                    </div>
+                    <span className="shrink-0 border border-verdigris bg-verdigris/8 px-2.5 py-1 text-xs font-medium text-verdigris">
+                      Ready
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+
+            {available.map((program) => (
+              <li key={program.id}>
+                <Link
+                  href={`/dashboard/programs/${program.id}`}
+                  className="flex items-center justify-between gap-4 border border-zinc-dust bg-paper p-4 transition-colors hover:border-verdigris"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-millscale">
+                      {program.title}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-wash">
+                      A few questions, then Word and PDF
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-sm font-medium text-verdigris">
+                    Prepare
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <h2 className="type-label mt-10 text-millscale">Files you sent us</h2>
+
       {documents.length === 0 ? (
-        <div className="mt-8 border border-zinc-dust bg-paper p-8">
+        <div className="mt-3 border border-zinc-dust bg-paper p-8">
           <FileStack aria-hidden className="mb-4 h-5 w-5 text-slate-wash" />
           <h2 className="type-h3 text-millscale">Nothing here yet</h2>
           <p className="type-body mt-3 max-w-xl">
@@ -89,7 +161,7 @@ export default async function DocumentsPage() {
         </div>
       ) : (
         <>
-          <p className="type-body mt-2">
+          <p className="type-body mt-3">
             {documents.length} file{documents.length === 1 ? "" : "s"}, across
             every request you&rsquo;ve sent.
             {unreadable.length > 0 ? (

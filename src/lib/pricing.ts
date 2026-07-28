@@ -103,3 +103,16 @@ export function formatMoney({ low, high }: Money): string {
 export function offerById(id: string): ServiceOffer | undefined {
   return ONE_TIME_SERVICES.find((offer) => offer.id === id);
 }
+
+/**
+ * What we promise when a generated document is sent back.
+ *
+ * Configurable rather than written into a page, because the boundary of a free
+ * revision is a commercial decision that will move. Deliberately not
+ * "unlimited": a revision of the same programme, for the same company, for the
+ * submission it was prepared for is covered. A new trade, a new hiring client
+ * with different demands, or materially changed operations is new work — and
+ * saying so now is easier than withdrawing an unlimited promise later.
+ */
+export const REVISION_PROMISE =
+  "If a hiring client sends this back, paste what they said and we will prepare a revised version at no extra cost \u2014 for this program, this company, and the submission it was prepared for.";

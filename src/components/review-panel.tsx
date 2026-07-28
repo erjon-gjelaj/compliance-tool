@@ -7,7 +7,10 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import Link from "next/link";
+
 import { SITE_NAME } from "@/lib/constants";
+import { programForLabel } from "@/lib/programs/registry";
 import type { Analysis, AnalysisItem } from "@/lib/analysis/schema";
 
 /**
@@ -154,8 +157,33 @@ function Finding({ item }: { item: AnalysisItem }) {
         </p>
       ) : null}
 
+      <PrepareAction item={item} />
       <Reasoning item={item} />
     </li>
+  );
+}
+
+/**
+ * The shortcut from a finding to the document that closes it.
+ *
+ * Only on something that looks missing, and only where we actually have a
+ * programme for it — offering to prepare a document for a requirement with no
+ * template behind it would be the worst kind of dead end, since the person
+ * clicking it has just been told they are short of exactly that.
+ */
+function PrepareAction({ item }: { item: AnalysisItem }) {
+  if (item.status !== "likely_missing") return null;
+
+  const program = programForLabel(item.requirement);
+  if (!program) return null;
+
+  return (
+    <Link
+      href={`/dashboard/programs/${program.id}`}
+      className="btn-primary mt-3 inline-block"
+    >
+      Prepare this program
+    </Link>
   );
 }
 

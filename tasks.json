@@ -290,9 +290,9 @@
     {
       "id": "047",
       "title": "Stage 2: four entry points into one workspace",
-      "status": "todo",
-      "notes": "Rejection, platform setup, gap check and document request as separate doors onto the same submission record via an entry_reason column. See docs/scope-c-plan.md.",
-      "needs_human_review": false
+      "status": "done",
+      "notes": "On branch task/047-entry-points. Three doors added alongside the gap check - /rejection, /setup, /documents - rendering one component with different framing onto the same intake. Migration 0005 adds entry_reason and rejection_notes; existing rows default to gap_check, which is what they were. The rejection door reads the pasted notice for real via lib/analysis/rejection.ts, matching the contractor pasted text against the recognition phrases already used on uploads and quoting back the words matched. Kept as its own module because of the sentence it must not write: naming a subject their notes mention is a fact about a paragraph we were given, stating what the reviewer requires is a claim about a portal we cannot see. Both rules are in the validator, not just in prose. The rejection block is optional in the schema so pre-Scope-C stored reviews still validate on the way out. 15 new tests, 54 total, build and lint clean. NOT verified against a database - this environment has no Supabase credentials, so migration 0005 needs running in the Supabase SQL editor and a real rejection submission needs putting through on production before this is trusted end to end.",
+      "needs_human_review": true
     },
     {
       "id": "048",
@@ -337,6 +337,6 @@
       "needs_human_review": false
     }
   ],
-  "current_task_id": "047",
+  "current_task_id": "049",
   "blocked_on": null
 }

@@ -102,8 +102,7 @@ function Empty() {
       <h2 className="type-h3 text-millscale">Nothing here yet</h2>
       <p className="type-body mt-3">
         There are no gap checks against this address. If you asked us to delete
-        your file, this is what that looks like &mdash; it is gone, documents
-        included.
+        your file, it is gone, documents included.
       </p>
       <Link
         href={GAP_CHECK_HREF}

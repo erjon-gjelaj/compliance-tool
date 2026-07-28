@@ -202,18 +202,21 @@ function SuccessPanel() {
       />
       <h3 className="type-h3 mt-4">Got it — your gap check is in</h3>
       <p className="type-body mt-3">
-        You&apos;ll get one email listing what your file still looks short on,
-        in the order worth tackling. Nothing else, and no call to book.
+        Check your email in a minute or two. You&apos;ll get one message listing
+        what your file still looks short on, in the order worth tackling.
+        Nothing else, and no call to book.
       </p>
       <p className="mt-4 text-sm leading-relaxed text-slate-wash">
-        Deadline sooner than that? Reply straight to{" "}
+        It stays in your dashboard too &mdash; sign in with this address any
+        time to read it again. Anything unusual about your situation? Reply to
+        the email, or write to{" "}
         <a
           href={`mailto:${CONTACT_EMAIL}`}
           className="text-verdigris underline underline-offset-4"
         >
           {CONTACT_EMAIL}
-        </a>{" "}
-        and say so.
+        </a>
+        .
       </p>
     </div>
   );

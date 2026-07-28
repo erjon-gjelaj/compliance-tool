@@ -279,8 +279,64 @@
       "status": "done",
       "notes": "On branch task/045-session-hint-sync. Raised as 'SSR is not aware of the user's session'. Half wrong, half a real bug. SSR is session-aware everywhere it gates anything - dashboard layout, both dashboard pages, the download route and the sign-in page all call currentClient() server-side; proven by /sign-in answering 307 to /dashboard from the session cookie alone. The navbar was the exception and the defect was worse than the first-paint flash already documented: the hint cookie was written only by openClientSession, so it could not exist for any session created before the hint itself did - which was every session live on production at that point. Those users saw 'Sign in' permanently and were dropped on the dashboard when they clicked it, since the server recognised them all along. That is precisely the state described as hypothetical in a task 044 code comment; it was live. src/proxy.ts now derives the hint from the session on every request, making the session cookie the single source of truth and the hint a one-bit cache refreshed rather than remembered. It verifies the token rather than checking presence, since presence would pass a tampered, expired or rotated-secret token. It returns without touching the response when the hint already agrees - not a micro-optimisation, since a Set-Cookie on a statically cached page is how a CDN stops treating it as shareable and five pages are prerendered. Rejected alternative, put to the human first: reading the session in the root layout would make the SSR HTML correct and remove the flash entirely, at the cost of every page going dynamic including the five static marketing pages. Cache Components would remove the flash while keeping them static but inverts the project's caching defaults, which is not worth the risk for a word in the chrome. So one paint of 'Sign in' remains for a signed-in visitor on a cached page - honest and unavoidable at this cost. Verified by response header across four cases (mint, no-op, clear, clear-on-unverifiable) and end to end in the browser from the exact broken state. Six proxy tests, 39 total, build and lint clean, five pages still static.",
       "needs_human_review": false
+    },
+    {
+      "id": "046",
+      "title": "Stage 1: copy truth and trust audit",
+      "status": "done",
+      "notes": "Done on branch task/046-copy-truth. The site described the Scope A process - a person comparing by hand, a reply in a few business days, and explicitly no dashboard - all false since tasks 027 and 039. Corrected across how-it-works, About, FAQ, the intake success panel, the contact page and the dashboard empty state, and added an About section plus an FAQ answer on how the review is actually produced (deterministic, no language model, eCFR-retrieved citations). Removed the copy narrating the company as small, early and honest; every limitation it was wrapped around stays, stated once where it applies. npm test failed on arrival with two auth tests missing the jose module - stale node_modules after the pull, not a code fault, fixed by npm install. Build, lint, 39 lib tests and 10 UI tests pass; the five marketing pages are still static.",
+      "needs_human_review": false
+    },
+    {
+      "id": "047",
+      "title": "Stage 2: four entry points into one workspace",
+      "status": "todo",
+      "notes": "Rejection, platform setup, gap check and document request as separate doors onto the same submission record via an entry_reason column. See docs/scope-c-plan.md.",
+      "needs_human_review": false
+    },
+    {
+      "id": "048",
+      "title": "Stage 3: reusable company profile",
+      "status": "todo",
+      "notes": "A companies table keyed by email so trade, states, headcount, platforms and hiring clients are entered once. Inferred values render for confirmation, never as fact.",
+      "needs_human_review": false
+    },
+    {
+      "id": "049",
+      "title": "Stage 4: dashboard as a compliance workspace",
+      "status": "todo",
+      "notes": "Next action, blockers, document library, questions outstanding, upcoming expirations. Direct actions, not charts.",
+      "needs_human_review": false
+    },
+    {
+      "id": "050",
+      "title": "Stage 5: review page hierarchy",
+      "status": "todo",
+      "notes": "Conclusion, blockers, next actions, present, questions, then standards behind progressive disclosure. Citations preserved, moved not dropped.",
+      "needs_human_review": false
+    },
+    {
+      "id": "051",
+      "title": "Stage 6: plan states and service requests",
+      "status": "todo",
+      "notes": "Entitlement seam Stripe can attach to later, plus a service_requests table capturing intent. No checkout and no fake buttons.",
+      "needs_human_review": false
+    },
+    {
+      "id": "052",
+      "title": "Stage 8: consultant workspace (later)",
+      "status": "todo",
+      "notes": "Schema preparation only. A consultant is a role holding many companies, not a second product.",
+      "needs_human_review": false
+    },
+    {
+      "id": "053",
+      "title": "Stage 9: maintenance and expiries (later)",
+      "status": "todo",
+      "notes": "Revision dates, expiries, annual reminders, version history - only about dates we were given, never about changes we are guessing at.",
+      "needs_human_review": false
     }
   ],
-  "current_task_id": "027",
+  "current_task_id": "047",
   "blocked_on": null
 }

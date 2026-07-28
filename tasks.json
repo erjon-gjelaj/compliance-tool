@@ -318,15 +318,15 @@
     {
       "id": "051",
       "title": "Stage 6: plan states and service requests",
-      "status": "todo",
-      "notes": "Entitlement seam Stripe can attach to later, plus a service_requests table capturing intent. No checkout and no fake buttons.",
-      "needs_human_review": false
+      "status": "done",
+      "notes": "On branch task/051-plans-and-requests. Migration 0007 adds companies.plan (free/contractor/consultant/admin), companies.managed_by_email and a service_requests table. lib/entitlements.ts is the single place a plan decides anything - every check goes through can(), so Stripe later is a write to one column rather than a permission model retrofitted across pages. gap_review covers the whole current product and is free, with a test that fails if a paywall ever appears over it. Admin is enumerated not wildcarded, with a test that fails when a capability is added without deciding admin holds it. /dashboard/help records intent, notifies the inbox and says a person replies - no price, no plan comparison, no upgrade button, no checkout. Notification failure is caught separately from the insert and not surfaced, since the request is already stored. managed_by_email is deliberately unread: a contractor must never see a workspace switcher. Split lib/service-kinds.ts from the server-only query module because the help form is a client component. 7 new tests, 83 total. MIGRATIONS 0006 AND 0007 MUST BE RUN.",
+      "needs_human_review": true
     },
     {
       "id": "052",
       "title": "Stage 8: consultant workspace (later)",
       "status": "todo",
-      "notes": "Schema preparation only. A consultant is a role holding many companies, not a second product.",
+      "notes": "Partially prepared by 051: companies.managed_by_email exists, the consultant plan holds multiple_companies and white_label in lib/entitlements, and nothing reads either yet. What remains is the workspace switcher, client invitations and branded exports - none of which should be started until there is a consultant asking for them.",
       "needs_human_review": false
     },
     {
@@ -344,6 +344,6 @@
       "notes": "On branch task/054-resume-and-header-facts. Three faults found by one screenshot of the live dashboard with real rows, none catchable by fixtures. (1) The primary action was a dead end - Finish the form you started linked to the submission page, which shows documents and a review, and a partial submission has neither. Added /dashboard/[id]/continue, resuming at the step after last_step with rowToValues seeding the form; no new server path since every step already posts submission_id and updates that row. Ownership checked in the query because the id handed to the form is a write capability, and a complete submission redirects to its review rather than reopening. (2) Header read Avetta, Both, ISNetworld - Both is a form answer, not a platform, and now expands to the two names; Not sure is dropped as the absence of an answer. (3) Header stated a passed deadline in the present tense; the date is kept because it is the most urgent thing on the page, but is now past tense and in the warning colour. 6 new tests, 68 total, build and lint clean. Resuming a real abandoned intake through to a review still needs confirming on production."
     }
   ],
-  "current_task_id": "050",
+  "current_task_id": "053",
   "blocked_on": null
 }

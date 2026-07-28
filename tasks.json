@@ -283,8 +283,8 @@
     {
       "id": "046",
       "title": "Stage 1: copy truth and trust audit",
-      "status": "todo",
-      "notes": "Correct every public description of how a review is produced - the site still says a person reads each submission by hand and that there is no dashboard, both false since tasks 027 and 039 - and strip the defensive self-narration from home, About, FAQ, sign-in, dashboard and form copy. Limits stay, stated once where they apply. See docs/scope-c-plan.md.",
+      "status": "done",
+      "notes": "Done on branch task/046-copy-truth. The site described the Scope A process - a person comparing by hand, a reply in a few business days, and explicitly no dashboard - all false since tasks 027 and 039. Corrected across how-it-works, About, FAQ, the intake success panel, the contact page and the dashboard empty state, and added an About section plus an FAQ answer on how the review is actually produced (deterministic, no language model, eCFR-retrieved citations). Removed the copy narrating the company as small, early and honest; every limitation it was wrapped around stays, stated once where it applies. npm test failed on arrival with two auth tests missing the jose module - stale node_modules after the pull, not a code fault, fixed by npm install. Build, lint, 39 lib tests and 10 UI tests pass; the five marketing pages are still static.",
       "needs_human_review": false
     },
     {
@@ -337,6 +337,6 @@
       "needs_human_review": false
     }
   ],
-  "current_task_id": "046",
+  "current_task_id": "047",
   "blocked_on": null
 }

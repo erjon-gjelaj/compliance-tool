@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Building2,
+  FileSignature,
   FileStack,
   LayoutDashboard,
   LifeBuoy,
@@ -29,6 +30,7 @@ const SECTIONS = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/requests", label: "Requests", icon: MessageSquare },
   { href: "/dashboard/documents", label: "Documents", icon: FileStack },
+  { href: "/dashboard/programs", label: "Programs", icon: FileSignature },
   { href: "/dashboard/company", label: "Company", icon: Building2 },
   { href: "/dashboard/help", label: "Ask for help", icon: LifeBuoy },
 ] as const;

@@ -367,11 +367,32 @@
     {
       "id": "058",
       "title": "Phase D: document generation",
+      "status": "done",
+      "notes": "Done on branch task/058-hazcom. HazCom end to end: 7 questions (2 conditional), 12 sections at full branching, DOCX via docx and PDF via pdfkit from one Section tree, migration 0009 with document/version split and a private generated-documents bucket, entry points from the programs list, the document library and a likely_missing gap finding, plus a revision path that reuses the previous version answers. NO LLM was added - prose is hand-written in lib/programs and assembled deterministically; the templates are company policy (the Company maintains...) rather than advice about law, which is what makes them permissible under the regulatory output rules. Recorded in CLAUDE.md. Two real bugs found and fixed: build() threw on incomplete answers (assembleProgram now orders answer-check before build, since templates read answers without fallbacks on purpose), and the PDF had 9 pages instead of 5 because the footer crossed the bottom margin and pdfkit auto-paginated - caught only by reading text back out of the rendered file. 23 new tests, 117 total. NOT DONE: logo on the cover (renderers accept one, the profile stores no file), and entitlements are not enforced on generation - HazCom is free today, which is a commercial decision not a technical gap. NEEDS MIGRATION 0009 RUN.",
+      "needs_human_review": true
+    },
+    {
+      "id": "059",
+      "title": "Program 2: Personal Protective Equipment",
       "status": "todo",
-      "notes": "Template model, section classification (confirmed fact / standard language / needs confirmation / evidence we cannot create / needs qualified review), Word and PDF output, versions, library. Ships behind a per-programme flag: the pipeline is not blocked, showing its prose to a customer is, until a qualified person has reviewed that programme text. Supersedes the blocked task 040.",
+      "notes": "Next after HazCom. Chosen because lib/requirements already carries it, the intake asks about it, and the company-specific facts it needs (who assesses hazards, what equipment is provided, how it is maintained) are answerable in the same 5-7 question shape without asserting anything about training completion or equipment owned.",
+      "needs_human_review": false
+    },
+    {
+      "id": "060",
+      "title": "Program 3: Emergency Action Plan",
+      "status": "todo",
+      "notes": "Site-specific by nature, so the questionnaire has to carry evacuation and muster arrangements. Higher input cost than PPE, which is why it is third rather than second.",
+      "needs_human_review": false
+    },
+    {
+      "id": "061",
+      "title": "Program 4: Incident Reporting and Investigation",
+      "status": "todo",
+      "notes": "Almost entirely procedural and low-risk to template - who is told, in what order, what gets recorded. Very little that could be fabricated.",
       "needs_human_review": false
     }
   ],
-  "current_task_id": "058",
+  "current_task_id": "059",
   "blocked_on": null
 }

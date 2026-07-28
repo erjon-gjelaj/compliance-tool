@@ -34,7 +34,7 @@ export default async function RequestsPage() {
   const requests = await listRequestsForEmail(session.email);
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-10">
+    <main className="max-w-3xl">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h1 className="type-h2 text-millscale">Requests</h1>
         <Link

@@ -45,7 +45,7 @@ export default async function RequestPage({
   if (!request) notFound();
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="max-w-3xl">
       <Link
         href="/dashboard/requests"
         className="inline-flex items-center gap-2 text-sm text-slate-wash underline-offset-4 hover:underline"

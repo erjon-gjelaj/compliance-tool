@@ -24,7 +24,7 @@ export default async function CompanyPage() {
   const company = await getCompanyForEmail(session.email);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="max-w-3xl">
       <Link
         href="/dashboard"
         className="inline-flex items-center gap-2 text-sm text-slate-wash underline-offset-4 hover:underline"

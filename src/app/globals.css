@@ -175,15 +175,15 @@ body {
  *
  * Swapping display sidesteps the quirk entirely.
  */
-.faq-icon-open {
+.disclosure-icon-open {
   display: none;
 }
 
-details[open] > summary .faq-icon-open {
+details[open] > summary .disclosure-icon-open {
   display: block;
 }
 
-details[open] > summary .faq-icon-closed {
+details[open] > summary .disclosure-icon-closed {
   display: none;
 }
 

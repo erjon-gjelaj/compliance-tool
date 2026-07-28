@@ -76,6 +76,36 @@ test("a low-confidence item renders as a question, never as a status", () => {
   assert.doesNotMatch(html, /Looks missing/);
 });
 
+test("a low-confidence PRESENT item is still a question, not a covered finding", () => {
+  // The trap in grouping by status instead of by confidence. A ticked-but-not-
+  // found item is status "present" at low confidence, and matching on status
+  // first would file it under "What looks covered" with a green "Looks
+  // present" against it — telling someone a document is in hand on the
+  // strength of them having ticked a box.
+  const html = render(
+    review({ items: [item({ status: "present", confidence: "low" })] }),
+  );
+
+  assert.match(html, /does this apply to you\?/);
+  assert.doesNotMatch(html, /Looks present/);
+  assert.doesNotMatch(html, /What looks covered/);
+});
+
+test("the conclusion counts only what we were willing to state", () => {
+  // A low-confidence item must not inflate the "of N document types" figure:
+  // it was not one of the ones we checked and concluded on.
+  const html = render(
+    review({
+      items: [
+        item({ requirement: "A", status: "likely_missing", confidence: "high" }),
+        item({ requirement: "B", status: "present", confidence: "low" }),
+      ],
+    }),
+  );
+
+  assert.match(html, /1 of the 1 document types/);
+});
+
 test("a high-confidence item does state its status", () => {
   const html = render(review({ items: [item({ confidence: "high" })] }));
 

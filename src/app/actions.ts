@@ -60,6 +60,10 @@ const RATE_LIMITED =
 /** Every field the form posts, echoed back so a rejected step keeps its answers. */
 function submittedIntakeValues(formData: FormData): IntakeValues {
   const single = [
+    // Worth echoing more than most: a rejection notice is pasted out of a
+    // portal, and losing it to a validation error on another field means
+    // going back to find it again.
+    "rejection_notes",
     "trade",
     "trade_other",
     "hiring_client",

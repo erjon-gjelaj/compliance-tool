@@ -80,8 +80,42 @@ export const analysisWarningSchema = z.object({
   message: z.string(),
 });
 
+/**
+ * What we could tell from a pasted rejection notice.
+ *
+ * `subjects` are requirements whose recognition phrases appear in the text the
+ * contractor pasted. They are NOT what the reviewer requires — we have never
+ * seen the reviewer's message, only the contractor's copy of it, and the
+ * validator below enforces the difference by refusing any subject whose phrase
+ * is not carried alongside it. A subject with no phrase behind it would be an
+ * assertion about a portal we cannot read.
+ *
+ * `notesProvided` false with an empty `subjects` means the rejection door was
+ * used but nothing was pasted — a real state, and different from "we read the
+ * notes and recognised nothing". The email says something different for each.
+ */
+export const rejectionReadingSchema = z.object({
+  notesProvided: z.boolean(),
+  subjects: z.array(
+    z.object({
+      requirement: z.string(),
+      /** The phrase found in the pasted text. Quoted back, so it is checkable. */
+      phrase: z.string(),
+    }),
+  ),
+});
+
+export type RejectionReading = z.infer<typeof rejectionReadingSchema>;
+
 export const analysisSchema = z.object({
   summary: z.string(),
+  /**
+   * Present only on submissions that came through the rejection door.
+   * Optional rather than defaulted, so reviews stored before Scope C still
+   * validate on the way back out — see getReviewForSubmission, which
+   * re-validates every stored row before rendering it.
+   */
+  rejection: rejectionReadingSchema.optional(),
   /** Declared gaps, e.g. a requirement we deliberately will not map. */
   warnings: z.array(analysisWarningSchema),
   items: z.array(analysisItemSchema),
@@ -170,6 +204,36 @@ export function validateAnalysis(raw: unknown): ValidationOutcome {
       }
     }
   });
+
+  /*
+   * A rejection subject has to carry the phrase it was recognised by.
+   *
+   * That phrase is the entire basis for naming the subject at all, and it is
+   * quoted back to the contractor so they can see we matched their own words
+   * rather than decided something about their file. A subject without one is
+   * indistinguishable, to a reader, from us knowing what the reviewer wants —
+   * which is the one thing this feature must never imply.
+   */
+  value.rejection?.subjects.forEach((subject, index) => {
+    if (!subject.phrase.trim()) {
+      problems.push(
+        `rejection.subjects[${index}]: no phrase to show for "${subject.requirement}"`,
+      );
+    }
+  });
+
+  // Subjects without notes cannot have come from anywhere. Nothing was read,
+  // so anything named here was inferred, and inference about a rejection is
+  // exactly what is off the table.
+  if (
+    value.rejection &&
+    !value.rejection.notesProvided &&
+    value.rejection.subjects.length > 0
+  ) {
+    problems.push(
+      "rejection: subjects were named but no notes were provided to find them in",
+    );
+  }
 
   if (problems.length > 0) {
     return { ok: false, error: problems.join("; ") };

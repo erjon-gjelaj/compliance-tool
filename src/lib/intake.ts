@@ -13,6 +13,12 @@
  */
 
 import { MAX_FILES } from "@/lib/uploads";
+import {
+  DEFAULT_ENTRY_REASON,
+  MAX_REJECTION_NOTES,
+  isEntryReason,
+  type EntryReason,
+} from "@/lib/entry-points";
 
 /* Trades taken from the audience described in business-model.md. Carried
  * over unchanged from the Scope A lead form, which this replaces. */
@@ -95,6 +101,8 @@ export const DOCUMENT_CATEGORIES = [
 
 export type IntakeField =
   // Step 1
+  | "entry_reason"
+  | "rejection_notes"
   | "trade"
   | "trade_other"
   | "hiring_client"
@@ -120,8 +128,17 @@ export type IntakeErrors = Partial<Record<IntakeField, string>>;
 
 export type IntakeValues = Partial<Record<IntakeField, string | string[]>>;
 
-/** Columns written by step 1. Everything here is required. */
+/**
+ * Columns written by step 1.
+ *
+ * Everything is required except the two Scope C additions. `entry_reason` is
+ * never absent — an unrecognised one falls back to the gap check rather than
+ * failing the step, because the door is our routing detail and a contractor
+ * who followed a stale link should still get their answer.
+ */
 export type StepOneValue = {
+  entry_reason: EntryReason;
+  rejection_notes: string | null;
   trade: string;
   hiring_client: string;
   platform: string;
@@ -216,6 +233,8 @@ export function validateStepOne(formData: FormData): StepResult<StepOneValue> {
   const errors: IntakeErrors = {};
   const read = reader(formData);
 
+  const entryReasonRaw = read("entry_reason");
+  const rejectionNotes = read("rejection_notes");
   const trade = read("trade");
   const tradeOther = read("trade_other");
   const hiringClient = read("hiring_client");
@@ -224,6 +243,28 @@ export function validateStepOne(formData: FormData): StepResult<StepOneValue> {
   const deadlineUnknown = isChecked(formData, "deadline_unknown");
   const contactName = read("contact_name");
   const email = read("email");
+
+  /*
+   * An unrecognised door is not an error the person can fix, and it is not
+   * theirs. It comes from a stale link or a hand-typed URL, and failing the
+   * step over it would cost a real submission to protect a routing hint. It
+   * falls back to the gap check, which is what every row before Scope C was.
+   */
+  const entryReason: EntryReason = isEntryReason(entryReasonRaw)
+    ? entryReasonRaw
+    : DEFAULT_ENTRY_REASON;
+
+  /*
+   * Deliberately optional even on the rejection door. Someone may have only a
+   * screenshot or the rejected file itself, and both of those arrive at step
+   * 4, long after this runs. Requiring the paste here would turn "I have the
+   * document but not the wording" into a dead end. A rejection that arrives
+   * with neither notes nor a file is handled where that is knowable — the
+   * review says it has nothing to work from rather than inventing a reason.
+   */
+  if (rejectionNotes.length > MAX_REJECTION_NOTES) {
+    errors.rejection_notes = `That's longer than we can take — keep it under ${MAX_REJECTION_NOTES.toLocaleString("en-US")} characters, or attach the notice itself at the last step.`;
+  }
 
   if (!trade) {
     errors.trade = "Pick the trade you work in.";
@@ -280,6 +321,16 @@ export function validateStepOne(formData: FormData): StepResult<StepOneValue> {
   return {
     ok: true,
     value: {
+      entry_reason: entryReason,
+      /*
+       * Dropped unless this actually came in through the rejection door, for
+       * the same reason a stale "Other" trade detail is dropped: a paste left
+       * behind by someone who changed doors must not end up attached to a
+       * submission that is not about a rejection, where the review would treat
+       * it as a reviewer's words.
+       */
+      rejection_notes:
+        entryReason === "rejection" && rejectionNotes ? rejectionNotes : null,
       trade: trade === OTHER_TRADE ? combineTrade(tradeOther) : trade,
       hiring_client: hiringClient,
       platform,

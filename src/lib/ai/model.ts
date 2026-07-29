@@ -7,7 +7,7 @@ import "server-only";
  * prompt, a user prompt, and a JSON Schema, get parsed JSON back. It does not
  * expose messages, tools, streaming, token budgets or any other vendor
  * concept, so swapping the model — or the vendor — is one file
- * (`anthropic.ts`) and one line in `revisionModel()`.
+ * (`openai-compatible.ts`) and one line in `revisionModel()`.
  *
  * It is deliberately narrow. A wider interface would let model-shaped thinking
  * leak into the rest of the codebase, and the whole point of the boundary is

@@ -552,8 +552,10 @@ export async function reviseVersion({
       ok: false,
       reason:
         analysis.reason === "not_configured"
-          ? "Revisions are unavailable right now. We'll pick this up by hand."
-          : "We couldn't make that change safely. We'll pick this up by hand.",
+          ? "Revisions are unavailable right now. Please contact us for help."
+          : analysis.reason === "busy"
+            ? "The revision service is busy right now. Please try again in a minute."
+            : "We couldn't make that change safely. Please contact us for help.",
     };
   }
 
@@ -573,7 +575,7 @@ export async function reviseVersion({
     console.error("Revised document failed validation:", validated.problems);
     return {
       ok: false,
-      reason: "We couldn't make that change safely. We'll pick this up by hand.",
+      reason: "We couldn't make that change safely. Please contact us for help.",
     };
   }
 

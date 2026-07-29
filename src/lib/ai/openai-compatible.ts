@@ -36,8 +36,19 @@ const DEFAULT_BASE_URL = "https://api.groq.com/openai/v1";
 
 /** Long enough for a slow free tier, short enough to fit inside maxDuration. */
 const TIMEOUT_MS = 45_000;
+const DEFAULT_MAX_TOKENS = 8_192;
 
 type Config = { baseUrl: string; apiKey: string; model: string };
+
+function maxTokensCeiling(): number {
+  const configured = Number.parseInt(process.env.LLM_MAX_TOKENS ?? "", 10);
+
+  if (!Number.isFinite(configured) || configured < 256) {
+    return DEFAULT_MAX_TOKENS;
+  }
+
+  return configured;
+}
 
 function readConfig(): Config | null {
   const apiKey = process.env.LLM_API_KEY;
@@ -130,7 +141,22 @@ export function openAiCompatibleModel(): StructuredModel {
              * answer shape, and sampling variety is pure downside here.
              */
             temperature: 0,
-            max_tokens: request.maxTokens,
+            /*
+             * The caller asks for enough room to return a whole programme.
+             * Free models vary wildly in what they will accept — several cap
+             * output well below that and reject the request outright, which
+             * surfaces as a flat `model_error` and reads like the integration
+             * is broken rather than like one number being too big.
+             *
+             * `LLM_MAX_TOKENS` is the escape hatch: set it to the model's own
+             * ceiling. Lowering it does not corrupt anything — a document
+             * that no longer fits comes back as `too_long`, which is a
+             * refusal, not a truncated file.
+             */
+            max_completion_tokens: Math.min(
+              request.maxTokens,
+              maxTokensCeiling(),
+            ),
             // Asks for JSON without asserting a dialect. See the note above.
             response_format: { type: "json_object" },
             messages: [

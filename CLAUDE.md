@@ -180,6 +180,7 @@ The model provider is configured, not coded:
     LLM_API_KEY=...        # required
     LLM_MODEL=...          # required; no default, see below
     LLM_BASE_URL=...       # optional, defaults to Groq
+    LLM_MAX_TOKENS=8192    # optional; caps completion size for the chosen model/tier
 
 Any OpenAI-compatible chat-completions endpoint works — Groq, OpenRouter,
 Together, a local llama.cpp or Ollama server — so moving between free tiers is

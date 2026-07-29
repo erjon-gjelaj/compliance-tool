@@ -96,3 +96,67 @@ document, and a working model call — none available here.
 The migration has not been run. `0010_revised_documents.sql` needs applying in
 the Supabase SQL editor before the first revision, or the insert fails on
 unknown columns.
+
+---
+
+# Amendment — the provider is a free tier, not Anthropic
+
+Changed the same day, before merge. The requirement is that revisions cost
+nothing to run, because they are promised free to the customer.
+
+`lib/ai/anthropic.ts` is gone and `@anthropic-ai/sdk` is uninstalled. The
+replacement is `lib/ai/openai-compatible.ts`, written against the OpenAI
+chat-completions shape rather than against a vendor, because every free
+provider worth using speaks it. Groq by default; Groq, OpenRouter, Together, a
+local llama.cpp or Ollama server are three environment variables apart with no
+code change and no deploy.
+
+`lib/ai/model.ts` did not change at all, and `revise-analysis.ts` changed only
+in how it phrases the schema. That was the point of the seam, and it held.
+
+Plain `fetch`, no SDK: the protocol is one POST, an SDK would be a dependency
+that has to be swapped whenever the provider is, and 063 is a recent reminder
+that every dependency is a bundling problem waiting to happen.
+
+## What changes when the model gets weaker
+
+Two things, both handled in code rather than hoped about.
+
+**Schema enforcement is now a hint.** Free providers vary from full
+`json_schema` with `strict` to ignoring the field entirely. So the request asks
+for JSON, sends the schema as guidance, and treats the reply as untrusted
+text. The real contract was always `revisionResultSchema` plus `checkRevision`
+plus `validateDocument`, and those are unchanged — which means a weak provider
+degrades into "refused more often", never into "bad document accepted". That
+property is the only reason a free tier is usable for this at all.
+
+The schema was also restructured from a top-level `anyOf` of two alternatives
+into one flat object with a `status` discriminator. Same contract, but root
+`anyOf` is the construct providers implement least consistently and the one a
+small model most often resolves by emitting fields from both branches at once.
+
+**Replies arrive wrapped.** A strict provider returns bare JSON; free ones
+routinely return a markdown fence, or a sentence of preamble, or both.
+`extractJson` takes the outermost braced span, with nine tests covering the
+cases that a naive `JSON.parse` would have thrown on — turning "answered
+correctly, wrapped in a fence" into "revision failed", with a logged reason
+blaming the model. Lenient there, strict immediately after.
+
+Expect more clarification questions than a frontier model would produce. That
+is the fence working.
+
+## Correction
+
+An earlier draft of the CLAUDE.md note claimed the prompt carries no company
+identifiers. That was wrong: `hazcom.ts` interpolates `context.companyName`
+into the programme's prose, so the company name travels with the document.
+Unavoidable while the document is the thing being edited, but it is the sort
+of thing to know rather than discover, and the note now says so.
+
+## Still not verified
+
+No call has been made. There is no `LLM_API_KEY` in this checkout, so the
+request shape typechecks and the parsing is tested against canned replies, but
+nothing has spoken to a real provider. `LLM_MODEL` has no default on purpose —
+free-tier model names churn, and a stale default fails at request time rather
+than at boot.

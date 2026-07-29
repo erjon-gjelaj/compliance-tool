@@ -64,102 +64,107 @@ export type RevisionResult =
   | { status: "failed"; reason: string };
 
 /**
- * The same shape as JSON Schema, for the API to enforce.
+ * The shape we ask the provider for, kept beside the zod version above.
  *
- * Written by hand and kept beside the zod version above; they must agree.
- * `additionalProperties: false` everywhere is required by structured outputs
- * and is load-bearing here for a second reason — it is what stops the model
- * returning a `sourceRef` it made up alongside a section.
+ * One flat object with a `status` discriminator, rather than a top-level
+ * `anyOf` of two alternatives. Both describe the same contract, but this one
+ * survives being read by a small model on a free tier: `anyOf` at the root is
+ * the construct providers implement least consistently and the one a weaker
+ * model most often resolves by emitting fields from both branches at once.
+ *
+ * This is a hint, not a guarantee. Some providers enforce it, some ignore it
+ * entirely — so the real contract is `revisionResultSchema` above, which
+ * rejects exactly the mixed-branch replies this phrasing makes less likely.
+ * Being lenient in what we ask for and strict in what we accept is the only
+ * combination that works across providers we do not control.
+ *
+ * `additionalProperties: false` on a section stays, and is doing a specific
+ * job: it is the line that tells the model not to hand back a `sourceRef`.
+ * It is belt to `reattachSourceRefs`'s braces, which drops one regardless.
  */
-const JSON_SCHEMA: Record<string, unknown> = {
-  type: "object",
-  additionalProperties: false,
-  required: ["status"],
+const BLOCK_SCHEMA = {
   anyOf: [
     {
       type: "object",
       additionalProperties: false,
-      required: ["status", "revisedDocument", "summary"],
+      required: ["type", "text"],
+      properties: { type: { const: "paragraph" }, text: { type: "string" } },
+    },
+    {
+      type: "object",
+      additionalProperties: false,
+      required: ["type", "items"],
       properties: {
-        status: { const: "success" },
-        revisedDocument: {
-          type: "object",
-          additionalProperties: false,
-          required: ["sections"],
-          properties: {
-            sections: {
-              type: "array",
-              items: {
-                type: "object",
-                additionalProperties: false,
-                required: ["heading", "blocks"],
-                properties: {
-                  heading: { type: "string" },
-                  blocks: {
-                    type: "array",
-                    items: {
-                      anyOf: [
-                        {
-                          type: "object",
-                          additionalProperties: false,
-                          required: ["type", "text"],
-                          properties: {
-                            type: { const: "paragraph" },
-                            text: { type: "string" },
-                          },
-                        },
-                        {
-                          type: "object",
-                          additionalProperties: false,
-                          required: ["type", "items"],
-                          properties: {
-                            type: { const: "bullets" },
-                            items: { type: "array", items: { type: "string" } },
-                          },
-                        },
-                        {
-                          type: "object",
-                          additionalProperties: false,
-                          required: ["type", "items"],
-                          properties: {
-                            type: { const: "numbered" },
-                            items: { type: "array", items: { type: "string" } },
-                          },
-                        },
-                        {
-                          type: "object",
-                          additionalProperties: false,
-                          required: ["type", "head", "rows"],
-                          properties: {
-                            type: { const: "table" },
-                            head: { type: "array", items: { type: "string" } },
-                            rows: {
-                              type: "array",
-                              items: { type: "array", items: { type: "string" } },
-                            },
-                          },
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        summary: { type: "array", items: { type: "string" } },
+        type: { const: "bullets" },
+        items: { type: "array", items: { type: "string" } },
       },
     },
     {
       type: "object",
       additionalProperties: false,
-      required: ["status", "questions"],
+      required: ["type", "items"],
       properties: {
-        status: { const: "clarification_required" },
-        questions: { type: "array", items: { type: "string" } },
+        type: { const: "numbered" },
+        items: { type: "array", items: { type: "string" } },
+      },
+    },
+    {
+      type: "object",
+      additionalProperties: false,
+      required: ["type", "head", "rows"],
+      properties: {
+        type: { const: "table" },
+        head: { type: "array", items: { type: "string" } },
+        rows: { type: "array", items: { type: "array", items: { type: "string" } } },
       },
     },
   ],
+};
+
+const JSON_SCHEMA: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["status"],
+  properties: {
+    status: {
+      enum: ["success", "clarification_required"],
+      description:
+        "Use success only when you carried out the change without assuming anything. Otherwise use clarification_required.",
+    },
+    revisedDocument: {
+      type: "object",
+      additionalProperties: false,
+      required: ["sections"],
+      description:
+        "Required when status is success. The WHOLE document, including every section you did not change, reproduced exactly.",
+      properties: {
+        sections: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["heading", "blocks"],
+            properties: {
+              heading: { type: "string" },
+              blocks: { type: "array", items: BLOCK_SCHEMA },
+            },
+          },
+        },
+      },
+    },
+    summary: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Required when status is success. One short plain sentence per change you made. Never empty.",
+    },
+    questions: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Required when status is clarification_required. At most five, each one plain sentence.",
+    },
+  },
 };
 
 /* ------------------------------------------------------------------ */

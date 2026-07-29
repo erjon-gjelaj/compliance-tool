@@ -82,6 +82,26 @@ What makes it acceptable is that the model is fenced rather than trusted:
 - Nothing is stored unless every gate passes. A refused revision leaves the
   existing version untouched.
 
+The provider is a free tier and is treated as untrusted and unreliable by
+design. Its schema enforcement is a hint, not a contract: the reply is
+re-validated field by field with zod and then put through the gates above, so
+a weak provider degrades into "refused more often" and never into "bad
+document accepted". Expect more clarification questions than a frontier model
+would produce — that is the fence working, not failing.
+
+Because the document goes to a third party, do not widen what is sent. The
+prompt carries the document's headings and prose, the reviewer's wording, and
+any clarification answers — nothing else. No email address, no company profile
+row, no uploaded file, no `sourceRef`.
+
+That is not the same as anonymous: the company's own name is written into the
+programme's prose by the template, so it goes with the document. That is
+unavoidable while the document is the thing being edited, but it is worth
+knowing rather than discovering — a free tier is free because of what the
+provider may do with what you send it. If a customer ever asks what leaves
+this system, the answer is "your safety programme, your company name, and what
+your hiring client wrote", and that answer should stay short.
+
 If you are adding a model anywhere else, this section is not precedent. It is
 one use, chosen because the deterministic path was not "harder" but absent,
 and it is bounded by code rather than by prompt wording.
@@ -145,15 +165,27 @@ saved rather than merely asked for in a prompt.
 - Lead and submission storage: Supabase (free tier); uploaded documents go
   in a private Supabase Storage bucket
 - Analysis: deterministic, server-side. No language model in the gap-check or
-  review path. The single model use is revision analysis — Anthropic API via
-  `@anthropic-ai/sdk`, behind `lib/ai/model.ts`; see "Language models" above.
+  review path. The single model use is revision analysis, on a free tier,
+  behind `lib/ai/model.ts`; see "Language models" above.
 - Transactional email: SMTP via nodemailer (see `src/lib/notify.ts`)
 - No auth, no user accounts, no payments in this phase
 
-Secrets: the Supabase service key, `ADMIN_SECRET` and `ANTHROPIC_API_KEY` live
-in `.env.local` only, are used server-side only, and must never take a
-`NEXT_PUBLIC_` prefix. A missing `ANTHROPIC_API_KEY` disables revisions and
-nothing else — every other page works without it, by design.
+Secrets: the Supabase service key, `ADMIN_SECRET` and `LLM_API_KEY` live in
+`.env.local` only, are used server-side only, and must never take a
+`NEXT_PUBLIC_` prefix. A missing `LLM_API_KEY` or `LLM_MODEL` disables
+revisions and nothing else — every other page works without them, by design.
+
+The model provider is configured, not coded:
+
+    LLM_API_KEY=...        # required
+    LLM_MODEL=...          # required; no default, see below
+    LLM_BASE_URL=...       # optional, defaults to Groq
+
+Any OpenAI-compatible chat-completions endpoint works — Groq, OpenRouter,
+Together, a local llama.cpp or Ollama server — so moving between free tiers is
+three variables and no deploy. `LLM_MODEL` has no default on purpose: free-tier
+model names are renamed and retired far faster than paid ones, and a stale
+default fails at request time with "model not found" instead of at boot.
 
 ## Naming
 Working name is "CertLoop" — not final, may still change. Store it in a

@@ -9,7 +9,7 @@ import {
   analyseRevision,
   type ClarificationExchange,
 } from "@/lib/programs/revise-analysis";
-import { anthropicModel } from "@/lib/ai/anthropic";
+import { openAiCompatibleModel } from "@/lib/ai/openai-compatible";
 import type { StructuredModel } from "@/lib/ai/model";
 import { renderDocx, type DocumentMeta } from "@/lib/programs/render-docx";
 import { renderPdf } from "@/lib/programs/render-pdf";
@@ -493,7 +493,7 @@ export async function reviseVersion({
   documentId,
   request,
   clarifications = [],
-  model = anthropicModel(),
+  model = openAiCompatibleModel(),
 }: {
   email: string;
   documentId: string;

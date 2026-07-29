@@ -66,17 +66,11 @@ export type RevisionResult =
 /**
  * The shape we ask the provider for, kept beside the zod version above.
  *
- * One flat object with a `status` discriminator, rather than a top-level
- * `anyOf` of two alternatives. Both describe the same contract, but this one
- * survives being read by a small model on a free tier: `anyOf` at the root is
- * the construct providers implement least consistently and the one a weaker
- * model most often resolves by emitting fields from both branches at once.
- *
- * This is a hint, not a guarantee. Some providers enforce it, some ignore it
- * entirely — so the real contract is `revisionResultSchema` above, which
- * rejects exactly the mixed-branch replies this phrasing makes less likely.
- * Being lenient in what we ask for and strict in what we accept is the only
- * combination that works across providers we do not control.
+ * This mirrors the zod union exactly. Every object is closed and every field
+ * in a selected branch is required, which is the subset strict structured
+ * outputs accepts. The provider enforces this while decoding; zod still
+ * validates the reply because an external API is never the final trust
+ * boundary.
  *
  * `additionalProperties: false` on a section stays, and is doing a specific
  * job: it is the line that tells the model not to hand back a `sourceRef`.
@@ -88,14 +82,17 @@ const BLOCK_SCHEMA = {
       type: "object",
       additionalProperties: false,
       required: ["type", "text"],
-      properties: { type: { const: "paragraph" }, text: { type: "string" } },
+      properties: {
+        type: { type: "string", enum: ["paragraph"] },
+        text: { type: "string" },
+      },
     },
     {
       type: "object",
       additionalProperties: false,
       required: ["type", "items"],
       properties: {
-        type: { const: "bullets" },
+        type: { type: "string", enum: ["bullets"] },
         items: { type: "array", items: { type: "string" } },
       },
     },
@@ -104,7 +101,7 @@ const BLOCK_SCHEMA = {
       additionalProperties: false,
       required: ["type", "items"],
       properties: {
-        type: { const: "numbered" },
+        type: { type: "string", enum: ["numbered"] },
         items: { type: "array", items: { type: "string" } },
       },
     },
@@ -113,7 +110,7 @@ const BLOCK_SCHEMA = {
       additionalProperties: false,
       required: ["type", "head", "rows"],
       properties: {
-        type: { const: "table" },
+        type: { type: "string", enum: ["table"] },
         head: { type: "array", items: { type: "string" } },
         rows: { type: "array", items: { type: "array", items: { type: "string" } } },
       },
@@ -121,50 +118,63 @@ const BLOCK_SCHEMA = {
   ],
 };
 
-const JSON_SCHEMA: Record<string, unknown> = {
-  type: "object",
-  additionalProperties: false,
-  required: ["status"],
-  properties: {
-    status: {
-      enum: ["success", "clarification_required"],
-      description:
-        "Use success only when you carried out the change without assuming anything. Otherwise use clarification_required.",
-    },
-    revisedDocument: {
+export const REVISION_JSON_SCHEMA: Record<string, unknown> = {
+  anyOf: [
+    {
       type: "object",
       additionalProperties: false,
-      required: ["sections"],
-      description:
-        "Required when status is success. The WHOLE document, including every section you did not change, reproduced exactly.",
+      required: ["status", "revisedDocument", "summary"],
       properties: {
-        sections: {
-          type: "array",
-          items: {
-            type: "object",
-            additionalProperties: false,
-            required: ["heading", "blocks"],
-            properties: {
-              heading: { type: "string" },
-              blocks: { type: "array", items: BLOCK_SCHEMA },
+        status: { type: "string", enum: ["success"] },
+        revisedDocument: {
+          type: "object",
+          additionalProperties: false,
+          required: ["sections"],
+          description:
+            "The WHOLE document, including every unchanged section reproduced exactly.",
+          properties: {
+            sections: {
+              type: "array",
+              minItems: 1,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["heading", "blocks"],
+                properties: {
+                  heading: { type: "string", minLength: 1 },
+                  blocks: {
+                    type: "array",
+                    minItems: 1,
+                    items: BLOCK_SCHEMA,
+                  },
+                },
+              },
             },
           },
         },
+        summary: {
+          type: "array",
+          minItems: 1,
+          items: { type: "string", minLength: 1 },
+          description: "One short plain sentence per change.",
+        },
       },
     },
-    summary: {
-      type: "array",
-      items: { type: "string" },
-      description:
-        "Required when status is success. One short plain sentence per change you made. Never empty.",
+    {
+      type: "object",
+      additionalProperties: false,
+      required: ["status", "questions"],
+      properties: {
+        status: { type: "string", enum: ["clarification_required"] },
+        questions: {
+          type: "array",
+          minItems: 1,
+          maxItems: 5,
+          items: { type: "string", minLength: 1 },
+        },
+      },
     },
-    questions: {
-      type: "array",
-      items: { type: "string" },
-      description:
-        "Required when status is clarification_required. At most five, each one plain sentence.",
-    },
-  },
+  ],
 };
 
 /* ------------------------------------------------------------------ */
@@ -379,7 +389,7 @@ export async function analyseRevision({
   const outcome = await model.complete({
     system: SYSTEM,
     user: buildUserPrompt({ sections, request, clarifications }),
-    schema: JSON_SCHEMA,
+    schema: REVISION_JSON_SCHEMA,
     schemaName: "RevisionResult",
     maxTokens: MAX_TOKENS,
   });

@@ -83,11 +83,12 @@ What makes it acceptable is that the model is fenced rather than trusted:
   existing version untouched.
 
 The provider is a free tier and is treated as untrusted and unreliable by
-design. Its schema enforcement is a hint, not a contract: the reply is
-re-validated field by field with zod and then put through the gates above, so
-a weak provider degrades into "refused more often" and never into "bad
-document accepted". Expect more clarification questions than a frontier model
-would produce — that is the fence working, not failing.
+design. The call requires strict JSON Schema output, and the reply is still
+re-validated field by field with zod and then put through the gates above:
+constrained decoding guarantees shape, not fidelity. A weak provider degrades
+into "refused more often" and never into "bad document accepted". Expect more
+clarification questions than a frontier model would produce — that is the
+fence working, not failing.
 
 Because the document goes to a third party, do not widen what is sent. The
 prompt carries the document's headings and prose, the reviewer's wording, and

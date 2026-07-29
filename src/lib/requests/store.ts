@@ -38,13 +38,21 @@ export type RequestWithState = RequestRow & {
 };
 
 /**
- * Every request for an address, with its state worked out.
+ * Every request for an address, with its state worked out. Throws if the
+ * database could not be read.
  *
  * One query for the requests and one for all their events, rather than a
  * query per request. A contractor with a dozen open requests should not cost
  * thirteen round trips to render a list.
+ *
+ * This is the variant for a screen whose entire job is the list. An empty
+ * array has to mean "you have made no requests", and if a failed query also
+ * returns one then the page tells a customer with ten open requests that they
+ * have none — the most alarming thing this product could say, and it says it
+ * in the calm voice of an empty state. Failing loudly hands the decision to
+ * an error boundary, which can at least offer to try again.
  */
-export async function listRequestsForEmail(
+export async function listRequestsForEmailOrThrow(
   email: string,
 ): Promise<RequestWithState[]> {
   const supabase = getSupabaseAdminClient();
@@ -57,8 +65,7 @@ export async function listRequestsForEmail(
     .limit(50);
 
   if (error) {
-    console.warn(`Could not list requests: ${error.message}`);
-    return [];
+    throw new Error(`Could not list requests: ${error.message}`);
   }
 
   const rows = (requests ?? []) as RequestRow[];
@@ -73,8 +80,15 @@ export async function listRequestsForEmail(
     )
     .order("created_at", { ascending: true });
 
+  /*
+   * Also fatal, and less obviously so. State is derived from the events, so
+   * a request whose events failed to load is not a request with unknown
+   * status — it renders with whatever `deriveStatus` makes of an empty log,
+   * which is a definite-looking label that happens to be wrong. Every row on
+   * the page would be mislabelled and none of them would look it.
+   */
   if (eventError) {
-    console.warn(`Could not list request events: ${eventError.message}`);
+    throw new Error(`Could not list request events: ${eventError.message}`);
   }
 
   const byRequest = new Map<string, RequestEvent[]>();
@@ -88,6 +102,26 @@ export async function listRequestsForEmail(
     const own = byRequest.get(row.id) ?? [];
     return { ...row, events: own, status: deriveStatus(own) };
   });
+}
+
+/**
+ * The same list, for a screen where it is a panel rather than the point.
+ *
+ * The overview and the help page both show requests alongside other things
+ * they fetched independently. Taking those whole pages down over one panel is
+ * the wrong trade, so here a failure degrades to an empty panel and a warning
+ * in the log. The requests page itself uses the throwing variant above,
+ * because there the empty panel would be the whole screen.
+ */
+export async function listRequestsForEmail(
+  email: string,
+): Promise<RequestWithState[]> {
+  try {
+    return await listRequestsForEmailOrThrow(email);
+  } catch (error) {
+    console.warn(error instanceof Error ? error.message : String(error));
+    return [];
+  }
 }
 
 /**

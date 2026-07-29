@@ -1,24 +1,23 @@
 import { Spinner } from "@/components/spinner";
 
 /**
- * Shown while the dashboard's server work is in flight.
+ * The fallback for the workspace and anything under it without one of its own.
  *
- * A route-level fallback rather than a spinner on the link that got here,
- * which is what Next's own guidance prefers for a dynamic route: the shell
- * appears immediately and the browser is on the new page while the data is
- * still being fetched, instead of sitting on the old page waiting.
+ * Next uses the nearest `loading.tsx` above a route, so this file is what
+ * Documents, Programs, Company and Help show while they fetch — which is why
+ * the copy is about the workspace in general. It used to say "Opening your
+ * file", from when /dashboard was a list of submissions and its only child
+ * was one submission; that wording now lives in [id]/loading.tsx, the one
+ * route it describes.
  *
- * It covers a real wait. This route verifies a JWT, queries submissions with
- * their documents, and on a cold serverless function does all of it after a
- * boot.
- *
- * `loading.tsx` applies to /dashboard/[id] as well, since a nested route with
- * no fallback of its own uses the nearest one above it — which is why the copy
- * is about the file in general rather than about the list specifically.
+ * The outer padding is gone as well. This predates the workspace chrome, and
+ * `mx-auto max-w-4xl px-6` on top of the layout's own centred, padded column
+ * indented the spinner further than the content it stood in for — the page
+ * visibly stepped left when it loaded.
  */
 export default function DashboardLoading() {
   return (
-    <main className="mx-auto flex max-w-4xl items-center gap-3 px-6 py-16">
+    <main className="flex items-center gap-3 py-16">
       <Spinner className="h-5 w-5 text-verdigris" />
       {/*
         The live region is the announcement; the spinner is aria-hidden, so
@@ -26,7 +25,7 @@ export default function DashboardLoading() {
         page is fetching.
       */}
       <p role="status" className="type-body">
-        Opening your file&hellip;
+        Loading&hellip;
       </p>
     </main>
   );

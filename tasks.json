@@ -393,6 +393,13 @@
       "needs_human_review": false
     },
     {
+      "id": "062",
+      "title": "Requests page states and a global navigation indicator",
+      "status": "done",
+      "notes": "The requests list had no fallback of its own and fell through to the workspace spinner, whose copy was about a submission. Adds a skeleton matched to the real row height, an error state with retry reached via a throwing store variant, and a route-transition progress bar in the root layout.",
+      "needs_human_review": false
+    },
+    {
       "id": "063",
       "title": "PDF generation failed in production: pdfkit was bundled",
       "status": "done",

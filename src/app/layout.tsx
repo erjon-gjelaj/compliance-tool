@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { NavigationProgress } from "@/components/nav-progress";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/constants";
 
 /*
@@ -50,6 +51,10 @@ export default function RootLayout({
       className={`${bricolage.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        {/* Route transitions, for every page in the app. It lives at the root
+            so there is one bar rather than one per section, and above the
+            header so it reads as belonging to the whole page. */}
+        <NavigationProgress />
         {/* Header and footer live here so all four pages share the same
             chrome and nothing drifts as pages are added. */}
         <SiteHeader />

@@ -59,7 +59,12 @@ export const revisionResultSchema = z.discriminatedUnion("status", [
 ]);
 
 export type RevisionResult =
-  | { status: "success"; revisedDocument: Section[]; summary: string[] }
+  | {
+      status: "success";
+      revisedDocument: Section[];
+      summary: string[];
+      modelId: string;
+    }
   | { status: "clarification_required"; questions: string[] }
   | { status: "failed"; reason: string };
 
@@ -422,5 +427,6 @@ export async function analyseRevision({
     status: "success",
     revisedDocument: reattachSourceRefs(sections, revised),
     summary: parsed.data.summary,
+    modelId: outcome.modelId,
   };
 }

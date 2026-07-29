@@ -607,7 +607,7 @@ export async function reviseVersion({
     revisionReason: request,
     source: "revised",
     summary: analysis.summary,
-    modelId: model.id,
+    modelId: analysis.modelId,
   });
 
   if (!outcome.ok) return outcome;

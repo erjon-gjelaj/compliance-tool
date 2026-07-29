@@ -426,6 +426,13 @@
       "status": "done",
       "notes": "The first live free-router reply put arrays where block fields require strings. Zod refused it and no version was saved, but JSON Object Mode only promises valid JSON, not the requested shape. The provider call now uses strict JSON Schema output. The schema mirrors the zod union, closes every object, and requires every declared field. Zod, the one-section diff gate, citation gate, and validateDocument still run after decoding.",
       "needs_human_review": false
+    },
+    {
+      "id": "067",
+      "title": "OpenRouter free router returned a zero-text completion",
+      "status": "done",
+      "notes": "A successful OpenRouter HTTP response can still contain no completion text. That exact failure now gets one retry within the original 45-second deadline; provider errors, malformed replies, and safety failures are not retried. Empty replies log response id, selected model, finish reason, token count, and refusal without logging secrets or document content. Successful revisions store the actual model selected behind openrouter/free rather than the router alias. Adapter tests cover successful recovery, bounded failure after two empty responses, no retry for provider errors, and selected-model propagation.",
+      "needs_human_review": true
     }
   ],
   "current_task_id": "059",

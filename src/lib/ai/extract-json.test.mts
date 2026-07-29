@@ -3,8 +3,36 @@ import { test } from "node:test";
 
 import {
   extractJson,
+  openAiCompatibleModel,
   strictResponseFormat,
 } from "./openai-compatible.ts";
+import type { StructuredRequest } from "./model.ts";
+
+const REQUEST: StructuredRequest = {
+  system: "Edit only what was requested.",
+  user: "Remove the Responsibilities section.",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["status"],
+    properties: { status: { type: "string" } },
+  },
+  schemaName: "RevisionResult",
+  maxTokens: 1_000,
+};
+
+function jsonResponse(payload: unknown, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+const TEST_CONFIG = {
+  apiKey: "test-key",
+  baseUrl: "https://openrouter.ai/api/v1",
+  model: "openrouter/free",
+};
 
 test("the provider is asked to enforce the schema while decoding", () => {
   const schema = { type: "object", properties: {} };
@@ -24,6 +52,84 @@ test("the provider is asked to enforce the schema while decoding", () => {
       schema,
     },
   });
+});
+
+test("a zero-text completion is retried once and the selected model is audited", async () => {
+  const responses = [
+    jsonResponse({
+      id: "first",
+      model: "free/provider-a",
+      choices: [{ message: { content: "" }, finish_reason: null }],
+      usage: { completion_tokens: 0 },
+    }),
+    jsonResponse({
+      id: "second",
+      model: "free/provider-b",
+      choices: [
+        {
+          message: { content: '{"status":"clarification_required"}' },
+          finish_reason: "stop",
+        },
+      ],
+      usage: { prompt_tokens: 12, completion_tokens: 4 },
+    }),
+  ];
+  const calls: string[] = [];
+  const model = openAiCompatibleModel({
+    config: TEST_CONFIG,
+    fetchImpl: async (input) => {
+      calls.push(String(input));
+      const response = responses.shift();
+      assert.ok(response, "unexpected provider call");
+      return response;
+    },
+  });
+
+  const result = await model.complete(REQUEST);
+
+  assert.equal(calls.length, 2);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.deepEqual(result.json, { status: "clarification_required" });
+  assert.equal(result.modelId, "openrouter.ai/free/provider-b");
+  assert.deepEqual(result.usage, { input: 12, output: 4 });
+});
+
+test("two zero-text completions fail closed without a third request", async () => {
+  let calls = 0;
+  const model = openAiCompatibleModel({
+    config: TEST_CONFIG,
+    fetchImpl: async () => {
+      calls += 1;
+      return jsonResponse({
+        id: `empty-${calls}`,
+        model: "free/provider-a",
+        choices: [{ message: { content: null }, finish_reason: null }],
+        usage: { completion_tokens: 0 },
+      });
+    },
+  });
+
+  const result = await model.complete(REQUEST);
+
+  assert.deepEqual(result, { ok: false, reason: "empty" });
+  assert.equal(calls, 2);
+});
+
+test("provider errors are not retried as if they were empty output", async () => {
+  let calls = 0;
+  const model = openAiCompatibleModel({
+    config: TEST_CONFIG,
+    fetchImpl: async () => {
+      calls += 1;
+      return jsonResponse({ error: { message: "unavailable" } }, 503);
+    },
+  });
+
+  const result = await model.complete(REQUEST);
+
+  assert.deepEqual(result, { ok: false, reason: "model_error" });
+  assert.equal(calls, 1);
 });
 
 /**

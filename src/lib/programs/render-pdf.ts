@@ -24,11 +24,18 @@ const PAGE_HEIGHT = 841.89;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
 /**
- * Standard fonts only.
+ * Standard fonts only — no font file of ours ships with the deployment.
  *
- * pdfkit embeds its own copies of the base-14 fonts, so nothing here depends
- * on a font file being present in the deployment. A missing font in a
- * serverless bundle is a class of failure that only appears in production.
+ * This used to claim that pdfkit "embeds its own copies of the base-14 fonts,
+ * so nothing here depends on a font file being present". That was wrong, and
+ * it was wrong in the direction that hurts: pdfkit reads the AFM metrics for
+ * these fonts off disk at startup, from its own package directory. Naming
+ * Helvetica avoids shipping a typeface, not a file read.
+ *
+ * The read only works because pdfkit is in `serverExternalPackages` — see
+ * next.config.ts. Bundled, it looked for its metrics under the bundler's
+ * virtual root and every generation failed in production while every
+ * generation passed locally. Do not remove it from that list.
  */
 const BODY = "Helvetica";
 const BOLD = "Helvetica-Bold";

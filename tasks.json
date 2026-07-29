@@ -391,6 +391,13 @@
       "status": "todo",
       "notes": "Almost entirely procedural and low-risk to template - who is told, in what order, what gets recorded. Very little that could be fabricated.",
       "needs_human_review": false
+    },
+    {
+      "id": "063",
+      "title": "PDF generation failed in production: pdfkit was bundled",
+      "status": "done",
+      "notes": "Every program generation failed on the deployment with ENOENT on /ROOT/node_modules/pdfkit/js/data/Helvetica.afm. pdfkit reads AFM font metrics off disk at startup; bundled, it resolved them against the bundler virtual root. Fixed by adding pdfkit to serverExternalPackages. Tracing was never the problem - the .afm files were already in the deployment. Guard test added because the rendering tests run in Node and passed throughout.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": "059",

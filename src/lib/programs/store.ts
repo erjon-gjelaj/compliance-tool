@@ -4,9 +4,21 @@ import { getSupabaseAdminClient } from "@/lib/supabase";
 import { getCompanyForEmail } from "@/lib/companies";
 import { PROGRAMS, programById } from "@/lib/programs/registry";
 import { assembleProgram } from "@/lib/programs/assemble";
+import { validateDocument } from "@/lib/programs/validate";
+import {
+  analyseRevision,
+  type ClarificationExchange,
+} from "@/lib/programs/revise-analysis";
+import { openAiCompatibleModel } from "@/lib/ai/openai-compatible";
+import type { StructuredModel } from "@/lib/ai/model";
 import { renderDocx, type DocumentMeta } from "@/lib/programs/render-docx";
 import { renderPdf } from "@/lib/programs/render-pdf";
-import type { Answers, CompanyContext } from "@/lib/programs/types";
+import type {
+  Answers,
+  CompanyContext,
+  ProgramTemplate,
+  Section,
+} from "@/lib/programs/types";
 
 /**
  * Producing, storing and reading generated programs.
@@ -62,6 +74,21 @@ export type VersionRow = {
   effective_date: string;
   superseded_at: string | null;
   revision_reason: string | null;
+  /**
+   * The document as rendered. Null on versions issued before 0010.
+   *
+   * A version used to be fully described by its answers — same answers, same
+   * template, same sections — so there was nothing to store but the inputs.
+   * A model-assisted revision breaks that: the result is no longer a function
+   * of the answers, and rebuilding from them would silently undo it.
+   */
+  sections: Section[] | null;
+  /** `assembled` = template + answers, no model. `revised` = a model edited it. */
+  source: "assembled" | "revised";
+  /** What the model said it changed. Audit trail, not display copy. */
+  revision_summary: string[] | null;
+  /** Which model proposed it, so a bad revision traces to a model and a date. */
+  revised_by_model: string | null;
 };
 
 export type DocumentWithVersions = DocumentRow & {
@@ -311,13 +338,65 @@ export async function generateVersion({
         : null,
   };
 
+  return publishVersion({
+    documentId,
+    version,
+    previous,
+    template,
+    meta,
+    sections: assembled.sections,
+    answers,
+    effectiveDate,
+    revisionReason,
+    source: "assembled",
+  });
+}
+
+/**
+ * Renders, uploads and records one version. The only way a version is made.
+ *
+ * Both a first issue and a model-assisted revision come through here, for the
+ * reason `generateVersion` already gives about its own two paths: a revision
+ * that rendered, uploaded or recorded differently from an original would be a
+ * hard bug to see and an easy one to ship. The only thing that differs
+ * between the two callers is where `sections` came from.
+ */
+async function publishVersion({
+  documentId,
+  version,
+  previous,
+  template,
+  meta,
+  sections,
+  answers,
+  effectiveDate,
+  revisionReason,
+  source,
+  summary,
+  modelId,
+}: {
+  documentId: string;
+  version: number;
+  previous: number;
+  template: ProgramTemplate;
+  meta: DocumentMeta;
+  sections: Section[];
+  answers: Answers;
+  effectiveDate: string;
+  revisionReason?: string | null;
+  source: "assembled" | "revised";
+  summary?: string[];
+  modelId?: string;
+}): Promise<GenerateOutcome> {
+  const supabase = getSupabaseAdminClient();
+
   let docx: Buffer;
   let pdf: Buffer;
 
   try {
     [docx, pdf] = await Promise.all([
-      renderDocx(meta, assembled.sections),
-      renderPdf(meta, assembled.sections),
+      renderDocx(meta, sections),
+      renderPdf(meta, sections),
     ]);
   } catch (cause) {
     console.error("Rendering failed:", cause);
@@ -355,10 +434,14 @@ export async function generateVersion({
       version,
       template_version: template.templateVersion,
       answers,
+      sections,
       docx_path: docxPath,
       pdf_path: pdfPath,
       effective_date: effectiveDate,
       revision_reason: revisionReason ?? null,
+      source,
+      revision_summary: summary ?? null,
+      revised_by_model: modelId ?? null,
     });
 
   if (insertError) {
@@ -378,6 +461,163 @@ export async function generateVersion({
   }
 
   return { ok: true, documentId, version };
+}
+
+export type ReviseOutcome =
+  | { ok: true; documentId: string; version: number; summary: string[] }
+  | { ok: false; questions: string[] }
+  | { ok: false; reason: string };
+
+/**
+ * A revision, read by a model and applied only if it survives every gate.
+ *
+ * The order matters and each step exists because the one before it cannot
+ * catch what it catches:
+ *
+ *   1. the API's JSON Schema — shape only
+ *   2. `checkRevision` — scope: what changed, and whether a citation appeared
+ *   3. `validateDocument` — the same gate every assembled document passes:
+ *      placeholders, empty sections, duplicate headings, stray `undefined`
+ *   4. render, upload, record — via the same path as an original
+ *
+ * A model that satisfies the schema can still return a document that rewrote
+ * six sections, and a document that survives the scope gate can still contain
+ * "[insert name]". Neither gate subsumes the other, and the last one is the
+ * one the rest of the product already trusts.
+ *
+ * Nothing is written until all of them pass. A refused revision leaves the
+ * customer's existing version exactly as it was.
+ */
+export async function reviseVersion({
+  email,
+  documentId,
+  request,
+  clarifications = [],
+  model = openAiCompatibleModel(),
+}: {
+  email: string;
+  documentId: string;
+  request: string;
+  clarifications?: ClarificationExchange[];
+  /** Injectable so the tests never reach the network. */
+  model?: StructuredModel;
+}): Promise<ReviseOutcome> {
+  const document = await getDocumentForEmail(email, documentId);
+  if (!document) return { ok: false, reason: "We couldn't find that document." };
+
+  const template = programById(document.program_id);
+  if (!template) return { ok: false, reason: "We don't have that program." };
+
+  const context = await companyContextFor(email);
+  if (!context) {
+    return { ok: false, reason: "Add your company name before revising." };
+  }
+
+  const current = document.current;
+
+  /*
+   * The sections as they actually stand. Versions issued before 0010 have
+   * none stored, and for those the answers still describe the document
+   * exactly — they predate any revision, so rebuilding is faithful.
+   */
+  let sections = current.sections;
+
+  if (!sections) {
+    const rebuilt = assembleProgram({
+      template,
+      answers: current.answers,
+      context,
+    });
+    if (!rebuilt.ok) {
+      console.error("Could not rebuild the current document:", rebuilt.problems);
+      return { ok: false, reason: "We couldn't read your current document." };
+    }
+    sections = rebuilt.sections;
+  }
+
+  const analysis = await analyseRevision({
+    model,
+    sections,
+    request,
+    clarifications,
+  });
+
+  if (analysis.status === "clarification_required") {
+    return { ok: false, questions: analysis.questions };
+  }
+
+  if (analysis.status === "failed") {
+    console.error(`Revision analysis failed: ${analysis.reason}`);
+    return {
+      ok: false,
+      reason:
+        analysis.reason === "not_configured"
+          ? "Revisions are unavailable right now. Please contact us for help."
+          : analysis.reason === "busy"
+            ? "The revision service is busy right now. Please try again in a minute."
+            : "We couldn't make that change safely. Please contact us for help.",
+    };
+  }
+
+  /*
+   * The gate every assembled document passes, applied unchanged. A revised
+   * document is not held to a lower standard than one we wrote ourselves —
+   * if anything the reverse, which is what the scope gate above is for.
+   */
+  const validated = validateDocument({
+    template,
+    answers: current.answers,
+    context,
+    sections: analysis.revisedDocument,
+  });
+
+  if (!validated.ok) {
+    console.error("Revised document failed validation:", validated.problems);
+    return {
+      ok: false,
+      reason: "We couldn't make that change safely. Please contact us for help.",
+    };
+  }
+
+  const version = current.version + 1;
+  const now = new Date();
+  const formatted = now.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const outcome = await publishVersion({
+    documentId,
+    version,
+    previous: current.version,
+    template,
+    meta: {
+      companyName: context.companyName,
+      title: template.title,
+      version,
+      effectiveDate: formatted,
+      revisionDate: formatted,
+    },
+    sections: analysis.revisedDocument,
+    // The answers ride along unchanged: they are still what the customer told
+    // us, and a revision does not make any of it untrue.
+    answers: current.answers,
+    effectiveDate: now.toISOString().slice(0, 10),
+    revisionReason: request,
+    source: "revised",
+    summary: analysis.summary,
+    modelId: model.id,
+  });
+
+  if (!outcome.ok) return outcome;
+
+  return {
+    ok: true,
+    documentId: outcome.documentId,
+    version: outcome.version,
+    summary: analysis.summary,
+  };
 }
 
 /**

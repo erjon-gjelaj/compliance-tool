@@ -47,17 +47,69 @@ Abuse: a submission no longer costs an API call, but it does cost storage,
 an email and a person's attention. Keep the submission endpoint rate-limited
 and keep basic spam protection on it.
 
-## No language models
-Text extraction and the review itself are deterministic: libraries pull the
-text out, and the review is a text search against `lib/requirements/`. No
-LLM is used anywhere in this project, and none should be added without an
-explicit decision to reverse this. The reasons are that the same submission
-must produce the same answer twice, every claim must point at a file and a
-phrase a person can check, and nothing may be invented — which is exactly
-what a model cannot promise about a contractor's safety paperwork.
+## Language models — one use, fenced
+This rule previously read "no LLM is used anywhere in this project, and none
+should be added without an explicit decision to reverse this." That decision
+was taken deliberately on 2026-07-29 and is recorded here rather than removed,
+because the reasoning it gave still governs everything except the one use it
+was reversed for.
+
+**Still deterministic, and not open for a model:** text extraction, the gap
+analysis, and the review. Libraries pull the text out; the review is a text
+search against `lib/requirements/`. The same submission must produce the same
+answer twice, every claim must point at a file and a phrase a person can
+check, and nothing may be invented. Do not put a model anywhere in that path.
+
+**The one exception — revision analysis** (`lib/programs/revise-analysis.ts`).
+When a hiring client sends a document back, a model reads the existing
+document and the reviewer's wording and either applies that one change or
+returns clarification questions. This could not be done deterministically:
+acting on free text is exactly the thing a text search cannot do, and the
+honest alternatives were a human or nothing.
+
+What makes it acceptable is that the model is fenced rather than trusted:
+
+- It never sees a blank page. It is given the document that exists and asked
+  for the smallest change that satisfies one request.
+- It never sees `sourceRef`, and one is never accepted back from it. Our
+  regulatory mapping is re-attached by heading afterwards.
+- A revision may change at most one section, may not add a section, and may
+  not introduce a CFR citation anywhere (`checkRevision`). All three are
+  refusals, not warnings.
+- The result then passes `validateDocument` — the same gate every assembled
+  document passes — before anything is written.
+- Ambiguity produces questions for the customer, never an assumption.
+- Nothing is stored unless every gate passes. A refused revision leaves the
+  existing version untouched.
+
+The provider is a free tier and is treated as untrusted and unreliable by
+design. Its schema enforcement is a hint, not a contract: the reply is
+re-validated field by field with zod and then put through the gates above, so
+a weak provider degrades into "refused more often" and never into "bad
+document accepted". Expect more clarification questions than a frontier model
+would produce — that is the fence working, not failing.
+
+Because the document goes to a third party, do not widen what is sent. The
+prompt carries the document's headings and prose, the reviewer's wording, and
+any clarification answers — nothing else. No email address, no company profile
+row, no uploaded file, no `sourceRef`.
+
+That is not the same as anonymous: the company's own name is written into the
+programme's prose by the template, so it goes with the document. That is
+unavoidable while the document is the thing being edited, but it is worth
+knowing rather than discovering — a free tier is free because of what the
+provider may do with what you send it. If a customer ever asks what leaves
+this system, the answer is "your safety programme, your company name, and what
+your hiring client wrote", and that answer should stay short.
+
+If you are adding a model anywhere else, this section is not precedent. It is
+one use, chosen because the deterministic path was not "harder" but absent,
+and it is bounded by code rather than by prompt wording.
 
 ## Regulatory output rules (Scope B — non-negotiable)
-These bind generated output, not just page copy.
+These bind generated output, not just page copy — including anything a model
+proposes during a revision, which is checked against them in code before it is
+saved rather than merely asked for in a prompt.
 - Never invent a regulation, CFR citation, platform requirement, or
   deadline. If unsure, emit the item as `status: "unknown"` and put it in
   `questionsForClient`.
@@ -112,12 +164,29 @@ These bind generated output, not just page copy.
 - Deploy target: Vercel
 - Lead and submission storage: Supabase (free tier); uploaded documents go
   in a private Supabase Storage bucket
-- Analysis: deterministic, server-side. No language model, no AI API.
+- Analysis: deterministic, server-side. No language model in the gap-check or
+  review path. The single model use is revision analysis, on a free tier,
+  behind `lib/ai/model.ts`; see "Language models" above.
 - Transactional email: SMTP via nodemailer (see `src/lib/notify.ts`)
 - No auth, no user accounts, no payments in this phase
 
-Secrets: the Supabase service key and `ADMIN_SECRET` live in `.env.local`
-only, are used server-side only, and must never take a `NEXT_PUBLIC_` prefix.
+Secrets: the Supabase service key, `ADMIN_SECRET` and `LLM_API_KEY` live in
+`.env.local` only, are used server-side only, and must never take a
+`NEXT_PUBLIC_` prefix. A missing `LLM_API_KEY` or `LLM_MODEL` disables
+revisions and nothing else — every other page works without them, by design.
+
+The model provider is configured, not coded:
+
+    LLM_API_KEY=...        # required
+    LLM_MODEL=...          # required; no default, see below
+    LLM_BASE_URL=...       # optional, defaults to Groq
+    LLM_MAX_TOKENS=8192    # optional; caps completion size for the chosen model/tier
+
+Any OpenAI-compatible chat-completions endpoint works — Groq, OpenRouter,
+Together, a local llama.cpp or Ollama server — so moving between free tiers is
+three variables and no deploy. `LLM_MODEL` has no default on purpose: free-tier
+model names are renamed and retired far faster than paid ones, and a stale
+default fails at request time with "model not found" instead of at boot.
 
 ## Naming
 Working name is "CertLoop" — not final, may still change. Store it in a

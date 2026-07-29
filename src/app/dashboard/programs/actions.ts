@@ -9,8 +9,9 @@ import { isOfferable } from "@/lib/programs/types";
 import {
   companyContextFor,
   generateVersion,
-  getDocumentForEmail,
+  reviseVersion,
 } from "@/lib/programs/store";
+import type { ClarificationExchange } from "@/lib/programs/revise-analysis";
 import { nextUnanswered, visibleQuestions } from "@/lib/programs/validate";
 import type { Answers } from "@/lib/programs/types";
 import type {
@@ -134,35 +135,61 @@ export async function reviseDocument(
   if (!session) redirect("/sign-in");
 
   const documentId = String(formData.get("document_id") ?? "");
-  const reason = String(formData.get("reason") ?? "").trim();
 
-  if (!reason) {
+  /*
+   * On the first pass the request comes from the textarea. On a clarification
+   * retry it rides in a hidden field, because nothing about a revision is
+   * persisted until a version is actually produced — an abandoned
+   * clarification leaves no row anywhere, which is the right outcome for a
+   * question the customer decided not to answer.
+   */
+  const carried = String(formData.get("carried_request") ?? "").trim();
+  const typed = String(formData.get("reason") ?? "").trim();
+  const request = carried || typed;
+
+  if (!request) {
     return { status: "editing", error: "Tell us what they asked you to change." };
   }
 
-  const document = await getDocumentForEmail(session.email, documentId);
+  /*
+   * Answers to the questions asked last time, paired back up with them. The
+   * questions are carried too: the model needs to see what it asked, and
+   * re-deriving them would mean a second call that might ask different ones.
+   */
+  const askedRaw = formData.getAll("asked").map((value) => String(value));
+  const clarifications: ClarificationExchange[] = [];
 
-  // Not yours, not real, and never successfully generated are all "not
-  // found" here — the reader drops documents with no version behind them.
-  if (!document) {
-    return { status: "editing", error: "We couldn't find that document." };
+  for (const [index, question] of askedRaw.entries()) {
+    const answer = String(formData.get(`answer_${index}`) ?? "").trim();
+    if (answer) clarifications.push({ question, answer });
   }
 
-  const outcome = await generateVersion({
+  // Every question must be answered, or the retry asks the same ones again.
+  if (askedRaw.length > 0 && clarifications.length < askedRaw.length) {
+    return {
+      status: "clarifying",
+      request,
+      questions: askedRaw,
+      error: "Answer all the questions so we don't have to guess.",
+    };
+  }
+
+  const outcome = await reviseVersion({
     email: session.email,
-    programId: document.program_id,
-    // The same answers as the version being revised. A revision that silently
-    // changed an answer would produce a document the customer never described.
-    answers: document.current.answers,
-    revisionReason: reason,
+    documentId,
+    request,
+    clarifications,
   });
 
   if (!outcome.ok) {
-    return { status: "editing", error: outcome.reason };
+    if ("questions" in outcome) {
+      return { status: "clarifying", request, questions: outcome.questions };
+    }
+    return { status: "editing", request, error: outcome.reason };
   }
 
   revalidatePath(`/dashboard/documents/${documentId}`);
   revalidatePath("/dashboard/documents");
 
-  return { status: "sent" };
+  return { status: "sent", summary: outcome.summary };
 }

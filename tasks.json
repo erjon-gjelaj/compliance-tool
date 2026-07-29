@@ -381,8 +381,8 @@
     {
       "id": "060",
       "title": "Program 3: Emergency Action Plan",
-      "status": "todo",
-      "notes": "Site-specific by nature, so the questionnaire has to carry evacuation and muster arrangements. Higher input cost than PPE, which is why it is third rather than second.",
+      "status": "done",
+      "notes": "Done. Added a deterministic, customer-available Emergency Action Plan with 8 site-specific questions covering the workplace, anticipated emergencies, coordinator role, reporting and alarm arrangement, evacuation routes, muster point, critical shutdown duties, and rescue/medical arrangement. The 9-section policy covers reporting, alarms, evacuation, critical operations, accounting, rescue/medical duties, contact responsibility, and plan communication/review. Site facts are never defaulted, and the document does not claim that a named employee completed instruction or is qualified for emergency response. Joined to the emergency-action-plan requirement and historical finding label. Added 7 regression tests; full suite 219 passing, lint passing, and production build passing.",
       "needs_human_review": false
     },
     {
@@ -442,6 +442,6 @@
       "needs_human_review": false
     }
   ],
-  "current_task_id": "059",
+  "current_task_id": "061",
   "blocked_on": null
 }

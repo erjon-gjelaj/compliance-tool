@@ -30,7 +30,13 @@ export type StructuredRequest = {
 };
 
 export type ModelOutcome =
-  | { ok: true; json: unknown; usage: { input: number; output: number } }
+  | {
+      ok: true;
+      json: unknown;
+      usage: { input: number; output: number };
+      /** The provider's actual selected model, not merely the requested router. */
+      modelId: string;
+    }
   | { ok: false; reason: string };
 
 export interface StructuredModel {

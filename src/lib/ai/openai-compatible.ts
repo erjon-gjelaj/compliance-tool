@@ -36,6 +36,14 @@ const TIMEOUT_MS = 45_000;
 const DEFAULT_MAX_TOKENS = 8_192;
 
 type Config = { baseUrl: string; apiKey: string; model: string };
+type Fetch = (input: string | URL, init?: RequestInit) => Promise<Response>;
+
+export type OpenAiCompatibleOptions = {
+  /** Test seam. Production reads the same three LLM_* variables as before. */
+  config?: Config | null;
+  fetchImpl?: Fetch;
+  timeoutMs?: number;
+};
 
 function maxTokensCeiling(): number {
   const configured = Number.parseInt(process.env.LLM_MAX_TOKENS ?? "", 10);
@@ -45,6 +53,22 @@ function maxTokensCeiling(): number {
   }
 
   return configured;
+}
+
+function openRouterOptions(config: Config) {
+  const hostname = new URL(config.baseUrl).hostname;
+  if (hostname !== "openrouter.ai" && !hostname.endsWith(".openrouter.ai")) {
+    return {};
+  }
+
+  return {
+    /*
+     * Some free reasoning models spend the whole completion on hidden
+     * reasoning and return `content: ""` with `finish_reason: "stop"`.
+     * Revision analysis needs the schema result, not a reasoning trace.
+     */
+    reasoning: { effort: "none" },
+  };
 }
 
 export function strictResponseFormat(request: StructuredRequest) {
@@ -103,18 +127,15 @@ export function extractJson(raw: string): string | null {
   return candidate.slice(start, end + 1);
 }
 
-export function openAiCompatibleModel(): StructuredModel {
-  const config = readConfig();
-
+function singleAttemptModel(
+  config: Config,
+  fetchImpl: Fetch,
+  timeoutMs: number,
+): StructuredModel {
   return {
-    id: config ? `${new URL(config.baseUrl).host}/${config.model}` : "unconfigured",
+    id: `${new URL(config.baseUrl).host}/${config.model}`,
 
     async complete(request: StructuredRequest): Promise<ModelOutcome> {
-      if (!config) {
-        console.error("LLM_API_KEY or LLM_MODEL is not set; revisions are off.");
-        return { ok: false, reason: "not_configured" };
-      }
-
       /*
        * An explicit abort rather than relying on the platform's timeout. This
        * runs inside a server action with a 60s ceiling, and a request that
@@ -122,12 +143,12 @@ export function openAiCompatibleModel(): StructuredModel {
        * instead of "we couldn't do that" — losing the one thing they need,
        * which is to know it did not happen.
        */
-      const abort = AbortSignal.timeout(TIMEOUT_MS);
+      const abort = AbortSignal.timeout(timeoutMs);
 
       let response: Response;
 
       try {
-        response = await fetch(`${config.baseUrl}/chat/completions`, {
+        response = await fetchImpl(`${config.baseUrl}/chat/completions`, {
           method: "POST",
           signal: abort,
           headers: {
@@ -143,6 +164,7 @@ export function openAiCompatibleModel(): StructuredModel {
           },
           body: JSON.stringify({
             model: config.model,
+            ...openRouterOptions(config),
             /*
              * Zero temperature. It does not make a model deterministic and it
              * is not claimed to — but this is an editing task with one right
@@ -198,9 +220,11 @@ export function openAiCompatibleModel(): StructuredModel {
       }
 
       let payload: {
+        id?: string;
+        model?: string;
         choices?: {
-          message?: { content?: string | null };
-          finish_reason?: string;
+          message?: { content?: string | null; refusal?: string | null };
+          finish_reason?: string | null;
         }[];
         usage?: { prompt_tokens?: number; completion_tokens?: number };
       };
@@ -227,7 +251,17 @@ export function openAiCompatibleModel(): StructuredModel {
       const content = choice?.message?.content;
 
       if (!content?.trim()) {
-        console.error("The model returned no text.");
+        console.error(
+          "The model returned no text.",
+          JSON.stringify({
+            responseId: payload.id ?? null,
+            requestedModel: config.model,
+            selectedModel: payload.model ?? null,
+            finishReason: choice?.finish_reason ?? null,
+            completionTokens: payload.usage?.completion_tokens ?? 0,
+            refusal: choice?.message?.refusal ?? null,
+          }),
+        );
         return { ok: false, reason: "empty" };
       }
 
@@ -246,11 +280,55 @@ export function openAiCompatibleModel(): StructuredModel {
             input: payload.usage?.prompt_tokens ?? 0,
             output: payload.usage?.completion_tokens ?? 0,
           },
+          modelId: `${new URL(config.baseUrl).host}/${payload.model || config.model}`,
         };
       } catch {
         console.error("The model's JSON did not parse.");
         return { ok: false, reason: "unparseable" };
       }
+    },
+  };
+}
+
+/**
+ * Retries only the free-provider failure where a successful HTTP response has
+ * no completion text. Both attempts share the original deadline, so retrying
+ * cannot double latency or leave the server action stuck.
+ */
+export function openAiCompatibleModel(
+  options: OpenAiCompatibleOptions = {},
+): StructuredModel {
+  const config =
+    options.config === undefined ? readConfig() : options.config;
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const timeoutMs = options.timeoutMs ?? TIMEOUT_MS;
+  const id = config
+    ? `${new URL(config.baseUrl).host}/${config.model}`
+    : "unconfigured";
+
+  return {
+    id,
+
+    async complete(request: StructuredRequest): Promise<ModelOutcome> {
+      if (!config) {
+        console.error("LLM_API_KEY or LLM_MODEL is not set; revisions are off.");
+        return { ok: false, reason: "not_configured" };
+      }
+
+      const startedAt = Date.now();
+      const first = await singleAttemptModel(
+        config,
+        fetchImpl,
+        timeoutMs,
+      ).complete(request);
+
+      if (first.ok || first.reason !== "empty") return first;
+
+      const remainingMs = timeoutMs - (Date.now() - startedAt);
+      if (remainingMs <= 0) return first;
+
+      console.warn("Retrying the zero-text model response once.");
+      return singleAttemptModel(config, fetchImpl, remainingMs).complete(request);
     },
   };
 }

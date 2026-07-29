@@ -86,7 +86,12 @@ function stub(reply: unknown): StructuredModel & { seen: StructuredRequest[] } {
     seen,
     async complete(request) {
       seen.push(request);
-      return { ok: true, json: reply, usage: { input: 0, output: 0 } };
+      return {
+        ok: true,
+        json: reply,
+        usage: { input: 0, output: 0 },
+        modelId: "provider/selected-model",
+      };
     },
   };
 }
@@ -237,6 +242,7 @@ test("a clean revision is returned with its summary", async () => {
   if (result.status !== "success") return;
   assert.equal(result.revisedDocument.length, 3);
   assert.deepEqual(result.summary, ["Changed one thing."]);
+  assert.equal(result.modelId, "provider/selected-model");
 });
 
 test("sourceRef is never taken from the model, only re-attached", async () => {

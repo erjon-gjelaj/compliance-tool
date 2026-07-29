@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "verify:citations": "tsx scripts/verify-citations.mts",
+    "test:revision-model": "node --env-file=.env.local --conditions react-server --import \"data:text/javascript,process.geteuid=()=>0\" --import tsx scripts/probe-revision-model.mts",
     "test": "npm run test:lib && npm run test:ui",
     "test:lib": "tsx --test --conditions react-server \"src/lib/**/*.test.mts\"",
     "test:ui": "tsx --test \"src/components/**/*.test.mts\""

@@ -90,6 +90,16 @@ into "refused more often" and never into "bad document accepted". Expect more
 clarification questions than a frontier model would produce — that is the
 fence working, not failing.
 
+OpenRouter's free router may occasionally return a successful response with
+zero completion text. That one provider failure is retried once inside the
+same 45-second deadline; every other failure still fails closed immediately.
+OpenRouter calls disable reasoning: the free model's job is to return the
+strict schema, not spend its completion budget on an internal trace and leave
+the schema result empty. Do not set `provider.require_parameters`: the live
+free pool had no endpoint advertising support for that parameter combination.
+The audit row records the actual model named in the successful provider
+response, not merely the `openrouter/free` router requested by the app.
+
 Because the document goes to a third party, do not widen what is sent. The
 prompt carries the document's headings and prose, the reviewer's wording, and
 any clarification answers — nothing else. No email address, no company profile

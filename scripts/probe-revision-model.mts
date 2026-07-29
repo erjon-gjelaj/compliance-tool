@@ -53,7 +53,7 @@ const expected: Section[] = [
   },
 ];
 
-const result = await analyseRevision({
+const replacement = await analyseRevision({
   model: openAiCompatibleModel(),
   sections: original,
   request:
@@ -61,27 +61,83 @@ const result = await analyseRevision({
 });
 
 assert.equal(
-  result.status,
+  replacement.status,
   "success",
-  `Expected a safe revision, received ${JSON.stringify(result)}`,
+  `Expected a safe replacement, received ${JSON.stringify(replacement)}`,
 );
 
-if (result.status !== "success") process.exit(1);
+if (replacement.status !== "success") process.exit(1);
 
 assert.deepEqual(
-  result.revisedDocument,
+  replacement.revisedDocument,
   expected,
   "The provider changed more or less than the exact requested phrase.",
 );
-assert.ok(result.summary.length > 0, "The provider omitted its change summary.");
+assert.ok(
+  replacement.summary.length > 0,
+  "The provider omitted its change summary.",
+);
+
+const removal = await analyseRevision({
+  model: openAiCompatibleModel(),
+  sections: original,
+  request: "Please remove the Responsibilities section.",
+});
+
+assert.equal(
+  removal.status,
+  "success",
+  `Expected a safe removal, received ${JSON.stringify(removal)}`,
+);
+
+if (removal.status !== "success") process.exit(1);
+
+assert.deepEqual(
+  removal.revisedDocument,
+  [original[0]],
+  "The provider changed content outside the removed section.",
+);
+
+const ambiguous = await analyseRevision({
+  model: openAiCompatibleModel(),
+  sections: original,
+  request: "Please update the responsible person.",
+});
+
+assert.equal(
+  ambiguous.status,
+  "clarification_required",
+  `Expected a clarification question, received ${JSON.stringify(ambiguous)}`,
+);
+
+if (ambiguous.status !== "clarification_required") process.exit(1);
+
+assert.ok(
+  ambiguous.questions.length > 0,
+  "The provider requested clarification without asking a question.",
+);
 
 console.log(
   JSON.stringify(
-    {
-      status: result.status,
-      selectedModel: result.modelId,
-      summary: result.summary,
-    },
+    [
+      {
+        scenario: "exact replacement",
+        status: replacement.status,
+        selectedModel: replacement.modelId,
+        summary: replacement.summary,
+      },
+      {
+        scenario: "section removal",
+        status: removal.status,
+        selectedModel: removal.modelId,
+        summary: removal.summary,
+      },
+      {
+        scenario: "ambiguous request",
+        status: ambiguous.status,
+        questions: ambiguous.questions,
+      },
+    ],
     null,
     2,
   ),

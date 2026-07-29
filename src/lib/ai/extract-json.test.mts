@@ -75,10 +75,12 @@ test("a zero-text completion is retried once and the selected model is audited",
     }),
   ];
   const calls: string[] = [];
+  const requestBodies: Record<string, unknown>[] = [];
   const model = openAiCompatibleModel({
     config: TEST_CONFIG,
-    fetchImpl: async (input) => {
+    fetchImpl: async (input, init) => {
       calls.push(String(input));
+      requestBodies.push(JSON.parse(String(init?.body)));
       const response = responses.shift();
       assert.ok(response, "unexpected provider call");
       return response;
@@ -93,6 +95,9 @@ test("a zero-text completion is retried once and the selected model is audited",
   assert.deepEqual(result.json, { status: "clarification_required" });
   assert.equal(result.modelId, "openrouter.ai/free/provider-b");
   assert.deepEqual(result.usage, { input: 12, output: 4 });
+  for (const body of requestBodies) {
+    assert.deepEqual(body.reasoning, { effort: "none" });
+  }
 });
 
 test("two zero-text completions fail closed without a third request", async () => {
@@ -130,6 +135,35 @@ test("provider errors are not retried as if they were empty output", async () =>
 
   assert.deepEqual(result, { ok: false, reason: "model_error" });
   assert.equal(calls, 1);
+});
+
+test("OpenRouter-only routing controls do not leak to other compatible APIs", async () => {
+  let body: Record<string, unknown> | undefined;
+  const model = openAiCompatibleModel({
+    config: {
+      apiKey: "test-key",
+      baseUrl: "https://api.groq.com/openai/v1",
+      model: "free-model",
+    },
+    fetchImpl: async (_input, init) => {
+      body = JSON.parse(String(init?.body));
+      return jsonResponse({
+        model: "free-model",
+        choices: [
+          {
+            message: { content: '{"status":"clarification_required"}' },
+            finish_reason: "stop",
+          },
+        ],
+      });
+    },
+  });
+
+  const result = await model.complete(REQUEST);
+
+  assert.equal(result.ok, true);
+  assert.equal("provider" in (body ?? {}), false);
+  assert.equal("reasoning" in (body ?? {}), false);
 });
 
 /**

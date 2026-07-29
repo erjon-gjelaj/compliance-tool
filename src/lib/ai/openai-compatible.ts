@@ -55,6 +55,22 @@ function maxTokensCeiling(): number {
   return configured;
 }
 
+function openRouterOptions(config: Config) {
+  const hostname = new URL(config.baseUrl).hostname;
+  if (hostname !== "openrouter.ai" && !hostname.endsWith(".openrouter.ai")) {
+    return {};
+  }
+
+  return {
+    /*
+     * Some free reasoning models spend the whole completion on hidden
+     * reasoning and return `content: ""` with `finish_reason: "stop"`.
+     * Revision analysis needs the schema result, not a reasoning trace.
+     */
+    reasoning: { effort: "none" },
+  };
+}
+
 export function strictResponseFormat(request: StructuredRequest) {
   return {
     type: "json_schema",
@@ -148,6 +164,7 @@ function singleAttemptModel(
           },
           body: JSON.stringify({
             model: config.model,
+            ...openRouterOptions(config),
             /*
              * Zero temperature. It does not make a model deterministic and it
              * is not claimed to — but this is an editing task with one right

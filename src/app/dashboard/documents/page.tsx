@@ -107,7 +107,7 @@ export default async function DocumentsPage() {
                         {template?.title ?? entry.program_id}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-wash">
-                        Version {entry.current?.version ?? 1} &middot; ready to
+                        Version {entry.current.version} &middot; ready to
                         download
                       </p>
                     </div>

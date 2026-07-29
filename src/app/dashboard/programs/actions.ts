@@ -142,7 +142,9 @@ export async function reviseDocument(
 
   const document = await getDocumentForEmail(session.email, documentId);
 
-  if (!document?.current) {
+  // Not yours, not real, and never successfully generated are all "not
+  // found" here — the reader drops documents with no version behind them.
+  if (!document) {
     return { status: "editing", error: "We couldn't find that document." };
   }
 

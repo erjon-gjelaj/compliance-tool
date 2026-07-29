@@ -405,6 +405,13 @@
       "status": "done",
       "notes": "Every program generation failed on the deployment with ENOENT on /ROOT/node_modules/pdfkit/js/data/Helvetica.afm. pdfkit reads AFM font metrics off disk at startup; bundled, it resolved them against the bundler virtual root. Fixed by adding pdfkit to serverExternalPackages. Tracing was never the problem - the .afm files were already in the deployment. Guard test added because the rendering tests run in Node and passed throughout.",
       "needs_human_review": false
+    },
+    {
+      "id": "064",
+      "title": "A generated document with no version claimed to be ready, then 404d",
+      "status": "done",
+      "notes": "Tail of 063. The document row is written before rendering, so failed generations left rows with no version. The archive and programs page both read them as real (entry.current?.version ?? 1), showed Ready, and linked to a detail page that 404d - and the programs page stopped offering to generate, locking the customer out. Fixed in the reader: listDocumentsForEmail drops version-less rows and current is no longer nullable. Orphan rows self-heal on the next generation, so no data cleanup is needed.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": "059",

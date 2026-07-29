@@ -13,10 +13,22 @@ import type { Answers, CompanyContext } from "@/lib/programs/types";
  *
  * The order in `generateVersion` is deliberate and is the part worth
  * reviewing: assemble and validate, then render both files, then upload both,
- * and only then write the row. A version row therefore always has two real
- * files behind it. Writing the row first would leave a document in someone's
- * library that cannot be downloaded, which is worse than a failure they can
- * retry.
+ * and only then write the VERSION row. A version therefore always has two
+ * real files behind it.
+ *
+ * The DOCUMENT row is the exception, and it is written first, because the
+ * version rows need something to hang off. So the guarantee above is narrower
+ * than it reads: a failure between the two writes leaves a document row with
+ * no version — a library entry with nothing in it. That is not hypothetical.
+ * The pdfkit fault in 063 put every generation on that path for days, and
+ * because two screens read the row without checking for a version, the result
+ * was not an error but a document that claimed to be ready and 404'd when
+ * opened.
+ *
+ * `listDocumentsForEmail` drops those rows, which is what makes the narrow
+ * guarantee safe to rely on: nothing outside this file ever sees a document
+ * without a version. If that filter is removed, the claim in the paragraph
+ * above quietly becomes false again.
  */
 
 const BUCKET = "generated-documents";
@@ -54,8 +66,22 @@ export type VersionRow = {
 
 export type DocumentWithVersions = DocumentRow & {
   versions: VersionRow[];
-  /** The one the customer should be using. */
-  current: VersionRow | null;
+  /**
+   * The one the customer should be using. Never null.
+   *
+   * It was `VersionRow | null`, and every screen that showed a document had
+   * to remember that a document might not have one. Two of them forgot in the
+   * same way — `entry.current?.version ?? 1` — which printed "Version 1,
+   * ready to download" for a document with no files at all.
+   *
+   * A document row is created before its first version is rendered, so the
+   * window where one exists with nothing in it is real: any failure between
+   * those two writes leaves one behind, and the pdfkit bug in 063 left them
+   * behind for every generation over several days. Rather than ask each
+   * caller to handle that, `listDocumentsForEmail` drops them, which makes
+   * the null unrepresentable here and the mistake impossible to repeat.
+   */
+  current: VersionRow;
 };
 
 /** Builds the context a template needs from the stored profile. */
@@ -79,6 +105,63 @@ export async function companyContextFor(
   };
 }
 
+export type JoinedDocumentRow = DocumentRow & {
+  generated_document_versions: VersionRow[] | null;
+};
+
+/**
+ * Turns the joined rows into documents, dropping the ones with no version.
+ *
+ * Separated from the query so it can be tested without a database. The rule
+ * it enforces is small and the consequence of getting it wrong is not, so it
+ * is worth pinning: see documents.test.mts.
+ */
+export function toDocuments(
+  rows: JoinedDocumentRow[],
+): DocumentWithVersions[] {
+  const documents: DocumentWithVersions[] = [];
+
+  for (const { generated_document_versions, ...row } of rows) {
+    const versions = [...(generated_document_versions ?? [])].sort(
+      (a, b) => b.version - a.version,
+    );
+
+    /*
+     * Prefer the version nobody has superseded. Falling back to the newest
+     * covers the case where every version has been marked superseded, which
+     * should not happen but must not blank the page if it does.
+     */
+    const current = versions.find((entry) => !entry.superseded_at) ?? versions[0];
+
+    // No version means nothing was ever produced under this row. See above.
+    if (!current) continue;
+
+    documents.push({ ...row, versions, current });
+  }
+
+  return documents;
+}
+
+/**
+ * The documents this address holds, each with a version behind it.
+ *
+ * A `generated_documents` row is written before the files are rendered, so
+ * one that never got a version is not a document — it is the scar of a
+ * generation that failed partway. Those are dropped here, in the one place
+ * every screen reads through, rather than filtered per page.
+ *
+ * That single decision is load-bearing in three places. The archive stops
+ * advertising a download that does not exist. The programs page stops
+ * counting the failed attempt as "held", which had made the program look
+ * finished and removed the offer to try again — leaving the customer with no
+ * route to the document at all. And the detail page's ownership check gets
+ * back to meaning what it says.
+ *
+ * Dropping rather than surfacing them is deliberate. An empty row records
+ * that our rendering broke, not anything the customer did or needs to act on,
+ * and the honest repair is to generate the program — which is exactly what
+ * they can now do again.
+ */
 export async function listDocumentsForEmail(
   email: string,
 ): Promise<DocumentWithVersions[]> {
@@ -95,23 +178,7 @@ export async function listDocumentsForEmail(
     return [];
   }
 
-  type Joined = DocumentRow & {
-    generated_document_versions: VersionRow[] | null;
-  };
-
-  return ((data ?? []) as Joined[]).map(
-    ({ generated_document_versions, ...row }) => {
-      const versions = [...(generated_document_versions ?? [])].sort(
-        (a, b) => b.version - a.version,
-      );
-
-      return {
-        ...row,
-        versions,
-        current: versions.find((entry) => !entry.superseded_at) ?? versions[0] ?? null,
-      };
-    },
-  );
+  return toDocuments((data ?? []) as JoinedDocumentRow[]);
 }
 
 export async function getDocumentForEmail(

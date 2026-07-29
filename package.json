@@ -13,6 +13,7 @@
     "test:ui": "tsx --test \"src/components/**/*.test.mts\""
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
     "@fontsource/bricolage-grotesque": "^5.3.0",
     "@headlessui/react": "^2.2.10",
     "@supabase/supabase-js": "^2.110.8",

@@ -28,6 +28,24 @@ export const initialProgramState: ProgramFormState = {
   answers: {},
 };
 
-export type RevisionState = { status: "editing" | "sent"; error?: string };
+/**
+ * The revision box, which is a small state machine rather than one field.
+ *
+ * `clarifying` is the state that earns the type: the model read the request
+ * and could not carry it out without guessing, so it asked instead. The
+ * original request is carried through that round trip because the retry needs
+ * both halves — the reviewer's wording and the customer's answers — and
+ * neither is stored anywhere until a version is actually produced.
+ */
+export type RevisionState = {
+  status: "editing" | "clarifying" | "sent";
+  error?: string;
+  /** The reviewer's wording, kept across a clarification round trip. */
+  request?: string;
+  /** Asked when the request could not be carried out without assuming. */
+  questions?: string[];
+  /** What changed, in the model's words. Shown after a successful revision. */
+  summary?: string[];
+};
 
 export const initialRevisionState: RevisionState = { status: "editing" };

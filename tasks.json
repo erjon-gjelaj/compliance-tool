@@ -412,6 +412,13 @@
       "status": "done",
       "notes": "Tail of 063. The document row is written before rendering, so failed generations left rows with no version. The archive and programs page both read them as real (entry.current?.version ?? 1), showed Ready, and linked to a detail page that 404d - and the programs page stopped offering to generate, locking the customer out. Fixed in the reader: listDocumentsForEmail drops version-less rows and current is no longer nullable. Orphan rows self-heal on the next generation, so no data cleanup is needed.",
       "needs_human_review": false
+    },
+    {
+      "id": "065",
+      "title": "LLM-powered revision analysis (reverses the no-LLM rule, scoped)",
+      "status": "done",
+      "notes": "Deliberate reversal of the No language models rule for ONE use: reading a free-text revision request. Gap analysis and review stay deterministic. Model is fenced not trusted - never sees sourceRef, at most one section may change, no section may be added, no CFR citation may be introduced, then validateDocument runs, then nothing is written unless all gates pass. Ambiguity returns clarification questions. Migration 0010 stores sections because a revised document is no longer a function of its answers. NOT VERIFIED against the live API - no ANTHROPIC_API_KEY in the checkout.",
+      "needs_human_review": true
     }
   ],
   "current_task_id": "059",

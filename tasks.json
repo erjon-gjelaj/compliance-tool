@@ -374,8 +374,8 @@
     {
       "id": "059",
       "title": "Program 2: Personal Protective Equipment",
-      "status": "todo",
-      "notes": "Next after HazCom. Chosen because lib/requirements already carries it, the intake asks about it, and the company-specific facts it needs (who assesses hazards, what equipment is provided, how it is maintained) are answerable in the same 5-7 question shape without asserting anything about training completion or equipment owned.",
+      "status": "done",
+      "notes": "Done. Added a deterministic Personal Protective Equipment program with 7 questions covering the responsible role, assessment process, customer-confirmed PPE categories, issue route, inspection method, shared equipment, and replacement route. The template produces 9 sections plus a conditional shared-PPE hygiene section, is joined to the existing ppe requirement and historical finding labels, and is customer-available through the existing program flow without route, action, renderer, or schema changes. It does not claim that a named employee completed instruction, and no equipment category appears unless the customer supplies it. Added 7 regression tests; full suite 212 passing, lint passing, and production build passing.",
       "needs_human_review": false
     },
     {

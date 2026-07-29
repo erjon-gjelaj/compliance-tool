@@ -1,9 +1,48 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 
-import { analyseRevision, checkRevision } from "./revise-analysis.ts";
+import {
+  analyseRevision,
+  checkRevision,
+  REVISION_JSON_SCHEMA,
+} from "./revise-analysis.ts";
 import type { StructuredModel, StructuredRequest } from "../ai/model.ts";
 import type { Section } from "./types.ts";
+
+function assertStrictObjects(value: unknown, path = "$"): void {
+  if (!value || typeof value !== "object") return;
+
+  const schema = value as Record<string, unknown>;
+
+  if (schema.type === "object") {
+    assert.equal(
+      schema.additionalProperties,
+      false,
+      `${path} must reject undeclared properties`,
+    );
+
+    const properties = Object.keys(
+      (schema.properties ?? {}) as Record<string, unknown>,
+    ).sort();
+    const required = [...((schema.required ?? []) as string[])].sort();
+
+    assert.deepEqual(required, properties, `${path} must require every property`);
+  }
+
+  for (const [key, child] of Object.entries(schema)) {
+    if (Array.isArray(child)) {
+      child.forEach((entry, index) =>
+        assertStrictObjects(entry, `${path}.${key}[${index}]`),
+      );
+    } else {
+      assertStrictObjects(child, `${path}.${key}`);
+    }
+  }
+}
+
+test("the provider schema qualifies for strict structured output", () => {
+  assertStrictObjects(REVISION_JSON_SCHEMA);
+});
 
 /**
  * What a model is allowed to do to somebody's safety programme.

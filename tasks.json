@@ -417,8 +417,15 @@
       "id": "065",
       "title": "LLM revision analysis on a free tier (reverses the no-LLM rule, scoped)",
       "status": "done",
-      "notes": "Deliberate reversal of the No language models rule for ONE use: reading a free-text revision request. Gap analysis and review stay deterministic. Provider is a free OpenAI-compatible tier (Groq by default, swappable by env: LLM_API_KEY / LLM_MODEL / LLM_BASE_URL) reached with plain fetch, no SDK. Model is fenced not trusted - never sees sourceRef, at most one section may change, no section added, no CFR citation introduced, then validateDocument, then nothing is written unless all gates pass. Schema enforcement is treated as a hint since free tiers vary; zod plus the gates are the real contract, so a weak model degrades into more refusals rather than bad output. Migration 0010 stores sections because a revised document is no longer a function of its answers. NOT VERIFIED against a live provider - no LLM_API_KEY in the checkout.",
+      "notes": "Deliberate reversal of the No language models rule for ONE use: reading a free-text revision request. Gap analysis and review stay deterministic. Provider is a free OpenAI-compatible tier (swappable by env: LLM_API_KEY / LLM_MODEL / LLM_BASE_URL) reached with plain fetch, no SDK. Model is fenced not trusted - never sees sourceRef, at most one section may change, no section added, no CFR citation introduced, then validateDocument, then nothing is written unless all gates pass. Migration 0010 stores sections because a revised document is no longer a function of its answers. First live OpenRouter trial failed closed when JSON Object Mode returned fields of the wrong type; 066 makes schema enforcement strict.",
       "needs_human_review": true
+    },
+    {
+      "id": "066",
+      "title": "OpenRouter returned valid JSON with the wrong document shape",
+      "status": "done",
+      "notes": "The first live free-router reply put arrays where block fields require strings. Zod refused it and no version was saved, but JSON Object Mode only promises valid JSON, not the requested shape. The provider call now uses strict JSON Schema output. The schema mirrors the zod union, closes every object, and requires every declared field. Zod, the one-section diff gate, citation gate, and validateDocument still run after decoding.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": "059",

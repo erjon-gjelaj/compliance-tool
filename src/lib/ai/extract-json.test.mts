@@ -1,17 +1,38 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 
-import { extractJson } from "./openai-compatible.ts";
+import {
+  extractJson,
+  strictResponseFormat,
+} from "./openai-compatible.ts";
+
+test("the provider is asked to enforce the schema while decoding", () => {
+  const schema = { type: "object", properties: {} };
+  const responseFormat = strictResponseFormat({
+    system: "system",
+    user: "user",
+    schema,
+    schemaName: "RevisionResult",
+    maxTokens: 100,
+  });
+
+  assert.deepEqual(responseFormat, {
+    type: "json_schema",
+    json_schema: {
+      name: "RevisionResult",
+      strict: true,
+      schema,
+    },
+  });
+});
 
 /**
  * Getting the JSON out of what a free-tier model actually sends.
  *
- * A provider with strict schema enforcement returns a bare object. The free
- * ones routinely do not, and every case below was a plausible reply that a
- * naive `JSON.parse(content)` would have thrown on — turning "the model
- * answered correctly, wrapped in a markdown fence" into "the revision
- * failed". That is a bad trade for the customer and an annoying one to
- * diagnose, since the logged reason blames the model.
+ * Strict schema enforcement should return a bare object. This remains
+ * defensive because provider fallbacks and proxies have historically wrapped
+ * valid JSON in a fence or preamble, and a naive `JSON.parse(content)` would
+ * turn that harmless wrapper into "the revision failed".
  *
  * Lenient here, strict immediately afterwards: whatever this returns is
  * re-validated field by field with zod and then put through the change gate.

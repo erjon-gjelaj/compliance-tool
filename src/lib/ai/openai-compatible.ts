@@ -21,15 +21,12 @@ import type {
  * 063 is a recent reminder that every dependency is also a bundling problem
  * waiting to happen. Node's global fetch has none of those failure modes.
  *
- * On schema enforcement, and why this file is deliberately not strict:
- * free-tier providers vary enormously in what they accept. Some support full
- * `json_schema` with `strict`, some only `json_object`, some ignore the field
- * and return prose with the JSON somewhere inside it. Rather than encode one
- * provider's dialect, this sends the schema as a hint, asks for JSON, and
- * treats the reply as untrusted text. `revise-analysis.ts` re-validates every
- * field with zod and then runs the change gate regardless — so a provider
- * with weak enforcement degrades into "refused more often", never into "bad
- * document accepted". That property is what makes a free tier usable here.
+ * Structured output is strict. `json_object` only guarantees parseable JSON,
+ * and the first OpenRouter trial proved that is not enough: the selected model
+ * returned arrays where the document schema requires strings. `json_schema`
+ * constrains decoding to the requested shape. `revise-analysis.ts` still
+ * re-validates every field with zod and runs the change gate regardless,
+ * because valid shape says nothing about whether the edit was faithful.
  */
 
 const DEFAULT_BASE_URL = "https://api.groq.com/openai/v1";
@@ -48,6 +45,17 @@ function maxTokensCeiling(): number {
   }
 
   return configured;
+}
+
+export function strictResponseFormat(request: StructuredRequest) {
+  return {
+    type: "json_schema",
+    json_schema: {
+      name: request.schemaName,
+      strict: true,
+      schema: request.schema,
+    },
+  } as const;
 }
 
 function readConfig(): Config | null {
@@ -72,9 +80,9 @@ function readConfig(): Config | null {
 /**
  * Pulls the JSON object out of whatever the model actually sent.
  *
- * A paid provider with strict schema enforcement returns bare JSON. A free
- * one frequently does not: markdown fences are the common case, a sentence of
- * preamble the next. Rather than fail those, take the outermost braced span.
+ * Strict schema enforcement should return bare JSON. Provider fallbacks and
+ * proxies have historically wrapped valid JSON in a markdown fence or a
+ * sentence of preamble, so take the outermost braced span defensively.
  *
  * Deliberately lenient here and strict afterwards. Nothing downstream trusts
  * this — zod re-validates every field and the change gate runs on the result
@@ -157,8 +165,7 @@ export function openAiCompatibleModel(): StructuredModel {
               request.maxTokens,
               maxTokensCeiling(),
             ),
-            // Asks for JSON without asserting a dialect. See the note above.
-            response_format: { type: "json_object" },
+            response_format: strictResponseFormat(request),
             messages: [
               {
                 role: "system",

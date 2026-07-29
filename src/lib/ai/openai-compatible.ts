@@ -5,6 +5,7 @@ import type {
   StructuredModel,
   StructuredRequest,
 } from "@/lib/ai/model";
+import { jsonrepair } from "jsonrepair";
 
 /**
  * The only file in this repo that knows a model provider exists.
@@ -33,16 +34,23 @@ const DEFAULT_BASE_URL = "https://api.groq.com/openai/v1";
 
 /** Long enough for a slow free tier, short enough to fit inside maxDuration. */
 const TIMEOUT_MS = 45_000;
+/** Leave a recovery window when a free endpoint hangs or returns nothing. */
+const FIRST_ATTEMPT_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_TOKENS = 8_192;
 
 type Config = { baseUrl: string; apiKey: string; model: string };
 type Fetch = (input: string | URL, init?: RequestInit) => Promise<Response>;
+type MessageContent =
+  | string
+  | null
+  | { type?: string; text?: string }[];
 
 export type OpenAiCompatibleOptions = {
   /** Test seam. Production reads the same three LLM_* variables as before. */
   config?: Config | null;
   fetchImpl?: Fetch;
   timeoutMs?: number;
+  firstAttemptTimeoutMs?: number;
 };
 
 function maxTokensCeiling(): number {
@@ -127,6 +135,114 @@ export function extractJson(raw: string): string | null {
   return candidate.slice(start, end + 1);
 }
 
+function messageText(content: MessageContent | undefined): string | null {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return null;
+
+  const text = content
+    .filter((part) => part.type === "text" && typeof part.text === "string")
+    .map((part) => part.text)
+    .join("");
+
+  return text || null;
+}
+
+export type ModelJsonParseResult =
+  | { ok: true; value: unknown; repaired: boolean }
+  | {
+      ok: false;
+      reason: "no_object" | "incomplete" | "repair_failed";
+    };
+
+/**
+ * Proves an object is structurally complete before syntax repair is allowed.
+ *
+ * Repairing a truncated document is unsafe. Adding its missing closing
+ * brackets can turn "the model stopped halfway through" into a valid-looking
+ * document with its final sections removed, and one section removal can be a
+ * legitimate revision. This scanner therefore requires one complete top-level
+ * object, balanced containers, and closed strings before `jsonrepair` runs.
+ */
+function isCompleteJsonObject(candidate: string): boolean {
+  const stack: string[] = [];
+  let inString = false;
+  let escaped = false;
+  let rootClosedAt = -1;
+
+  for (let index = 0; index < candidate.length; index += 1) {
+    const character = candidate[index];
+
+    if (rootClosedAt !== -1 && !/\s/.test(character)) return false;
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (character === "\\") {
+        escaped = true;
+      } else if (character === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (character === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (character === "{" || character === "[") {
+      stack.push(character);
+      continue;
+    }
+
+    if (character === "}" || character === "]") {
+      const opening = stack.pop();
+      const matches =
+        (opening === "{" && character === "}") ||
+        (opening === "[" && character === "]");
+      if (!matches) return false;
+      if (stack.length === 0) rootClosedAt = index;
+    }
+  }
+
+  return (
+    !inString &&
+    stack.length === 0 &&
+    rootClosedAt !== -1 &&
+    candidate.slice(rootClosedAt + 1).trim() === ""
+  );
+}
+
+/**
+ * Parses strict JSON first, then repairs syntax only when the full object is
+ * already present. The returned value is still untrusted and must pass the
+ * caller's schema and semantic safety gates.
+ */
+export function parseModelJson(raw: string): ModelJsonParseResult {
+  const candidate = extractJson(raw);
+  if (!candidate) {
+    return {
+      ok: false,
+      reason: raw.includes("{") ? "incomplete" : "no_object",
+    };
+  }
+
+  try {
+    return { ok: true, value: JSON.parse(candidate), repaired: false };
+  } catch {
+    if (!isCompleteJsonObject(candidate)) {
+      return { ok: false, reason: "incomplete" };
+    }
+  }
+
+  try {
+    const repaired = jsonrepair(candidate);
+    return { ok: true, value: JSON.parse(repaired), repaired: true };
+  } catch {
+    return { ok: false, reason: "repair_failed" };
+  }
+}
+
 function singleAttemptModel(
   config: Config,
   fetchImpl: Fetch,
@@ -172,8 +288,8 @@ function singleAttemptModel(
              */
             temperature: 0,
             /*
-             * The caller asks for enough room to return a whole programme.
-             * Free models vary wildly in what they will accept — several cap
+             * Callers choose enough room for their structured result. Free
+             * models vary wildly in what they will accept — several cap
              * output well below that and reject the request outright, which
              * surfaces as a flat `model_error` and reads like the integration
              * is broken rather than like one number being too big.
@@ -198,7 +314,10 @@ function singleAttemptModel(
           }),
         });
       } catch (cause) {
-        if (cause instanceof Error && cause.name === "TimeoutError") {
+        if (
+          cause instanceof Error &&
+          (cause.name === "TimeoutError" || cause.name === "AbortError")
+        ) {
           console.warn("The model did not answer in time.");
           return { ok: false, reason: "timeout" };
         }
@@ -216,24 +335,39 @@ function singleAttemptModel(
       if (!response.ok) {
         const detail = await response.text().catch(() => "");
         console.error(`Model error ${response.status}: ${detail.slice(0, 300)}`);
-        return { ok: false, reason: "model_error" };
+        return {
+          ok: false,
+          reason: response.status >= 500 ? "provider_error" : "model_error",
+        };
       }
 
       let payload: {
         id?: string;
         model?: string;
         choices?: {
-          message?: { content?: string | null; refusal?: string | null };
+          message?: {
+            content?: MessageContent;
+            refusal?: string | null;
+          };
           finish_reason?: string | null;
         }[];
         usage?: { prompt_tokens?: number; completion_tokens?: number };
       };
 
+      const responseText = await response.text().catch(() => "");
+
       try {
-        payload = await response.json();
+        payload = JSON.parse(responseText);
       } catch {
-        console.error("Model response was not JSON.");
-        return { ok: false, reason: "model_error" };
+        console.error(
+          "Model response envelope was not JSON.",
+          JSON.stringify({
+            status: response.status,
+            contentType: response.headers.get("content-type"),
+            contentLength: responseText.length,
+          }),
+        );
+        return { ok: false, reason: "invalid_response" };
       }
 
       const choice = payload.choices?.[0];
@@ -248,7 +382,15 @@ function singleAttemptModel(
         return { ok: false, reason: "too_long" };
       }
 
-      const content = choice?.message?.content;
+      if (
+        choice?.finish_reason === "content_filter" ||
+        choice?.message?.refusal?.trim()
+      ) {
+        console.warn("The model declined the revision request.");
+        return { ok: false, reason: "declined" };
+      }
+
+      const content = messageText(choice?.message?.content);
 
       if (!content?.trim()) {
         console.error(
@@ -265,35 +407,53 @@ function singleAttemptModel(
         return { ok: false, reason: "empty" };
       }
 
-      const json = extractJson(content);
+      const parsed = parseModelJson(content);
 
-      if (!json) {
-        console.error("No JSON object found in the model's reply.");
+      if (!parsed.ok) {
+        console.error(
+          "The model's JSON did not parse.",
+          JSON.stringify({
+            responseId: payload.id ?? null,
+            requestedModel: config.model,
+            selectedModel: payload.model ?? null,
+            finishReason: choice?.finish_reason ?? null,
+            completionTokens: payload.usage?.completion_tokens ?? 0,
+            contentLength: content.length,
+            parseReason: parsed.reason,
+          }),
+        );
         return { ok: false, reason: "unparseable" };
       }
 
-      try {
-        return {
-          ok: true,
-          json: JSON.parse(json),
-          usage: {
-            input: payload.usage?.prompt_tokens ?? 0,
-            output: payload.usage?.completion_tokens ?? 0,
-          },
-          modelId: `${new URL(config.baseUrl).host}/${payload.model || config.model}`,
-        };
-      } catch {
-        console.error("The model's JSON did not parse.");
-        return { ok: false, reason: "unparseable" };
+      if (parsed.repaired) {
+        console.warn(
+          "Repaired model JSON syntax before validation.",
+          JSON.stringify({
+            responseId: payload.id ?? null,
+            selectedModel: payload.model ?? config.model,
+            contentLength: content.length,
+          }),
+        );
       }
+
+      return {
+        ok: true,
+        json: parsed.value,
+        usage: {
+          input: payload.usage?.prompt_tokens ?? 0,
+          output: payload.usage?.completion_tokens ?? 0,
+        },
+        modelId: `${new URL(config.baseUrl).host}/${payload.model || config.model}`,
+      };
     },
   };
 }
 
 /**
- * Retries only the free-provider failure where a successful HTTP response has
- * no completion text. Both attempts share the original deadline, so retrying
- * cannot double latency or leave the server action stuck.
+ * Retries one transient free-provider failure: timeout, 5xx, malformed 2xx
+ * envelope, empty content, or unusable model JSON. Both attempts share the
+ * original deadline, so recovery cannot double latency or leave the server
+ * action stuck.
  */
 export function openAiCompatibleModel(
   options: OpenAiCompatibleOptions = {},
@@ -302,6 +462,8 @@ export function openAiCompatibleModel(
     options.config === undefined ? readConfig() : options.config;
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? TIMEOUT_MS;
+  const firstAttemptTimeoutMs =
+    options.firstAttemptTimeoutMs ?? FIRST_ATTEMPT_TIMEOUT_MS;
   const id = config
     ? `${new URL(config.baseUrl).host}/${config.model}`
     : "unconfigured";
@@ -319,15 +481,26 @@ export function openAiCompatibleModel(
       const first = await singleAttemptModel(
         config,
         fetchImpl,
-        timeoutMs,
+        Math.min(firstAttemptTimeoutMs, timeoutMs),
       ).complete(request);
 
-      if (first.ok || first.reason !== "empty") return first;
+      if (
+        first.ok ||
+        ![
+          "empty",
+          "unparseable",
+          "invalid_response",
+          "provider_error",
+          "timeout",
+        ].includes(first.reason)
+      ) {
+        return first;
+      }
 
       const remainingMs = timeoutMs - (Date.now() - startedAt);
       if (remainingMs <= 0) return first;
 
-      console.warn("Retrying the zero-text model response once.");
+      console.warn(`Retrying the ${first.reason} model response once.`);
       return singleAttemptModel(config, fetchImpl, remainingMs).complete(request);
     },
   };

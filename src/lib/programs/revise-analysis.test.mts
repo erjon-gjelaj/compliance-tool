@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import {
   analyseRevision,
+  applyRevisionOperation,
   checkRevision,
   REVISION_JSON_SCHEMA,
 } from "./revise-analysis.ts";
@@ -105,8 +106,31 @@ function failing(reason: string): StructuredModel {
   };
 }
 
-function success(sections: unknown, summary = ["Changed one thing."]) {
-  return { status: "success", revisedDocument: { sections }, summary };
+function replacement(
+  targetHeading: string,
+  oldText: string,
+  newText: string,
+  summary = ["Changed one thing."],
+) {
+  return {
+    status: "success",
+    operation: {
+      type: "replace_text",
+      targetHeading,
+      oldText,
+      newText,
+      replaceAll: false,
+    },
+    summary,
+  };
+}
+
+function removal(targetHeading: string, summary = ["Removed one section."]) {
+  return {
+    status: "success",
+    operation: { type: "remove_section", targetHeading },
+    summary,
+  };
 }
 
 /** The original, with one named section's paragraph replaced. */
@@ -223,19 +247,110 @@ test("removing one section counts against the change budget", () => {
   assert.ok(codes.includes("too_many_changes"), codes.join(","));
 });
 
+test("a replacement operation preserves every untargeted section by identity", () => {
+  const revised = applyRevisionOperation(ORIGINAL, {
+    type: "replace_text",
+    targetHeading: "Responsibilities",
+    oldText: "Safety Manager",
+    newText: "Owner",
+    replaceAll: false,
+  });
+
+  assert.ok(revised);
+  assert.equal(revised[0], ORIGINAL[0]);
+  assert.equal(revised[2], ORIGINAL[2]);
+  assert.equal(revised[1].sourceRef, ORIGINAL[1].sourceRef);
+});
+
+test("a removal operation removes exactly its named existing section", () => {
+  const revised = applyRevisionOperation(ORIGINAL, {
+    type: "remove_section",
+    targetHeading: "Responsibilities",
+  });
+
+  assert.deepEqual(revised, [ORIGINAL[0], ORIGINAL[2]]);
+});
+
+test("an operation cannot invent a target section", () => {
+  assert.equal(
+    applyRevisionOperation(ORIGINAL, {
+      type: "remove_section",
+      targetHeading: "Imaginary Section",
+    }),
+    null,
+  );
+});
+
+test("an ambiguous text match is refused unless every occurrence was explicit", () => {
+  const original: Section[] = [
+    {
+      heading: "Roles",
+      blocks: [
+        { type: "paragraph", text: "The Manager reviews records." },
+        { type: "paragraph", text: "The Manager signs records." },
+      ],
+    },
+  ];
+
+  assert.equal(
+    applyRevisionOperation(original, {
+      type: "replace_text",
+      targetHeading: "Roles",
+      oldText: "Manager",
+      newText: "Owner",
+      replaceAll: false,
+    }),
+    null,
+  );
+
+  const revised = applyRevisionOperation(original, {
+    type: "replace_text",
+    targetHeading: "Roles",
+    oldText: "Manager",
+    newText: "Owner",
+    replaceAll: true,
+  });
+  assert.match(JSON.stringify(revised), /Owner reviews/);
+  assert.match(JSON.stringify(revised), /Owner signs/);
+  assert.doesNotMatch(JSON.stringify(revised), /Manager/);
+});
+
+test("a no-op or missing text replacement is refused", () => {
+  for (const [oldText, newText] of [
+    ["Manager", "Manager"],
+    ["Not present", "Owner"],
+  ]) {
+    assert.equal(
+      applyRevisionOperation(ORIGINAL, {
+        type: "replace_text",
+        targetHeading: "Responsibilities",
+        oldText,
+        newText,
+        replaceAll: false,
+      }),
+      null,
+    );
+  }
+});
+
 /* ------------------------------------------------------------------ */
 /* End to end, against a stubbed model                                 */
 /* ------------------------------------------------------------------ */
 
 test("a clean revision is returned with its summary", async () => {
   const model = stub(
-    success(edited("Responsibilities", "The Owner administers this program.")),
+    replacement(
+      "Responsibilities",
+      "Safety Manager",
+      "Owner",
+    ),
   );
 
   const result = await analyseRevision({
     model,
     sections: ORIGINAL,
-    request: "Change the responsible person to the owner.",
+    request:
+      "In Responsibilities, change the responsible person to the owner.",
   });
 
   assert.equal(result.status, "success");
@@ -245,22 +360,29 @@ test("a clean revision is returned with its summary", async () => {
   assert.equal(result.modelId, "provider/selected-model");
 });
 
-test("sourceRef is never taken from the model, only re-attached", async () => {
+test("sourceRef is never taken from the model", async () => {
   /*
    * sourceRef maps a section to the element of a regulation it covers. A
    * model inventing one would be inventing a regulatory mapping, so it is
    * neither shown to the model nor accepted back — it is restored from the
    * original by heading.
    */
-  const revised = edited("Responsibilities", "The Owner administers this program.").map(
-    (section) => ({ ...section, sourceRef: "1926.99(z)(9)" }),
-  );
-
-  const model = stub(success(revised));
+  const model = stub({
+    ...replacement(
+      "Responsibilities",
+      "Safety Manager",
+      "Owner",
+    ),
+    operation: {
+      ...replacement("Responsibilities", "Safety Manager", "Owner").operation,
+      sourceRef: "1926.99(z)(9)",
+    },
+  });
   const result = await analyseRevision({
     model,
     sections: ORIGINAL,
-    request: "Change the responsible person to the owner.",
+    request:
+      "In Responsibilities, change the responsible person to the owner.",
   });
 
   assert.equal(result.status, "success");
@@ -277,13 +399,18 @@ test("sourceRef is never taken from the model, only re-attached", async () => {
 
 test("the prompt never shows the model our regulatory mapping", async () => {
   const model = stub(
-    success(edited("Responsibilities", "The Owner administers this program.")),
+    replacement(
+      "Responsibilities",
+      "Safety Manager",
+      "Owner",
+    ),
   );
 
   await analyseRevision({
     model,
     sections: ORIGINAL,
-    request: "Change the responsible person to the owner.",
+    request:
+      "In Responsibilities, change the responsible person to the owner.",
   });
 
   const [request] = model.seen;
@@ -310,7 +437,11 @@ test("clarification questions are passed straight back", async () => {
 
 test("answers to earlier questions are carried into the retry", async () => {
   const model = stub(
-    success(edited("Responsibilities", "The Owner administers this program.")),
+    replacement(
+      "Responsibilities",
+      "Safety Manager",
+      "Owner",
+    ),
   );
 
   await analyseRevision({
@@ -328,7 +459,17 @@ test("answers to earlier questions are carried into the retry", async () => {
 });
 
 test("a reply that does not match the schema is a failure, not a document", async () => {
-  const model = stub({ status: "success", revisedDocument: { sections: "nope" } });
+  const model = stub({
+    status: "success",
+    operation: {
+      type: "replace_text",
+      targetHeading: "Responsibilities",
+      oldText: "Safety Manager",
+      newText: "Owner",
+      replaceAll: "nope",
+    },
+    summary: ["Changed something."],
+  });
 
   const result = await analyseRevision({
     model,
@@ -343,7 +484,12 @@ test("a reply that does not match the schema is a failure, not a document", asyn
 
 test("a reply with no summary is refused — an unexplained change is not offered", async () => {
   const model = stub(
-    success(edited("Responsibilities", "The Owner administers this program."), []),
+    replacement(
+      "Responsibilities",
+      "Safety Manager",
+      "Owner",
+      [],
+    ),
   );
 
   const result = await analyseRevision({
@@ -369,19 +515,179 @@ test("a model failure is reported, never silently treated as no change", async (
   }
 });
 
-test("an over-broad rewrite is refused end to end, not just by the gate", async () => {
-  const revised = ORIGINAL.map(({ heading }) => ({
-    heading,
-    blocks: [{ type: "paragraph" as const, text: "Rewritten." }],
-  }));
-
+test("a model operation targeting a missing section asks for clarification", async () => {
   const result = await analyseRevision({
-    model: stub(success(revised)),
+    model: stub(removal("Imaginary Section")),
     sections: ORIGINAL,
-    request: "Change the responsible person.",
+    request: "Remove the imaginary section.",
+  });
+
+  assert.equal(result.status, "clarification_required");
+});
+
+test("a section removal succeeds end to end without rewriting its neighbours", async () => {
+  const result = await analyseRevision({
+    model: stub(removal("Responsibilities")),
+    sections: ORIGINAL,
+    request: "Remove the Responsibilities section.",
+  });
+
+  assert.equal(result.status, "success");
+  if (result.status !== "success") return;
+  assert.deepEqual(result.revisedDocument, [ORIGINAL[0], ORIGINAL[2]]);
+});
+
+test("a citation introduced inside the one replacement is still refused", async () => {
+  const result = await analyseRevision({
+    model: stub(
+      replacement(
+        "Container Labels",
+        "labelled on receipt",
+        "labelled under 29 CFR 1910.1200(f)",
+      ),
+    ),
+    sections: ORIGINAL,
+    request:
+      "In Container Labels, replace labelled on receipt with labelled under 29 CFR 1910.1200(f).",
   });
 
   assert.equal(result.status, "failed");
   if (result.status !== "failed") return;
   assert.equal(result.reason, "unsafe_change");
+});
+
+test("a model cannot choose a section the customer did not name", async () => {
+  const result = await analyseRevision({
+    model: stub(
+      replacement(
+        "Container Labels",
+        "labelled",
+        "marked",
+      ),
+    ),
+    sections: ORIGINAL,
+    request: "Please update the document.",
+  });
+
+  assert.equal(result.status, "clarification_required");
+  if (result.status !== "clarification_required") return;
+  assert.match(result.questions[0], /section heading/i);
+});
+
+test("an obvious unique typo in a section heading is grounded safely", async () => {
+  const result = await analyseRevision({
+    model: stub(removal("Responsibilities")),
+    sections: ORIGINAL,
+    request: "Please remove the Responsibilites section.",
+  });
+
+  assert.equal(result.status, "success");
+  if (result.status !== "success") return;
+  assert.deepEqual(result.revisedDocument, [ORIGINAL[0], ORIGINAL[2]]);
+});
+
+test("naming two sections does not let the model silently choose one", async () => {
+  const result = await analyseRevision({
+    model: stub(removal("Responsibilities")),
+    sections: ORIGINAL,
+    request: "Remove Responsibilities and Container Labels.",
+  });
+
+  assert.equal(result.status, "clarification_required");
+  if (result.status !== "clarification_required") return;
+  assert.match(result.questions[0], /which exact section/i);
+});
+
+test("a model cannot invent replacement text the customer did not supply", async () => {
+  const result = await analyseRevision({
+    model: stub(
+      replacement(
+        "Responsibilities",
+        "Safety Manager",
+        "Owner",
+      ),
+    ),
+    sections: ORIGINAL,
+    request: "Update the responsible role in Responsibilities.",
+  });
+
+  assert.equal(result.status, "clarification_required");
+  if (result.status !== "clarification_required") return;
+  assert.match(result.questions[0], /exact replacement text/i);
+});
+
+test("a model cannot remove a section without explicit removal language", async () => {
+  const result = await analyseRevision({
+    model: stub(removal("Responsibilities")),
+    sections: ORIGINAL,
+    request: "Update Responsibilities.",
+  });
+
+  assert.equal(result.status, "clarification_required");
+  if (result.status !== "clarification_required") return;
+  assert.match(result.questions[0], /entire.*removed/i);
+});
+
+test("a negated removal request can never remove the section", async () => {
+  const result = await analyseRevision({
+    model: stub(removal("Responsibilities")),
+    sections: ORIGINAL,
+    request: "Do not remove the Responsibilities section.",
+  });
+
+  assert.equal(result.status, "clarification_required");
+  if (result.status !== "clarification_required") return;
+  assert.match(result.questions[0], /entire.*removed/i);
+});
+
+test("replace-all requires the customer to explicitly ask for every occurrence", async () => {
+  const repeated: Section[] = [
+    {
+      heading: "Responsibilities",
+      blocks: [
+        { type: "paragraph", text: "The Manager reviews records." },
+        { type: "paragraph", text: "The Manager signs records." },
+      ],
+    },
+  ];
+  const model = stub({
+    status: "success",
+    operation: {
+      type: "replace_text",
+      targetHeading: "Responsibilities",
+      oldText: "Manager",
+      newText: "Owner",
+      replaceAll: true,
+    },
+    summary: ["Changed the role."],
+  });
+
+  const result = await analyseRevision({
+    model,
+    sections: repeated,
+    request: "In Responsibilities, replace Manager with Owner.",
+  });
+
+  assert.equal(result.status, "clarification_required");
+  if (result.status !== "clarification_required") return;
+  assert.match(result.questions[0], /every occurrence/i);
+});
+
+test("contradictory replace and preserve instructions require clarification", async () => {
+  const result = await analyseRevision({
+    model: stub(
+      replacement(
+        "Responsibilities",
+        "Safety Manager",
+        "Owner",
+      ),
+    ),
+    sections: ORIGINAL,
+    request:
+      'In Responsibilities, replace "Safety Manager" with "Owner" but keep "Safety Manager" unchanged.',
+  });
+
+  assert.equal(result.status, "clarification_required");
+  if (result.status !== "clarification_required") return;
+  assert.match(result.questions[0], /remain unchanged or be replaced/i);
 });

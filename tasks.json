@@ -433,6 +433,13 @@
       "status": "done",
       "notes": "A successful OpenRouter HTTP response can still contain no completion text. The live probe reproduced it twice on openai/gpt-oss-20b:free: each response spent 172 completion tokens on reasoning, reported stop, and returned no final content. OpenRouter requests now disable reasoning so the budget goes to the strict schema result. Requiring every parameter was tested and rejected: today's free pool returned 404 because no endpoint advertised that combination. The exact empty failure still gets one retry within the original 45-second deadline; provider errors, malformed replies, and safety failures are not retried. Empty replies log response id, selected model, finish reason, token count, and refusal without logging secrets or document content. Successful revisions store the actual selected model rather than the openrouter/free alias.",
       "needs_human_review": false
+    },
+    {
+      "id": "068",
+      "title": "Full revision reliability and safety audit",
+      "status": "done",
+      "notes": "Production-sized testing showed that echoing the entire 12-section document was the root reliability and fidelity problem: the random free router returned malformed JSON and zero-byte envelopes, while a pinned model sometimes rewrote an entire target section or guessed through ambiguity. The model now returns only remove_section or exact oldText-to-newText operations. Deterministic code requires an explicitly named existing heading, grounds replacement text in the customer's words, requires explicit removal/replace-all intent, catches contradictions, and applies the patch to the source document so untouched content never passes through model output. Complete malformed JSON can be repaired and revalidated; truncation is never repaired. Empty, malformed, timeout and transient provider failures receive one retry inside the original 45-second budget. The full six-scenario, 12-section live matrix passed on nvidia/nemotron-nano-9b-v2:free; openrouter/free is not production-safe and must not be configured.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": "059",

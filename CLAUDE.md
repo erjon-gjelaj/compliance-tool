@@ -71,11 +71,18 @@ What makes it acceptable is that the model is fenced rather than trusted:
 
 - It never sees a blank page. It is given the document that exists and asked
   for the smallest change that satisfies one request.
-- It never sees `sourceRef`, and one is never accepted back from it. Our
-  regulatory mapping is re-attached by heading afterwards.
-- A revision may change at most one section, may not add a section, and may
-  not introduce a CFR citation anywhere (`checkRevision`). All three are
-  refusals, not warnings.
+- It never sees `sourceRef`, and one is never accepted back from it.
+- It returns one minimal operation, never a revised document: either remove
+  one exact existing section, or replace exact old text with customer-supplied
+  new text inside one exact existing section. Deterministic code applies that
+  operation to the source document, so untouched content never passes through
+  the model at all.
+- The customer must explicitly name the target heading. Removal needs removal
+  language, replacement text must appear in the request or clarification
+  answers, and replacing repeated text needs explicit all/every language.
+  Contradictions and missing facts become clarification questions in code.
+- A revision may not add a section or introduce a CFR citation anywhere
+  (`checkRevision`). Both are refusals, not warnings.
 - The result then passes `validateDocument` — the same gate every assembled
   document passes — before anything is written.
 - Ambiguity produces questions for the customer, never an assumption.
@@ -90,15 +97,22 @@ into "refused more often" and never into "bad document accepted". Expect more
 clarification questions than a frontier model would produce — that is the
 fence working, not failing.
 
-OpenRouter's free router may occasionally return a successful response with
-zero completion text. That one provider failure is retried once inside the
-same 45-second deadline; every other failure still fails closed immediately.
+OpenRouter may return an empty completion, malformed model JSON, a zero-byte
+success envelope, a timeout, or a transient 5xx. Those failures get one retry
+inside the same 45-second deadline (30 seconds for the first attempt, the
+remainder for recovery). Permanent 4xx errors, rate limits, refusals, token
+limits, invalid schema, and unsafe operations fail closed without retry.
+Syntactically malformed model JSON may be repaired only when one complete
+balanced object is already present; truncated or multiple objects are never
+completed or selected.
 OpenRouter calls disable reasoning: the free model's job is to return the
 strict schema, not spend its completion budget on an internal trace and leave
 the schema result empty. Do not set `provider.require_parameters`: the live
 free pool had no endpoint advertising support for that parameter combination.
-The audit row records the actual model named in the successful provider
-response, not merely the `openrouter/free` router requested by the app.
+Do not use `openrouter/free` in production: its random pool includes models
+that ignore strict output or return malformed content. The current live-tested
+free pin is `nvidia/nemotron-nano-9b-v2:free`. The audit row records the actual
+model named in the successful provider response.
 
 Because the document goes to a third party, do not widen what is sent. The
 prompt carries the document's headings and prose, the reviewer's wording, and

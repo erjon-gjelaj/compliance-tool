@@ -22,34 +22,32 @@ import type { Block, Section } from "@/lib/programs/types";
  * `sourceRef` is deliberately not shown to the model and not accepted back
  * from it. It records which element of a regulation each section covers, it is
  * our own maintenance data, and a model inventing one would be inventing a
- * regulatory mapping. It is re-attached from the original by heading after the
- * model replies.
+ * regulatory mapping. Deterministic code edits the original section objects,
+ * so the stored reference never leaves our side of the trust boundary.
  */
 
 /* ------------------------------------------------------------------ */
 /* The shape we ask for, and the shape we accept                       */
 /* ------------------------------------------------------------------ */
 
-const blockSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("paragraph"), text: z.string().min(1) }),
-  z.object({ type: z.literal("bullets"), items: z.array(z.string().min(1)).min(1) }),
-  z.object({ type: z.literal("numbered"), items: z.array(z.string().min(1)).min(1) }),
+const revisionOperationSchema = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal("table"),
-    head: z.array(z.string()).min(1),
-    rows: z.array(z.array(z.string())).min(1),
+    type: z.literal("remove_section"),
+    targetHeading: z.string().min(1),
+  }),
+  z.object({
+    type: z.literal("replace_text"),
+    targetHeading: z.string().min(1),
+    oldText: z.string().min(1),
+    newText: z.string().min(1),
+    replaceAll: z.boolean(),
   }),
 ]);
-
-const sectionSchema = z.object({
-  heading: z.string().min(1),
-  blocks: z.array(blockSchema).min(1),
-});
 
 export const revisionResultSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("success"),
-    revisedDocument: z.object({ sections: z.array(sectionSchema).min(1) }),
+    operation: revisionOperationSchema,
     summary: z.array(z.string().min(1)).min(1),
   }),
   z.object({
@@ -68,6 +66,8 @@ export type RevisionResult =
   | { status: "clarification_required"; questions: string[] }
   | { status: "failed"; reason: string };
 
+export type RevisionOperation = z.infer<typeof revisionOperationSchema>;
+
 /**
  * The shape we ask the provider for, kept beside the zod version above.
  *
@@ -77,85 +77,74 @@ export type RevisionResult =
  * validates the reply because an external API is never the final trust
  * boundary.
  *
- * `additionalProperties: false` on a section stays, and is doing a specific
- * job: it is the line that tells the model not to hand back a `sourceRef`.
- * It is belt to `reattachSourceRefs`'s braces, which drops one regardless.
+ * The model returns one operation against one exact existing heading, not a
+ * copy of the document. Unchanged sections therefore cannot drift at all:
+ * deterministic code carries them forward from the source of truth.
  */
-const BLOCK_SCHEMA = {
-  anyOf: [
-    {
-      type: "object",
-      additionalProperties: false,
-      required: ["type", "text"],
-      properties: {
-        type: { type: "string", enum: ["paragraph"] },
-        text: { type: "string" },
-      },
-    },
-    {
-      type: "object",
-      additionalProperties: false,
-      required: ["type", "items"],
-      properties: {
-        type: { type: "string", enum: ["bullets"] },
-        items: { type: "array", items: { type: "string" } },
-      },
-    },
-    {
-      type: "object",
-      additionalProperties: false,
-      required: ["type", "items"],
-      properties: {
-        type: { type: "string", enum: ["numbered"] },
-        items: { type: "array", items: { type: "string" } },
-      },
-    },
-    {
-      type: "object",
-      additionalProperties: false,
-      required: ["type", "head", "rows"],
-      properties: {
-        type: { type: "string", enum: ["table"] },
-        head: { type: "array", items: { type: "string" } },
-        rows: { type: "array", items: { type: "array", items: { type: "string" } } },
-      },
-    },
-  ],
-};
-
 export const REVISION_JSON_SCHEMA: Record<string, unknown> = {
   anyOf: [
     {
       type: "object",
       additionalProperties: false,
-      required: ["status", "revisedDocument", "summary"],
+      required: ["status", "operation", "summary"],
       properties: {
         status: { type: "string", enum: ["success"] },
-        revisedDocument: {
-          type: "object",
-          additionalProperties: false,
-          required: ["sections"],
-          description:
-            "The WHOLE document, including every unchanged section reproduced exactly.",
-          properties: {
-            sections: {
-              type: "array",
-              minItems: 1,
-              items: {
-                type: "object",
-                additionalProperties: false,
-                required: ["heading", "blocks"],
-                properties: {
-                  heading: { type: "string", minLength: 1 },
-                  blocks: {
-                    type: "array",
-                    minItems: 1,
-                    items: BLOCK_SCHEMA,
-                  },
+        operation: {
+          anyOf: [
+            {
+              type: "object",
+              additionalProperties: false,
+              required: ["type", "targetHeading"],
+              properties: {
+                type: { type: "string", enum: ["remove_section"] },
+                targetHeading: {
+                  type: "string",
+                  minLength: 1,
+                  description:
+                    "An exact heading copied from the current document.",
                 },
               },
             },
-          },
+            {
+              type: "object",
+              additionalProperties: false,
+              required: [
+                "type",
+                "targetHeading",
+                "oldText",
+                "newText",
+                "replaceAll",
+              ],
+              properties: {
+                type: { type: "string", enum: ["replace_text"] },
+                targetHeading: {
+                  type: "string",
+                  minLength: 1,
+                  description:
+                    "An exact heading copied from the current document.",
+                },
+                oldText: {
+                  type: "string",
+                  minLength: 1,
+                  description:
+                    "The smallest exact text span to find in the target section.",
+                },
+                newText: {
+                  type: "string",
+                  minLength: 1,
+                  description:
+                    "The replacement text, using only facts supplied by the document or customer.",
+                },
+                replaceAll: {
+                  type: "boolean",
+                  description:
+                    "True only when every occurrence in this section must change.",
+                },
+              },
+            },
+          ],
+          description:
+            "One minimal operation against one existing section.",
         },
         summary: {
           type: "array",
@@ -193,8 +182,13 @@ Everything you need is either in the document or in the customer's request. You 
 
 MAKE THE SMALLEST CHANGE THAT SATISFIES THE REQUEST.
 - Change only what the request explicitly asks you to change.
-- Reproduce every other section, heading, sentence, bullet and table cell exactly as given, character for character. Do not reword, tidy, reorder, retitle or "improve" anything you were not asked about.
-- Do not add sections. Do not add sentences to sections you were not asked to change.
+- Return one operation against one exact existing section heading.
+- Use remove_section only when the customer explicitly asked to remove that whole section.
+- Use replace_text for an edit inside one section. oldText must be the smallest exact text span copied character-for-character from that section; newText is only its replacement.
+- Set replaceAll to true only when every occurrence of oldText in that section must change. If oldText occurs more than once and the request does not clearly mean all occurrences, ask a question.
+- Never return unchanged sections. The application preserves them directly from the source document.
+- Do not add, rename, or reorder sections. If the request requires that, ask a clarification question instead.
+- If the request clearly changes more than one section, ask which single section to handle first.
 
 NEVER INVENT A FACT.
 Never introduce a name, job title, date, number, quantity, address, location, product, chemical, department, phone number, email, regulation, standard, CFR citation, or legal requirement that does not already appear in the document or in the customer's request. This is absolute. A plausible-sounding invented detail is the worst thing you can produce here, because the reader cannot tell it from a real one.
@@ -279,6 +273,69 @@ function bodyOf(section: { heading: string; blocks: Block[] }): string {
   return section.blocks.flatMap(textOf).join("\n");
 }
 
+function regexEscape(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function editDistance(left: string, right: string): number {
+  const previous = Array.from(
+    { length: right.length + 1 },
+    (_, index) => index,
+  );
+
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    const current = [leftIndex];
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const substitution =
+        previous[rightIndex - 1] +
+        (left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1);
+      current[rightIndex] = Math.min(
+        current[rightIndex - 1] + 1,
+        previous[rightIndex] + 1,
+        substitution,
+      );
+    }
+    previous.splice(0, previous.length, ...current);
+  }
+
+  return previous[right.length];
+}
+
+function namedHeadings(
+  sections: Section[],
+  instructions: string,
+): string[] {
+  const words = instructions.match(/[a-z0-9]+/g) ?? [];
+
+  return sections
+    .filter((section) => {
+      const heading = section.heading.toLocaleLowerCase();
+      if (instructions.includes(heading)) return true;
+
+      const headingWords = heading.match(/[a-z0-9]+/g) ?? [];
+      const threshold = Math.min(
+        2,
+        Math.max(1, Math.floor(heading.length * 0.12)),
+      );
+
+      for (
+        let index = 0;
+        index <= words.length - headingWords.length;
+        index += 1
+      ) {
+        const candidate = words
+          .slice(index, index + headingWords.length)
+          .join(" ");
+        if (editDistance(candidate, headingWords.join(" ")) <= threshold) {
+          return true;
+        }
+      }
+
+      return false;
+    })
+    .map((section) => section.heading);
+}
+
 /**
  * Refuses a revision whose changes go beyond what was asked for.
  *
@@ -356,29 +413,74 @@ export function checkRevision(
 }
 
 /**
- * Puts `sourceRef` back, from the original, matched on heading.
+ * Applies one exact operation to the source-of-truth document.
  *
- * Never taken from the model. A section it renamed loses its ref rather than
- * acquiring a wrong one — and a lost ref is caught by `checkRevision`, which
- * counts a rename as a removal plus an addition.
+ * Untouched sections, headings, block structure, and `sourceRef` values come
+ * only from the original. A text replacement is accepted only when its exact
+ * old text exists unambiguously, unless the model explicitly says every
+ * occurrence must change.
  */
-function reattachSourceRefs(
+export function applyRevisionOperation(
   original: Section[],
-  revised: { heading: string; blocks: Block[] }[],
-): Section[] {
-  const refs = new Map(original.map((s) => [s.heading, s.sourceRef]));
-  return revised.map((section) => {
-    const sourceRef = refs.get(section.heading);
-    return sourceRef ? { ...section, sourceRef } : section;
+  operation: RevisionOperation,
+): Section[] | null {
+  const targetIndex = original.findIndex(
+    (section) => section.heading === operation.targetHeading,
+  );
+  if (targetIndex === -1) return null;
+
+  if (operation.type === "remove_section") {
+    return original.filter((_, index) => index !== targetIndex);
+  }
+
+  if (operation.oldText === operation.newText) return null;
+
+  const target = original[targetIndex];
+  const occurrences = target.blocks
+    .flatMap(textOf)
+    .reduce(
+      (total, value) =>
+        total + value.split(operation.oldText).length - 1,
+      0,
+    );
+
+  if (
+    occurrences === 0 ||
+    (!operation.replaceAll && occurrences !== 1)
+  ) {
+    return null;
+  }
+
+  const replace = (value: string) =>
+    value.split(operation.oldText).join(operation.newText);
+
+  const blocks = target.blocks.map((block): Block => {
+    switch (block.type) {
+      case "paragraph":
+        return { ...block, text: replace(block.text) };
+      case "bullets":
+      case "numbered":
+        return { ...block, items: block.items.map(replace) };
+      case "table":
+        return {
+          ...block,
+          head: block.head.map(replace),
+          rows: block.rows.map((row) => row.map(replace)),
+        };
+    }
   });
+
+  return original.map((section, index) =>
+    index === targetIndex ? { ...section, blocks } : section,
+  );
 }
 
 /* ------------------------------------------------------------------ */
 /* The call                                                            */
 /* ------------------------------------------------------------------ */
 
-/** A revised programme can be long; leave room rather than truncate. */
-const MAX_TOKENS = 32000;
+/** One section patch plus a short summary; the whole document is never echoed. */
+const MAX_TOKENS = 4096;
 
 export async function analyseRevision({
   model,
@@ -415,7 +517,131 @@ export async function analyseRevision({
     };
   }
 
-  const revised = parsed.data.revisedDocument.sections;
+  const operation = parsed.data.operation;
+  const instructions = [
+    request,
+    ...clarifications.flatMap(({ question, answer }) => [question, answer]),
+  ]
+    .join("\n")
+    .toLocaleLowerCase();
+  const target = sections.find(
+    (section) => section.heading === operation.targetHeading,
+  );
+  const mentionedHeadings = namedHeadings(sections, instructions);
+
+  if (
+    !target ||
+    mentionedHeadings.length !== 1 ||
+    mentionedHeadings[0] !== target.heading
+  ) {
+    return {
+      status: "clarification_required",
+      questions: [
+        "Which exact section heading should be changed?",
+      ],
+    };
+  }
+
+  if (operation.type === "remove_section") {
+    const removalWasRequested =
+      /\b(remove|delete|drop|omit)\b/.test(instructions) ||
+      instructions.includes("take out");
+    const removalWasNegated =
+      /\b(?:do not|don't|never|not to)\s+(?:remove|delete|drop|omit)\b/.test(
+        instructions,
+      ) ||
+      /\b(?:do not|don't|never|not to)\s+take\s+out\b/.test(instructions);
+
+    if (!removalWasRequested || removalWasNegated) {
+      return {
+        status: "clarification_required",
+        questions: [
+          `Should the entire "${target.heading}" section be removed?`,
+        ],
+      };
+    }
+  }
+
+  if (operation.type === "replace_text") {
+    const oldTextPattern = regexEscape(operation.oldText.toLocaleLowerCase());
+    const preserveOldText = new RegExp(
+      `(?:keep|leave)\\s+["']?${oldTextPattern}["']?\\s+unchanged|(?:do not|don't)\\s+(?:change|replace)\\s+["']?${oldTextPattern}`,
+    );
+
+    if (preserveOldText.test(instructions)) {
+      return {
+        status: "clarification_required",
+        questions: [
+          `Should "${operation.oldText}" remain unchanged or be replaced?`,
+        ],
+      };
+    }
+
+    const occurrences = target.blocks
+      .flatMap(textOf)
+      .reduce(
+        (total, value) =>
+          total + value.split(operation.oldText).length - 1,
+        0,
+      );
+
+    if (occurrences === 0) {
+      return {
+        status: "clarification_required",
+        questions: [
+          `What exact existing text in "${target.heading}" should be changed?`,
+        ],
+      };
+    }
+
+    if (!instructions.includes(operation.newText.toLocaleLowerCase())) {
+      return {
+        status: "clarification_required",
+        questions: [
+          `What exact replacement text should be used in "${target.heading}"?`,
+        ],
+      };
+    }
+
+    if (!operation.replaceAll && occurrences > 1) {
+      return {
+        status: "clarification_required",
+        questions: [
+          `Should every occurrence of "${operation.oldText}" in "${target.heading}" be changed?`,
+        ],
+      };
+    }
+
+    if (
+      operation.replaceAll &&
+      occurrences > 1 &&
+      !/\b(all|every|each)\b/.test(instructions) &&
+      !instructions.includes("throughout")
+    ) {
+      return {
+        status: "clarification_required",
+        questions: [
+          `Should every occurrence of "${operation.oldText}" in "${target.heading}" be changed?`,
+        ],
+      };
+    }
+
+    if (operation.oldText === operation.newText) {
+      return {
+        status: "clarification_required",
+        questions: ["What should the existing text be changed to?"],
+      };
+    }
+  }
+
+  const revised = applyRevisionOperation(sections, operation);
+  if (!revised) {
+    console.error(
+      `Revision operation did not apply safely: ${parsed.data.operation.type} on ${parsed.data.operation.targetHeading}`,
+    );
+    return { status: "failed", reason: "operation_not_applicable" };
+  }
+
   const problems = checkRevision(sections, revised);
 
   if (problems.length > 0) {
@@ -425,7 +651,7 @@ export async function analyseRevision({
 
   return {
     status: "success",
-    revisedDocument: reattachSourceRefs(sections, revised),
+    revisedDocument: revised,
     summary: parsed.data.summary,
     modelId: outcome.modelId,
   };

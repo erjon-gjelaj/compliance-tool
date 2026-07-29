@@ -40,8 +40,14 @@ export default async function GeneratedDocumentPage({
   const { id } = await params;
   const document = await getDocumentForEmail(session.email, id);
 
-  // Not yours and not real render identically.
-  if (!document?.current) notFound();
+  /*
+   * Not yours, not real, and never successfully generated all render
+   * identically. The third case is why this 404'd for documents the customer
+   * could see listed: a generation that failed after creating its row left a
+   * document with no version, the archive linked to it anyway, and this line
+   * refused it. The reader now drops those, so the list and this page agree.
+   */
+  if (!document) notFound();
 
   const template = programById(document.program_id);
   const title = template?.title ?? document.program_id;

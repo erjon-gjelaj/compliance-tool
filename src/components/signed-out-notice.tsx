@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 /**
  * One-time confirmation for an explicit sign-out.
@@ -12,11 +13,12 @@ import { X } from "lucide-react";
  */
 export function SignedOutNotice() {
   const [visible, setVisible] = useState(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const url = new URL(window.location.href);
-    if (url.searchParams.get("signed_out") !== "1") return;
+    if (searchParams.get("signed_out") !== "1") return;
 
+    const url = new URL(window.location.href);
     url.searchParams.delete("signed_out");
     const query = url.searchParams.toString();
     window.history.replaceState(
@@ -25,9 +27,11 @@ export function SignedOutNotice() {
       `${url.pathname}${query ? `?${query}` : ""}${url.hash}`,
     );
 
-    const reveal = window.setTimeout(() => setVisible(true), 0);
-    return () => window.clearTimeout(reveal);
-  }, []);
+    // Scheduled because the URL cleanup updates Next's search-param store.
+    // Deliberately not cancelled by that update: the notice is the lasting
+    // acknowledgement of the marker we just removed.
+    window.setTimeout(() => setVisible(true), 0);
+  }, [searchParams]);
 
   if (!visible) return null;
 

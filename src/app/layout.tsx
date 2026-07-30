@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Bricolage_Grotesque } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -59,7 +60,9 @@ export default function RootLayout({
         {/* Header and footer live here so all four pages share the same
             chrome and nothing drifts as pages are added. */}
         <SiteHeader />
-        <SignedOutNotice />
+        <Suspense fallback={null}>
+          <SignedOutNotice />
+        </Suspense>
         {children}
         <SiteFooter />
         {/* Vercel Speed Insights. Reports Core Web Vitals to the Vercel

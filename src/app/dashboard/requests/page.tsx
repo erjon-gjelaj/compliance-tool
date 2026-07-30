@@ -4,7 +4,7 @@ import { ChevronRight, MessageSquare } from "lucide-react";
 
 import { SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { listRequestsForEmailOrThrow } from "@/lib/requests/store";
 import { SERVICE_LABELS } from "@/lib/service-kinds";
 import { StatusChip } from "@/components/status-chip";
@@ -28,12 +28,12 @@ function when(value: string | null): string {
 }
 
 export default async function RequestsPage() {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   // Throws rather than returning [] on a failed read, so that a database
   // problem reaches error.tsx instead of rendering as "no requests yet".
-  const requests = await listRequestsForEmailOrThrow(session.email);
+  const requests = await listRequestsForEmailOrThrow(workspace.email);
 
   return (
     <main className="max-w-3xl">

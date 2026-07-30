@@ -5,7 +5,7 @@ import { FileStack, FileText, FileWarning } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
 import { formatBytes } from "@/lib/uploads";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { listDocumentsForEmail, type LibraryDocument } from "@/lib/dashboard";
 import { listDocumentsForEmail as listGenerated } from "@/lib/programs/store";
 import { offerablePrograms, programById } from "@/lib/programs/registry";
@@ -64,12 +64,12 @@ function Row({ document }: { document: LibraryDocument }) {
 }
 
 export default async function DocumentsPage() {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const [documents, generated] = await Promise.all([
-    listDocumentsForEmail(session.email),
-    listGenerated(session.email),
+    listDocumentsForEmail(workspace.email),
+    listGenerated(workspace.email),
   ]);
 
   // Programmes we can prepare that this company does not already hold.

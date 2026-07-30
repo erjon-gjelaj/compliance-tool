@@ -111,29 +111,25 @@ capability check in one module, and a `service_requests` table capturing what
 someone asked for. No checkout, no fake buttons. Where money will eventually
 change hands, the button records intent and says so.
 
-### Stage 7 — Document generation (task 040, still blocked)
+### Stage 7 — Document generation (tasks 058–061, done)
 
-Unchanged in status. The human picked the shape implicitly in this brief —
-"controlled, reviewed source material and conditional sections rather than
-unrestricted AI generation", which is option (a) from task 040's note — but
-the source prose still has to be written by a person. This repo can build the
-assembly engine, the section model, the confirmed-vs-draft separation and the
-export, and cannot author the safety programme text. Stage 7 starts when
-reviewed prose exists for at least one program.
+The controlled assembly engine, reviewed program registry, conditional
+sections, Word/PDF export, revision requests, and version history now ship.
+Customer availability remains an explicit registry decision per program.
 
-### Stage 8 — Consultant workspace (task 052, later)
+### Stage 8 — Consultant workspace (task 052, done)
 
-Schema-level preparation only for now: company rows already carry an owner, so
-a consultant becomes a role holding many companies rather than a second
-product. The contractor dashboard must not grow a workspace switcher it does
-not need.
+Consultant plans can invite and switch among managed company workspaces.
+Every switch is re-authorized against the current plan and company relation;
+contractor accounts do not see the client-management navigation. Eligible
+exports can carry the consultant's brand as the preparer.
 
-### Stage 9 — Maintenance (task 053, later)
+### Stage 9 — Maintenance (task 053, done)
 
-Revision dates, expiries, annual review reminders, version history. The rule
-that constrains it: we do not know that a platform requirement changed unless
-the customer tells us or a real source says so. Reminders are about dates we
-were given, never about changes we are guessing at.
+Customers can attach expiry or review dates to uploaded and generated
+documents and see overdue or due-soon reminders. Dates are always entered by
+the customer; the product does not infer them from files, platforms, or
+regulations.
 
 ## What does not change
 

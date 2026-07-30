@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { getSubmissionForEmail } from "@/lib/dashboard";
 import { rowToValues } from "@/lib/submissions";
 import { TOTAL_STEPS, type StepNumber } from "@/lib/intake";
@@ -53,12 +53,12 @@ export default async function ContinuePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const { id } = await params;
 
-  const submission = await getSubmissionForEmail(session.email, id);
+  const submission = await getSubmissionForEmail(workspace.email, id);
   if (!submission) notFound();
 
   // Already finished. Sending them back to the form would invite a second

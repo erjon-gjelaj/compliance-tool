@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { getRequestForEmail } from "@/lib/requests/store";
 import { SERVICE_LABELS } from "@/lib/service-kinds";
 import { StatusChip } from "@/components/status-chip";
@@ -36,12 +36,12 @@ export default async function RequestPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const { id } = await params;
 
-  const request = await getRequestForEmail(session.email, id);
+  const request = await getRequestForEmail(workspace.email, id);
   if (!request) notFound();
 
   return (

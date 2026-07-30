@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { saveCompanyForEmail, type ProfileInput } from "@/lib/companies";
 import {
   HEADCOUNT_BANDS,
@@ -45,8 +45,8 @@ export async function saveCompany(
   _previous: ProfileState,
   formData: FormData,
 ): Promise<ProfileState> {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const name = text(formData, "name");
 
@@ -98,7 +98,7 @@ export async function saveCompany(
   };
 
   try {
-    await saveCompanyForEmail(session.email, input);
+    await saveCompanyForEmail(workspace.email, input);
   } catch (cause) {
     console.error("Could not save the company profile:", cause);
     return {

@@ -1,5 +1,6 @@
 import { EMERGENCY_ACTION_PLAN } from "@/lib/programs/emergency-action-plan";
 import { HAZCOM } from "@/lib/programs/hazcom";
+import { INCIDENT_REPORTING } from "@/lib/programs/incident-reporting";
 import { PPE } from "@/lib/programs/ppe";
 import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/types";
 
@@ -20,6 +21,7 @@ export const PROGRAMS: ProgramTemplate[] = [
   HAZCOM,
   PPE,
   EMERGENCY_ACTION_PLAN,
+  INCIDENT_REPORTING,
 ];
 
 export function programById(id: string): ProgramTemplate | undefined {

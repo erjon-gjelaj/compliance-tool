@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { getRequestForEmail, recordEvent } from "@/lib/requests/store";
 import { notifyCustomerReply } from "@/lib/notify";
 
@@ -26,8 +26,8 @@ export async function replyToRequest(
   _previous: ReplyState,
   formData: FormData,
 ): Promise<ReplyState> {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const requestId = formData.get("request_id");
 
@@ -52,7 +52,7 @@ export async function replyToRequest(
   // Ownership is checked by reading it back through the email filter. A
   // request id posted by a browser proves nothing on its own, and appending to
   // a stranger's conversation would put this customer's words in front of them.
-  const request = await getRequestForEmail(session.email, requestId);
+  const request = await getRequestForEmail(workspace.email, requestId);
 
   if (!request) {
     return { status: "editing", error: "We couldn't find that request." };
@@ -76,7 +76,7 @@ export async function replyToRequest(
   // Outside the try above: the message is already recorded, and telling
   // somebody their reply failed while it sits in the table is the worse error.
   try {
-    await notifyCustomerReply({ email: session.email, requestId: request.id, body });
+    await notifyCustomerReply({ email: workspace.email, requestId: request.id, body });
   } catch (cause) {
     console.error("Could not notify about a customer reply:", cause);
   }

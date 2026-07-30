@@ -103,6 +103,8 @@ export type CompanyContext = {
   hiringClients: string[] | null;
   operations: string | null;
   logoUrl: string | null;
+  /** Consultancy name printed on exports for managed workspaces. */
+  preparedBy?: string | null;
 };
 
 /* ------------------------------------------------------------------ */

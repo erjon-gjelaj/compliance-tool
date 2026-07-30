@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { listRequestsForEmail } from "@/lib/requests/store";
 import { SERVICE_LABELS } from "@/lib/service-kinds";
 import { StatusChip } from "@/components/status-chip";
@@ -24,11 +24,11 @@ export default async function HelpPage({
 }: {
   searchParams: Promise<{ submission?: string }>;
 }) {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const { submission } = await searchParams;
-  const existing = await listRequestsForEmail(session.email);
+  const existing = await listRequestsForEmail(workspace.email);
 
   return (
     <main className="max-w-3xl">

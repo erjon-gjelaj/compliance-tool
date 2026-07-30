@@ -5,7 +5,7 @@ import { ArrowLeft, FileText, FileWarning } from "lucide-react";
 import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
 import { formatBytes } from "@/lib/uploads";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import {
   getReviewForSubmission,
   getSubmissionForEmail,
@@ -102,15 +102,15 @@ export default async function SubmissionPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const { id } = await params;
 
   // Filtered by address in the query. A submission belonging to someone else
   // is indistinguishable from one that does not exist, so a guessed uuid
   // reveals nothing about whether it is real.
-  const submission = await getSubmissionForEmail(session.email, id);
+  const submission = await getSubmissionForEmail(workspace.email, id);
   if (!submission) notFound();
 
   const [documents, review] = await Promise.all([

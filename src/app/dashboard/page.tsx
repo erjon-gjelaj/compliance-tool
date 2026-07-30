@@ -10,7 +10,7 @@ import {
 
 import { SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import {
   getReviewForSubmission,
   listDocumentsForEmail,
@@ -23,6 +23,11 @@ import { listRequestsForEmail } from "@/lib/requests/store";
 import { SERVICE_LABELS } from "@/lib/service-kinds";
 import { needsCustomer } from "@/lib/requests/state";
 import { StatusChip } from "@/components/status-chip";
+import {
+  listMaintenanceDates,
+  reminderState,
+  todayIso,
+} from "@/lib/maintenance";
 
 export const metadata = pageMetadata({
   title: "Overview",
@@ -169,14 +174,15 @@ function SubmissionRow({ row }: { row: DashboardSubmission }) {
 }
 
 export default async function DashboardPage() {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const active = await currentWorkspace();
+  if (!active) redirect("/sign-in");
 
-  const [submissions, documents, company, requests] = await Promise.all([
-    listSubmissionsForEmail(session.email),
-    listDocumentsForEmail(session.email),
-    getCompanyForEmail(session.email),
-    listRequestsForEmail(session.email),
+  const [submissions, documents, company, requests, maintenance] = await Promise.all([
+    listSubmissionsForEmail(active.email),
+    listDocumentsForEmail(active.email),
+    getCompanyForEmail(active.email),
+    listRequestsForEmail(active.email),
+    listMaintenanceDates(active.email),
   ]);
 
   const toConfirm = company ? unconfirmedFields(company) : [];
@@ -208,6 +214,10 @@ export default async function DashboardPage() {
   );
 
   const unreadable = documents.filter((entry) => !entry.readable);
+  const today = todayIso();
+  const maintenanceDue = maintenance.filter(
+    (entry) => reminderState(entry.due_date, today) !== "later",
+  );
 
   return (
     <main>
@@ -239,7 +249,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <Tile
           label="need something from you"
           value={yourMove.length}
@@ -260,6 +270,12 @@ export default async function DashboardPage() {
           label="documents held"
           value={documents.length}
           href="/dashboard/documents"
+        />
+        <Tile
+          label="document dates due soon"
+          value={maintenanceDue.length}
+          href="/dashboard/maintenance"
+          alert
         />
       </div>
 

@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { getCompanyForEmail, unconfirmedFields } from "@/lib/companies";
 import { CompanyForm } from "@/components/company-form";
 
@@ -18,10 +18,10 @@ export const metadata = pageMetadata({
 export const dynamic = "force-dynamic";
 
 export default async function CompanyPage() {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
-  const company = await getCompanyForEmail(session.email);
+  const company = await getCompanyForEmail(workspace.email);
 
   return (
     <main className="max-w-3xl">

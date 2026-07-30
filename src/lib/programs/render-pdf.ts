@@ -222,7 +222,19 @@ export async function renderPdf(
     .font(BODY)
     .fontSize(18)
     .text(meta.title, { width: CONTENT_WIDTH, align: "center" })
-    .moveDown(2)
+    .moveDown(meta.preparedBy ? 1 : 2);
+
+  if (meta.preparedBy) {
+    doc
+      .fontSize(10.5)
+      .text(`Prepared by ${meta.preparedBy}`, {
+        width: CONTENT_WIDTH,
+        align: "center",
+      })
+      .moveDown(1);
+  }
+
+  doc
     .fontSize(10.5)
     .text(`Effective ${meta.effectiveDate}`, { width: CONTENT_WIDTH, align: "center" });
 

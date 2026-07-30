@@ -784,6 +784,49 @@ export async function sendSignInLink(
   }
 }
 
+export async function notifyClientInvitation({
+  email,
+  companyName,
+  consultantName,
+  url,
+  days,
+}: {
+  email: string;
+  companyName: string;
+  consultantName: string;
+  url: string;
+  days: number;
+}): Promise<boolean> {
+  const config = readSmtpConfig();
+  if (!config) return false;
+  const transport = buildTransport(config);
+
+  try {
+    await transport.sendMail({
+      from: config.from,
+      to: email,
+      replyTo: config.to,
+      subject: `${consultantName} invited you to ${companyName}`,
+      text: [
+        `${consultantName} created a ${SITE_NAME} workspace for ${companyName}.`,
+        "",
+        "Open the workspace:",
+        url,
+        "",
+        `This invitation link expires after ${days} days.`,
+        "The link signs you in as the owner address it was sent to. If you did",
+        "not expect this invitation, ignore it and nothing changes.",
+      ].join("\n"),
+    });
+    return true;
+  } catch (cause) {
+    console.error("Client invitation failed to send:", cause);
+    return false;
+  } finally {
+    transport.close();
+  }
+}
+
 /**
  * The contact-form message, sent to our own inbox.
  *

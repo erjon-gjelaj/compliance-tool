@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
 
 import { pageMetadata } from "@/lib/metadata";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { offerablePrograms } from "@/lib/programs/registry";
 import { listDocumentsForEmail } from "@/lib/programs/store";
 import { getCompanyForEmail } from "@/lib/companies";
@@ -18,12 +18,12 @@ export const metadata = pageMetadata({
 export const dynamic = "force-dynamic";
 
 export default async function ProgramsPage() {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const [held, company] = await Promise.all([
-    listDocumentsForEmail(session.email),
-    getCompanyForEmail(session.email),
+    listDocumentsForEmail(workspace.email),
+    getCompanyForEmail(workspace.email),
   ]);
 
   const programs = offerablePrograms();

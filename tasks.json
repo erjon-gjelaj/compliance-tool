@@ -482,6 +482,13 @@
       "status": "done",
       "notes": "Done. Reworked the homepage's repeated card-grid rhythm into three distinct visual stages. The entry routes now use a guided split layout with numbered, scan-friendly rows; the process is a compact dark sequence band with shorter copy; and the hero and intake remain calm light anchors. Updated the written-program route to describe automatic preparation accurately. The information architecture and four existing entry destinations are unchanged.",
       "needs_human_review": false
+    },
+    {
+      "id": "075",
+      "title": "Simplify the sign-in method choice",
+      "status": "done",
+      "notes": "Done. Replaced the magic-link and email-code radio choices plus generic Continue action with two direct submit buttons. Each button sends the requested method while retaining native form validation and the existing pending state. Widened the shared sign-in panel and increased its responsive padding so the initial form, email confirmation, and code entry views all have more room.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": null,

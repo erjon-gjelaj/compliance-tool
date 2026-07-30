@@ -489,6 +489,13 @@
       "status": "done",
       "notes": "Done. Replaced the magic-link and email-code radio choices plus generic Continue action with two direct submit buttons. Each button sends the requested method while retaining native form validation and the existing pending state. Widened the shared sign-in panel and increased its responsive padding so the initial form, email confirmation, and code entry views all have more room.",
       "needs_human_review": false
+    },
+    {
+      "id": "076",
+      "title": "Move the generic gap check to its own page",
+      "status": "done",
+      "notes": "Done. Moved the generic intake from a homepage fragment to /gap-check and updated every shared gap-check link plus the generic entry route. The new page uses its available width for a concise expectation panel and a centered max-width form, while the homepage now closes with reassurance and a focused CTA instead of embedding the full intake. Added the new canonical route to the sitemap and retained /setup and the other problem-specific intake routes.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": null,

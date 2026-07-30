@@ -23,10 +23,10 @@ export const NAV_LINKS = [
 export const LEGAL_LINKS = [{ href: "/privacy", label: "Privacy" }] as const;
 
 /**
- * The intake form lives on the home page, so this has to be an absolute
- * path with a fragment: from /about a bare "#gap-check" would do nothing.
+ * The generic intake has its own focused page. Named entry pages such as
+ * /setup use the same underlying form with problem-specific framing.
  */
-export const GAP_CHECK_HREF = "/#gap-check";
+export const GAP_CHECK_HREF = "/gap-check";
 
 /**
  * The way back in for someone who has already sent us something.

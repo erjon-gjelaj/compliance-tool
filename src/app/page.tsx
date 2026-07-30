@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { EntryPointsSection } from "@/components/entry-points-section";
-import { GapCheck } from "@/components/gap-check";
 import { Hero } from "@/components/hero";
+import { HomeCta } from "@/components/home-cta";
 import { HowItWorks } from "@/components/how-it-works";
 import { OrganizationSchema } from "@/components/organization-schema";
 import { SITE_NAME } from "@/lib/constants";
@@ -13,20 +13,6 @@ const PAGE_DESCRIPTION =
   "training records, and insurance documents your ISNetworld or Avetta " +
   "file is still missing. Tell us your trade and hiring client, get a " +
   "free list back.";
-
-/**
- * The gap-check server action runs here, and the analysis runs inside it via
- * after() — which counts towards this function's wall clock, not a separate
- * one.
- *
- * Extraction is fast now that there is no OCR: reading a text layer is
- * milliseconds, and the slowest step left is the SMTP round trip. This is
- * headroom rather than a requirement, and 60 is the ceiling on Vercel's Hobby
- * plan anyway. It matters because an invocation killed mid-flight loses the
- * email as well as the review, which is the one outcome worth paying for
- * margin to avoid.
- */
-export const maxDuration = 60;
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,
@@ -59,7 +45,7 @@ export default function Home() {
         <Hero />
         <EntryPointsSection />
         <HowItWorks />
-        <GapCheck />
+        <HomeCta />
       </main>
     </>
   );

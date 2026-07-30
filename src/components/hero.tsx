@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { FileText, GraduationCap, ShieldCheck } from "lucide-react";
 import { TickRule } from "@/components/tick-rule";
+import { GAP_CHECK_HREF } from "@/lib/nav";
 
 /*
  * TODO-VERIFY: the three categories below come from business-model.md's
@@ -45,12 +47,9 @@ export function Hero() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-              <a
-                href="#gap-check"
-                className="btn-primary"
-              >
+              <Link href={GAP_CHECK_HREF} className="btn-primary">
                 Start your free gap check
-              </a>
+              </Link>
               <span className="text-sm text-slate-wash">
                 About a minute to start. No account or card.
               </span>

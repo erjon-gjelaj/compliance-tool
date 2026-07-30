@@ -66,7 +66,7 @@ export const ENTRY_POINTS: EntryPoint[] = [
   },
   {
     reason: "gap_check",
-    href: "/#gap-check",
+    href: "/gap-check",
     headline: "I don't know what I'm missing",
     detail:
       "Attach whatever you already have. You get back what looks present, what looks missing, and what needs confirming with your hiring client.",

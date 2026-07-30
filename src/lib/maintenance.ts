@@ -2,6 +2,7 @@ import "server-only";
 
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { programById } from "@/lib/programs/registry";
+import { clockState, todayIso } from "@/lib/clock";
 
 export const MAINTENANCE_KINDS = ["expiry", "review"] as const;
 export type MaintenanceKind = (typeof MAINTENANCE_KINDS)[number];
@@ -30,17 +31,14 @@ export function reminderState(
   today: string,
   soonDays = 60,
 ): ReminderState {
-  if (dueDate < today) return "overdue";
-
-  const due = Date.parse(`${dueDate}T00:00:00Z`);
-  const start = Date.parse(`${today}T00:00:00Z`);
-  const days = Math.floor((due - start) / 86_400_000);
-  return days <= soonDays ? "due_soon" : "later";
+  const result = clockState(dueDate, today);
+  if (result.state === "overdue") return "overdue";
+  return (result.daysUntil ?? Number.POSITIVE_INFINITY) <= soonDays
+    ? "due_soon"
+    : "later";
 }
 
-export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+export { todayIso };
 
 export function isIsoDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;

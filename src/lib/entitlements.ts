@@ -1,8 +1,8 @@
 /**
  * What each plan may do.
  *
- * One module, so that connecting Stripe later means writing to
- * `companies.plan` and nothing else. Every check in the product goes through
+ * One module keeps plan checks out of UI code. Paid human work ends in stored
+ * quote acceptance; there is no payment-processor integration. Every check goes through
  * `can()`; no page tests a plan string directly, because the day a fifth plan
  * appears, scattered string comparisons are how a feature ends up silently
  * available to the wrong people.

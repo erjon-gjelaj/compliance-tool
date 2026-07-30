@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "2026-07-30.1",
+  "effective_from": "2026-07-30",
+  "supersedes": null,
+  "provenance": {"source_kind":"domain_spec","source_ref":"docs/certloop-domain-spec.md#4","source_date":"2026-07-30","verification_state":"needs_live_account","verified_at":null,"verification_note":"Program-specific lists are explicitly non-exhaustive in the spec."},
+  "records": [
+    {
+      "element_set_key":"universal","program_key":null,"scope":"universal","completeness":"complete_from_spec",
+      "elements":[
+        {"element_key":"company_named","title":"Company named","evidence_description":"Company name appears in body text and is not a placeholder."},
+        {"element_key":"purpose_scope","title":"Purpose and scope","evidence_description":"Purpose and scope are stated."},
+        {"element_key":"responsible_parties","title":"Responsible parties","evidence_description":"Responsible roles such as program administrator or competent person are named."},
+        {"element_key":"citation_correct","title":"Correct citation","evidence_description":"The standard cited is the one configured for the program."},
+        {"element_key":"procedures_specific","title":"Specific procedures","evidence_description":"Step-by-step task procedures match the declared scope of work."},
+        {"element_key":"training_requirement","title":"Training requirement","evidence_description":"Training and its frequency are stated."},
+        {"element_key":"training_records","title":"Training records","evidence_description":"The program states that training is documented and retained."},
+        {"element_key":"inspection_frequency","title":"Inspection frequency","evidence_description":"An audit or inspection cadence is stated."},
+        {"element_key":"recordkeeping","title":"Recordkeeping","evidence_description":"Records and retention duration are stated."},
+        {"element_key":"forms_attached","title":"Forms attached","evidence_description":"Referenced checklists or permits are included."},
+        {"element_key":"review_cycle","title":"Review cycle","evidence_description":"A revision date and review interval are present."},
+        {"element_key":"enforcement_link","title":"Enforcement link","evidence_description":"The program links to the disciplinary policy."}
+      ]
+    },
+    {
+      "element_set_key":"confined_space","program_key":"confined_space","scope":"program_specific","completeness":"non_exhaustive",
+      "elements":[
+        {"element_key":"permit_form","title":"Permit form","evidence_description":"A confined-space entry permit form is included."},
+        {"element_key":"atmospheric_testing_sequence","title":"Atmospheric testing sequence","evidence_description":"The order of atmospheric tests is stated."},
+        {"element_key":"attendant_duties","title":"Attendant duties","evidence_description":"Attendant responsibilities are stated."},
+        {"element_key":"non_entry_retrieval","title":"Non-entry retrieval rescue","evidence_description":"The rescue plan includes non-entry retrieval."},
+        {"element_key":"rescue_service_contact","title":"Rescue service contact","evidence_description":"The rescue service contact is identified."},
+        {"element_key":"rescue_response_time","title":"Rescue response time","evidence_description":"The expected rescue response time is stated."}
+      ]
+    },
+    {
+      "element_set_key":"respiratory","program_key":"respiratory","scope":"program_specific","completeness":"non_exhaustive",
+      "elements":[
+        {"element_key":"medical_evaluation","title":"Medical evaluation","evidence_description":"Medical evaluation is addressed."},
+        {"element_key":"fit_testing_protocol","title":"Fit-testing protocol","evidence_description":"The fit-testing protocol is stated."},
+        {"element_key":"fit_testing_frequency","title":"Fit-testing frequency","evidence_description":"Fit-testing frequency is stated."},
+        {"element_key":"cartridge_change_schedule","title":"Cartridge change schedule","evidence_description":"A cartridge change schedule is stated."},
+        {"element_key":"facial_hair_policy","title":"Facial hair policy","evidence_description":"Facial hair restrictions are stated."},
+        {"element_key":"program_administrator","title":"Program administrator","evidence_description":"A program administrator role is named."}
+      ]
+    },
+    {
+      "element_set_key":"loto","program_key":"loto","scope":"program_specific","completeness":"non_exhaustive",
+      "elements":[
+        {"element_key":"equipment_specific_procedures","title":"Equipment-specific procedures","evidence_description":"Equipment-specific energy-control procedures are provided."},
+        {"element_key":"group_lockout","title":"Group lockout","evidence_description":"Group lockout is addressed."},
+        {"element_key":"shift_change","title":"Shift change","evidence_description":"Lockout continuity across shift changes is addressed."},
+        {"element_key":"contractor_coordination","title":"Contractor coordination","evidence_description":"Coordination with other employers is addressed."},
+        {"element_key":"independent_periodic_inspection","title":"Independent annual inspection","evidence_description":"Annual periodic inspection by someone other than the authorized employee is stated."}
+      ]
+    },
+    {
+      "element_set_key":"fall_protection","program_key":"fall_protection","scope":"program_specific","completeness":"non_exhaustive",
+      "elements":[
+        {"element_key":"anchorage_criteria","title":"Anchorage criteria","evidence_description":"Anchorage selection criteria are stated."},
+        {"element_key":"suspended_worker_rescue","title":"Suspended-worker rescue","evidence_description":"A suspended-worker rescue plan is included."},
+        {"element_key":"equipment_inspection_cadence","title":"Equipment inspection cadence","evidence_description":"Fall-protection equipment inspection cadence is stated."},
+        {"element_key":"leading_edge_controlled_access","title":"Leading edge and controlled access","evidence_description":"Leading-edge or controlled-access work is addressed."}
+      ]
+    },
+    {
+      "element_set_key":"hazcom","program_key":"hazcom","scope":"program_specific","completeness":"non_exhaustive",
+      "elements":[
+        {"element_key":"chemical_inventory","title":"Chemical inventory","evidence_description":"A chemical inventory is included or its maintained location is identified."},
+        {"element_key":"sds_access_method","title":"SDS access method","evidence_description":"The safety data sheet access method is stated."},
+        {"element_key":"labeling_system","title":"Labeling system","evidence_description":"The container-labeling system is stated."},
+        {"element_key":"non_routine_tasks","title":"Non-routine tasks","evidence_description":"Chemical exposure during non-routine tasks is addressed."}
+      ]
+    },
+    {
+      "element_set_key":"hot_work","program_key":"hot_work","scope":"program_specific","completeness":"non_exhaustive",
+      "elements":[
+        {"element_key":"permit_form","title":"Permit form","evidence_description":"A hot-work permit form is included."},
+        {"element_key":"fire_watch_duration","title":"Fire-watch duration","evidence_description":"Fire-watch duration after work is stated."},
+        {"element_key":"gas_testing","title":"Gas testing","evidence_description":"Gas testing requirements are stated."}
+      ]
+    },
+    {
+      "element_set_key":"excavation","program_key":"excavation","scope":"program_specific","completeness":"non_exhaustive",
+      "elements":[
+        {"element_key":"competent_person_named","title":"Competent person named","evidence_description":"The competent person is named."},
+        {"element_key":"soil_classification","title":"Soil classification","evidence_description":"Soil classification is addressed."},
+        {"element_key":"protective_system_selection","title":"Protective system selection","evidence_description":"Protective-system selection is addressed."}
+      ]
+    },
+    {
+      "element_set_key":"electrical_safety","program_key":"electrical_safety","scope":"program_specific","completeness":"non_exhaustive",
+      "elements":[
+        {"element_key":"arc_flash_boundary","title":"Arc-flash boundary","evidence_description":"The arc-flash boundary is addressed."},
+        {"element_key":"ppe_category_table","title":"PPE category table","evidence_description":"A PPE category table is included."},
+        {"element_key":"energized_work_permit","title":"Energized-work permit","evidence_description":"An energized-work permit is included."}
+      ]
+    },
+    {
+      "element_set_key":"sse","program_key":"sse","scope":"program_specific","completeness":"non_exhaustive",
+      "elements":[
+        {"element_key":"sse_period_definition","title":"SSE period definition","evidence_description":"The short-service period is defined."},
+        {"element_key":"mentor_ratio","title":"Mentor ratio","evidence_description":"The mentor-to-SSE ratio is stated."},
+        {"element_key":"identification_method","title":"Identification method","evidence_description":"An SSE identification method such as a sticker or hard hat is stated."}
+      ]
+    }
+  ]
+}

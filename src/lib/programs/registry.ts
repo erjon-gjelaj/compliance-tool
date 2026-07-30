@@ -3,6 +3,7 @@ import { HAZCOM } from "@/lib/programs/hazcom";
 import { INCIDENT_REPORTING } from "@/lib/programs/incident-reporting";
 import { PPE } from "@/lib/programs/ppe";
 import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/types";
+import { programConfigByKey } from "@/lib/config";
 
 /**
  * The programme library.
@@ -17,12 +18,29 @@ import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/ty
  * carry functions, and functions cannot be serialised. Pass an id and look it
  * up on the far side.
  */
+function withCatalog(template: ProgramTemplate): ProgramTemplate {
+  const config = programConfigByKey(template.id);
+  if (!config) {
+    throw new Error(`Generated program ${template.id} is absent from config`);
+  }
+  if (!config.template_body_key) {
+    throw new Error(`Generated program ${template.id} has no template body key`);
+  }
+
+  return {
+    ...template,
+    title: config.title,
+    shortName: config.title,
+    release: config.release_state,
+  };
+}
+
 export const PROGRAMS: ProgramTemplate[] = [
   HAZCOM,
   PPE,
   EMERGENCY_ACTION_PLAN,
   INCIDENT_REPORTING,
-];
+].map(withCatalog);
 
 export function programById(id: string): ProgramTemplate | undefined {
   return PROGRAMS.find((program) => program.id === id);

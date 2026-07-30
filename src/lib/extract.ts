@@ -1,106 +1,162 @@
 import "server-only";
 
-/**
- * Pulls text out of an uploaded document.
- *
- * Deliberately not a model call. Extraction is a mechanical job with a right
- * answer, and a language model does it slower, non-deterministically, at a
- * cost per page, and with the ability to invent text that isn't in the file —
- * which is the one failure this project can least afford. Libraries do it
- * exactly or fail honestly.
- *
- *  - PDF   unpdf, a serverless-targeted build of Mozilla's pdf.js. No native
- *          binary, which is what rules most PDF tooling out on Vercel.
- *  - DOCX  mammoth
- *  - DOC   word-extractor, for the old OLE binary format
- *
- * The honest-failure part matters as much as the extraction. A photograph of
- * a training card and a scanned PDF with no text layer both extract to
- * nothing, and "nothing" is not the same as "this document is empty". Those
- * come back as `unreadable`, which the response email lists by name — silence
- * about a file nobody could read is exactly the kind of thing that reads as
- * "reviewed and fine".
- *
- * ## No OCR, for now
- *
- * There was OCR here. It never once worked in production: tesseract.js runs
- * in a child process, and Vercel's module loader cannot resolve that worker's
- * own package root, so it died on every invocation — and because the analysis
- * runs inside after(), the first real scan took the email down with it.
- *
- * The replacements all cost something ongoing: a hosted OCR API, or a Pro
- * plan for the wall clock, or a second deployable to run an engine on. None
- * of them is worth buying before we know how many contractors actually have
- * nothing but a scan, and that number is currently a guess. So scans are
- * accepted, recorded, reported as unread with advice on what to send instead,
- * and left for a person to open — which at this volume is both more accurate
- * than OCR and already possible from /internal/submissions.
- *
- * What would justify bringing it back: a run of real submissions where the
- * only document is a scan. The evidence is being collected by doing nothing.
- */
-
 export type TextStatus =
   | "ok"
-  /**
-   * Text recovered by image recognition. Nothing produces this today — see
-   * "No OCR, for now" above — but the status and the rules that depend on it
-   * are kept, because they are what make OCR safe to reintroduce. See
-   * isReliable in analysis/documents.ts.
-   */
   | "ocr"
+  | "needs_review"
   | "unreadable"
   | "unsupported"
   | "error";
 
+export type ExtractionMethod = "text" | "ocr" | "mixed" | "manual";
+
+export type PageExtraction = {
+  page: number;
+  text: string;
+  method: "text" | "ocr";
+  confidence: number;
+  reviewRequired: boolean;
+};
+
 export type Extraction = {
   status: TextStatus;
+  method: ExtractionMethod | null;
+  confidence: number | null;
   text: string;
-  /** Recorded for the log; never shown to the person who uploaded the file. */
+  pages: number;
+  pageMap: PageExtraction[];
   detail?: string;
 };
 
-/** Beyond this, the text is truncated — a 200-page manual is not worth the tokens. */
-const MAX_TEXT_CHARS = 60_000;
-
-/**
- * A page's worth of text. Below this a PDF is treated as having no real text
- * layer: scanners often emit a few stray characters, and a handful of
- * punctuation marks is not something to analyse.
- */
+const MAX_TEXT_CHARS = 240_000;
 const MIN_MEANINGFUL_CHARS = 40;
+const OCR_REVIEW_THRESHOLD = 0.72;
 
 function tidy(raw: string): string {
-  const text = raw
+  return raw
     .replace(/\r\n?/g, "\n")
-    // Runs of blank lines carry no information and cost tokens.
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
     .trim();
+}
 
+function combinedText(pageMap: PageExtraction[]): string {
+  const text = pageMap
+    .map((page) => page.text)
+    .filter(Boolean)
+    .join("\n\n")
+    .trim();
   return text.length > MAX_TEXT_CHARS
     ? `${text.slice(0, MAX_TEXT_CHARS)}\n\n[truncated]`
     : text;
 }
 
-async function extractPdf(bytes: Uint8Array): Promise<Extraction> {
-  const { extractText, getDocumentProxy } = await import("unpdf");
+async function recognizeImage(
+  bytes: Uint8Array,
+  page: number,
+): Promise<PageExtraction> {
+  const [{ createWorker, OEM }, language] = await Promise.all([
+    import("tesseract.js"),
+    import("@tesseract.js-data/eng"),
+  ]);
+  const worker = await createWorker(language.default.code, OEM.LSTM_ONLY, {
+    langPath: language.default.langPath,
+    gzip: language.default.gzip,
+  });
 
-  const pdf = await getDocumentProxy(bytes);
-  const { text } = await extractText(pdf, { mergePages: true });
-  const merged = tidy(Array.isArray(text) ? text.join("\n\n") : text);
+  try {
+    const result = await worker.recognize(Buffer.from(bytes));
+    const confidence = Math.max(0, Math.min(1, result.data.confidence / 100));
+    return {
+      page,
+      text: tidy(result.data.text),
+      method: "ocr",
+      confidence,
+      reviewRequired: confidence < OCR_REVIEW_THRESHOLD,
+    };
+  } finally {
+    await worker.terminate();
+  }
+}
 
-  if (merged.length < MIN_MEANINGFUL_CHARS) {
-    // A PDF that is a photograph of paper. Nothing to read, and nothing to
-    // pretend about — the email names the file and says what to send instead.
+function finish(pageMap: PageExtraction[]): Extraction {
+  const text = combinedText(pageMap);
+  const ocrPages = pageMap.filter((page) => page.method === "ocr");
+  const reviewRequired = pageMap.some((page) => page.reviewRequired);
+  const method: ExtractionMethod =
+    ocrPages.length === 0
+      ? "text"
+      : ocrPages.length === pageMap.length
+        ? "ocr"
+        : "mixed";
+  const confidence =
+    pageMap.length === 0
+      ? null
+      : pageMap.reduce((sum, page) => sum + page.confidence, 0) /
+        pageMap.length;
+
+  if (!text) {
     return {
       status: "unreadable",
+      method,
+      confidence,
       text: "",
-      detail: "no text layer (likely a scan)",
+      pages: pageMap.length,
+      pageMap,
+      detail: "no usable text recovered",
     };
   }
 
-  return { status: "ok", text: merged };
+  return {
+    status: reviewRequired ? "needs_review" : ocrPages.length > 0 ? "ocr" : "ok",
+    method,
+    confidence,
+    text,
+    pages: pageMap.length,
+    pageMap,
+  };
+}
+
+async function extractPdf(bytes: Uint8Array): Promise<Extraction> {
+  const {
+    definePDFJSModule,
+    extractText,
+    getDocumentProxy,
+    renderPageAsImage,
+  } = await import("unpdf");
+
+  await definePDFJSModule(() => import("pdfjs-dist"));
+  const pdf = await getDocumentProxy(bytes);
+  const extracted = await extractText(pdf, { mergePages: false });
+  const rawPages = Array.isArray(extracted.text)
+    ? extracted.text
+    : [extracted.text];
+  const pageMap: PageExtraction[] = [];
+
+  for (let index = 0; index < pdf.numPages; index += 1) {
+    const text = tidy(rawPages[index] ?? "");
+    if (text.length >= MIN_MEANINGFUL_CHARS) {
+      pageMap.push({
+        page: index + 1,
+        text,
+        method: "text",
+        confidence: 1,
+        reviewRequired: false,
+      });
+      continue;
+    }
+
+    const rendered = await renderPageAsImage(pdf, index + 1, {
+      canvasImport: () => import("@napi-rs/canvas"),
+      scale: 2,
+    });
+    if (typeof rendered === "string") {
+      throw new Error("PDF renderer returned a data URL instead of bytes");
+    }
+    pageMap.push(await recognizeImage(new Uint8Array(rendered), index + 1));
+  }
+
+  return finish(pageMap);
 }
 
 async function extractDocx(bytes: Uint8Array): Promise<Extraction> {
@@ -108,25 +164,29 @@ async function extractDocx(bytes: Uint8Array): Promise<Extraction> {
   const { value } = await mammoth.extractRawText({
     buffer: Buffer.from(bytes),
   });
-  const text = tidy(value);
-
-  if (!text) {
-    return { status: "unreadable", text: "", detail: "document had no text" };
-  }
-
-  return { status: "ok", text };
+  return finish([
+    {
+      page: 1,
+      text: tidy(value),
+      method: "text",
+      confidence: 1,
+      reviewRequired: false,
+    },
+  ]);
 }
 
 async function extractDoc(bytes: Uint8Array): Promise<Extraction> {
   const WordExtractor = (await import("word-extractor")).default;
   const document = await new WordExtractor().extract(Buffer.from(bytes));
-  const text = tidy(document.getBody());
-
-  if (!text) {
-    return { status: "unreadable", text: "", detail: "document had no text" };
-  }
-
-  return { status: "ok", text };
+  return finish([
+    {
+      page: 1,
+      text: tidy(document.getBody()),
+      method: "text",
+      confidence: 1,
+      reviewRequired: false,
+    },
+  ]);
 }
 
 export type ExtractionInput = {
@@ -135,11 +195,6 @@ export type ExtractionInput = {
   fileName: string;
 };
 
-/**
- * Extracts one document. Never throws — a file that blows up is recorded as
- * an error and reported as unassessed, rather than taking the whole
- * submission down with it.
- */
 export async function extractDocument(
   input: ExtractionInput,
 ): Promise<Extraction> {
@@ -147,29 +202,23 @@ export async function extractDocument(
     switch (input.mimeType) {
       case "application/pdf":
         return await extractPdf(input.bytes);
-
       case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         return await extractDocx(input.bytes);
-
       case "application/msword":
         return await extractDoc(input.bytes);
-
       case "image/png":
       case "image/jpeg":
       case "image/heic":
       case "image/heif":
-        // Still accepted at upload, still stored, still listed for a person to
-        // open. There is simply no text in a photograph to search.
-        return {
-          status: "unreadable",
-          text: "",
-          detail: "image: no text to search without OCR",
-        };
-
+        return finish([await recognizeImage(input.bytes, 1)]);
       default:
         return {
           status: "unsupported",
+          method: null,
+          confidence: null,
           text: "",
+          pages: 0,
+          pageMap: [],
           detail: `no extractor for ${input.mimeType}`,
         };
     }
@@ -177,7 +226,11 @@ export async function extractDocument(
     console.error(`Extraction failed for ${input.fileName}:`, cause);
     return {
       status: "error",
+      method: null,
+      confidence: null,
       text: "",
+      pages: 0,
+      pageMap: [],
       detail: cause instanceof Error ? cause.message : "unknown error",
     };
   }

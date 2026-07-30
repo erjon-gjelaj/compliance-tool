@@ -15,7 +15,7 @@ import { IntakeForm } from "@/components/intake-form";
  *
  * This exists because the dashboard's first instruction was a dead end. It
  * said "Finish the form you started" and linked to the submission page, which
- * shows documents and a review — neither of which a partial submission has —
+ * shows documents and a review; neither of which a partial submission has :
  * and offered no way to actually finish anything. The primary action on the
  * page did not work.
  *

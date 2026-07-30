@@ -15,7 +15,7 @@ import { currentWorkspace } from "@/lib/workspaces";
  * A layout rather than middleware, on purpose. A layout runs on the server for
  * every route beneath it and cannot be skipped by a client-side navigation, so
  * "did we check?" has one answer for the whole section instead of one per page
- * — and a page added under /dashboard next month is covered without anyone
+ *; and a page added under /dashboard next month is covered without anyone
  * remembering to cover it.
  *
  * It is still not the only check. Each page re-derives the session and every

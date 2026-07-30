@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "2026-07-30.1",
+  "effective_from": "2026-07-30",
+  "supersedes": null,
+  "provenance": {"source_kind":"domain_spec","source_ref":"docs/certloop-domain-spec.md#1","source_date":"2026-07-30","verification_state":"consultancy_only","verified_at":null,"verification_note":"Verify platform labels against live accounts before release."},
+  "records": [
+    {"category_key":"written_programs","ordinal":1,"title":"Written programs","platform_labels":{"isnetworld":"RAVS","avetta":null}},
+    {"category_key":"statistics","ordinal":2,"title":"Statistics","platform_labels":{"isnetworld":"Q&A (Quantitative & Qualitative)","avetta":null}},
+    {"category_key":"recordkeeping","ordinal":3,"title":"Recordkeeping","platform_labels":{"isnetworld":"OSHA logs","avetta":null}},
+    {"category_key":"insurance","ordinal":4,"title":"Insurance","platform_labels":{"isnetworld":"COI review","avetta":null}},
+    {"category_key":"questionnaire","ordinal":5,"title":"Questionnaire","platform_labels":{"isnetworld":"MSQ / MQ","avetta":null}},
+    {"category_key":"training","ordinal":6,"title":"Training","platform_labels":{"isnetworld":"Training documents","avetta":null}}
+  ]
+}

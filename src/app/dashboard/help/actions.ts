@@ -71,7 +71,7 @@ export async function requestHelp(
   /*
    * Notifying is deliberately outside the try above. The request is already
    * stored at this point, and a failed notification is our problem to find in
-   * the logs — telling someone their request did not go through, when it is
+   * the logs. Telling someone their request did not go through, when it is
    * sitting in the table, would be the worse error of the two.
    */
   try {

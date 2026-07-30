@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "2026-07-30.1",
+  "effective_from": "2026-07-30",
+  "supersedes": null,
+  "provenance": {"source_kind":"domain_spec","source_ref":"docs/certloop-domain-spec.md#11","source_date":"2026-07-30","verification_state":"needs_live_account","verified_at":null,"verification_note":"Reviewer wording and routing require live-account verification."},
+  "records": [
+    {"code":"R01","cause":"Generic template, company not named","fix_path":"regenerate with company profile","target_subsystem":"program","public_slug":"generic-template-company-not-named","action_key":"regenerate_company_profile","recognition_terms":["company not named","company is not named","generic template"]},
+    {"code":"R02","cause":"Required section missing (for example, no rescue plan)","fix_path":"element-level patch","target_subsystem":"program","public_slug":"required-section-missing","action_key":"patch_missing_element","recognition_terms":["required section missing","rescue plan"]},
+    {"code":"R03","cause":"Wrong or absent standard citation","fix_path":"citation correction","target_subsystem":"program","public_slug":"wrong-or-missing-citation","action_key":"correct_citation","recognition_terms":["wrong citation","citation missing","standard citation"]},
+    {"code":"R04","cause":"Training frequency not stated","fix_path":"insert frequency clause","target_subsystem":"program","public_slug":"training-frequency-not-stated","action_key":"insert_training_frequency","recognition_terms":["training frequency","frequency not stated"]},
+    {"code":"R05","cause":"Forms or permits referenced but not attached","fix_path":"attach form pack","target_subsystem":"program","public_slug":"forms-or-permits-not-attached","action_key":"attach_form_pack","recognition_terms":["form not attached","permit not attached"]},
+    {"code":"R06","cause":"Procedures not specific to declared scope","fix_path":"rewrite procedures section","target_subsystem":"program","public_slug":"procedures-not-scope-specific","action_key":"rewrite_procedures","recognition_terms":["not specific","generic procedure"]},
+    {"code":"R07","cause":"Page range answers wrong or missing","fix_path":"regenerate answer key","target_subsystem":"answer_key","public_slug":"page-ranges-wrong-or-missing","action_key":"regenerate_answer_key","recognition_terms":["page range","page number"]},
+    {"code":"R08","cause":"MSQ answer contradicts uploaded program","fix_path":"consistency report","target_subsystem":"questionnaire","public_slug":"msq-program-contradiction","action_key":"open_consistency_report","recognition_terms":["MSQ","contradict"]},
+    {"code":"R09","cause":"EMR in wrong year slot","fix_path":"reslot","target_subsystem":"emr","public_slug":"emr-wrong-year-slot","action_key":"reslot_emr","recognition_terms":["wrong year","year slot"]},
+    {"code":"R10","cause":"EMR is broker summary, not carrier letter","fix_path":"request correct letter","target_subsystem":"emr","public_slug":"emr-broker-summary","action_key":"request_carrier_letter","recognition_terms":["broker summary","carrier letter"]},
+    {"code":"R11","cause":"Reported rates do not reconcile with 300A","fix_path":"recompute and correct","target_subsystem":"statistics","public_slug":"rates-do-not-reconcile-300a","action_key":"reconcile_statistics","recognition_terms":["reconcile","300A","reported rate"]},
+    {"code":"R12","cause":"300 or 300A missing for a prior year","fix_path":"backfill guidance","target_subsystem":"recordkeeping","public_slug":"prior-year-osha-log-missing","action_key":"open_backfill_guidance","recognition_terms":["prior year","300A missing","300 missing"]},
+    {"code":"R13","cause":"COI missing additional insured or waiver of subrogation","fix_path":"agent email template","target_subsystem":"insurance","public_slug":"coi-endorsement-missing","action_key":"draft_agent_email","recognition_terms":["additional insured","waiver of subrogation"]},
+    {"code":"R14","cause":"COI limits below client minimum","fix_path":"agent email template","target_subsystem":"insurance","public_slug":"coi-limits-below-minimum","action_key":"draft_agent_email","recognition_terms":["limits below","client minimum"]},
+    {"code":"R15","cause":"Training roster missing instructor signature","fix_path":"regenerate roster","target_subsystem":"training","public_slug":"roster-instructor-signature-missing","action_key":"regenerate_roster","recognition_terms":["instructor signature","signature missing"]}
+  ]
+}

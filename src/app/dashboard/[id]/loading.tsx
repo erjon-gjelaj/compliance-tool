@@ -10,8 +10,8 @@ import { Spinner } from "@/components/spinner";
  * of them. The wording moved down here to the one route it is actually about.
  *
  * A spinner rather than a skeleton, unlike the requests list: what this route
- * renders depends on what the submission contains — a review panel, uploaded
- * documents, neither — so there is no single shape to hold, and a skeleton
+ * renders depends on what the submission contains; a review panel, uploaded
+ * documents, neither; so there is no single shape to hold, and a skeleton
  * that guesses wrong moves the page twice instead of once.
  *
  * It covers a real wait. This route verifies a JWT, queries a submission with

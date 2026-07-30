@@ -1,0 +1,14 @@
+{
+  "schema_version":"1.0.0",
+  "content_version":"2026-07-30.1",
+  "effective_from":"2026-07-30",
+  "supersedes":null,
+  "provenance":{"source_kind":"domain_spec","source_ref":"docs/certloop-domain-spec.md#1-2","source_date":"2026-07-30","verification_state":"needs_live_account","verified_at":null,"verification_note":"Actual client lists and year ranges require confirmation."},
+  "records":[
+    {"requirement_key":"stat.three_year_history","category_key":"statistics","title":"Three-year statistics history","triggered_by":{"op":"always"}},
+    {"requirement_key":"record.osha_logs","category_key":"recordkeeping","title":"OSHA logs for the required years","triggered_by":{"op":"always"}},
+    {"requirement_key":"insurance.coi","category_key":"insurance","title":"Certificate of insurance and required endorsements","triggered_by":{"op":"always"}},
+    {"requirement_key":"questionnaire.platform","category_key":"questionnaire","title":"Platform and client questionnaire","triggered_by":{"op":"always"}},
+    {"requirement_key":"training.program_evidence","category_key":"training","title":"Training evidence for submitted programs","triggered_by":{"op":"always"}}
+  ]
+}

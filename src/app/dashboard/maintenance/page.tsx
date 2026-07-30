@@ -45,7 +45,7 @@ export default async function MaintenancePage() {
     ...generated.map((document) => ({
       value: `generated:${document.id}`,
       label: document.current
-        ? `${programById(document.program_id)?.title ?? document.program_id} — generated program`
+        ? `${programById(document.program_id)?.title ?? document.program_id}: generated program`
         : (programById(document.program_id)?.title ?? document.program_id),
     })),
     ...uploaded.map((document) => ({

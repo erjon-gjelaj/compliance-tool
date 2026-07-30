@@ -2,7 +2,7 @@
  * Shown while the requests list is being read.
  *
  * There was no fallback of its own here, so this route fell through to
- * /dashboard/loading.tsx — a centred spinner reading "Opening your file…",
+ * /dashboard/loading.tsx; a centred spinner reading "Opening your file…",
  * which is the copy for a submission and describes nothing that happens on
  * this page. In the gap the workspace chrome stayed put and the content area
  * emptied, which reads less like loading than like a page that broke.
@@ -10,7 +10,7 @@
  * A skeleton rather than a spinner, because unlike the dashboard shell this
  * screen is one list of one known row shape. Holding that shape means the
  * heading lands in its final position and the rows arrive in place instead of
- * pushing the page down as they replace a spinner — the wait looks like the
+ * pushing the page down as they replace a spinner; the wait looks like the
  * page filling in rather than the page changing its mind.
  *
  * Three rows is a deliberate lie of a useful kind: it is the shape of the
@@ -26,7 +26,7 @@ function RowSkeleton() {
           round numbers: type-label at 0.9375rem/1.4 is 21px, the activity
           line at text-sm is 20px, and `mt-1` is the real gap between them.
           Eyeballed values left each row 7px short, which is a row of shift
-          on arrival — small, and precisely what a skeleton is for.
+          on arrival; small, and precisely what a skeleton is for.
         */}
         <div className="skeleton h-[21px] w-48 max-w-full" />
         <div className="skeleton mt-1 h-5 w-32 max-w-full" />

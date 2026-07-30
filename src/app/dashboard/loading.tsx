@@ -4,7 +4,7 @@ import { Spinner } from "@/components/spinner";
  * The fallback for the workspace and anything under it without one of its own.
  *
  * Next uses the nearest `loading.tsx` above a route, so this file is what
- * Documents, Programs, Company and Help show while they fetch — which is why
+ * Documents, Programs, Company and Help show while they fetch; which is why
  * the copy is about the workspace in general. It used to say "Opening your
  * file", from when /dashboard was a list of submissions and its only child
  * was one submission; that wording now lives in [id]/loading.tsx, the one
@@ -12,7 +12,7 @@ import { Spinner } from "@/components/spinner";
  *
  * The outer padding is gone as well. This predates the workspace chrome, and
  * `mx-auto max-w-4xl px-6` on top of the layout's own centred, padded column
- * indented the spinner further than the content it stood in for — the page
+ * indented the spinner further than the content it stood in for; the page
  * visibly stepped left when it loaded.
  */
 export default function DashboardLoading() {

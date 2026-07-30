@@ -19,7 +19,11 @@ export type ExtractedDocument = {
 };
 
 export function isReadable(entry: ExtractedDocument): boolean {
-  return entry.status === "ok" || entry.status === "ocr";
+  return (
+    entry.status === "ok" ||
+    entry.status === "ocr" ||
+    entry.status === "needs_review"
+  );
 }
 
 /**

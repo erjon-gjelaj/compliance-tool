@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "2026-07-30.1",
+  "effective_from": "2026-07-30",
+  "supersedes": null,
+  "provenance": {"source_kind":"domain_spec","source_ref":"docs/certloop-domain-spec.md#3","source_date":"2026-07-30","verification_state":"unknown","verified_at":null,"verification_note":"These are CertLoop generation questions, not official platform questions."},
+  "records": [
+    {
+      "questionnaire_schema_key":"hazcom_v1","program_key":"hazcom","version":"1.0.0","completeness":"unknown",
+      "questions":[
+        {"question_key":"responsible_role","prompt":"Who looks after this program day to day?","response_type":"choice","required":true},
+        {"question_key":"sds_format","prompt":"How do your crew get to safety data sheets?","response_type":"choice","required":true},
+        {"question_key":"sds_location","prompt":"Where are they kept?","response_type":"text","required":true},
+        {"question_key":"labelling","prompt":"How are chemical containers labelled on your jobs?","response_type":"choice","required":true},
+        {"question_key":"multi_employer","prompt":"Do you work on sites where other contractors are working too?","response_type":"boolean","required":true},
+        {"question_key":"unlabelled_pipes","prompt":"Do your crew work on pipes or lines that are not labelled?","response_type":"boolean","required":true},
+        {"question_key":"non_routine","prompt":"Are there occasional jobs with chemical exposure outside the normal routine?","response_type":"boolean","required":true}
+      ]
+    },
+    {
+      "questionnaire_schema_key":"ppe_v1","program_key":"ppe","version":"1.0.0","completeness":"unknown",
+      "questions":[
+        {"question_key":"responsible_role","prompt":"Who looks after PPE assessments and this program?","response_type":"choice","required":true},
+        {"question_key":"assessment_process","prompt":"How do you assess which PPE a job needs?","response_type":"choice","required":true},
+        {"question_key":"ppe_provided","prompt":"What PPE do you provide when a job assessment calls for it?","response_type":"text","required":true},
+        {"question_key":"issue_method","prompt":"How does required PPE reach the crew?","response_type":"choice","required":true},
+        {"question_key":"inspection_method","prompt":"How is PPE checked for damage or wear?","response_type":"choice","required":true},
+        {"question_key":"shared_ppe","prompt":"Is any PPE used by more than one employee?","response_type":"boolean","required":true},
+        {"question_key":"replacement_method","prompt":"How does damaged or worn PPE get replaced?","response_type":"choice","required":true}
+      ]
+    },
+    {
+      "questionnaire_schema_key":"emergency_action_v1","program_key":"emergency_action","version":"1.0.0","completeness":"unknown",
+      "questions":[
+        {"question_key":"workplace","prompt":"Which workplace does this plan cover?","response_type":"text","required":true},
+        {"question_key":"emergencies","prompt":"Which emergencies do you plan for there?","response_type":"text","required":true},
+        {"question_key":"coordinator_role","prompt":"Who coordinates an emergency?","response_type":"text","required":true},
+        {"question_key":"reporting_alarm","prompt":"How are emergencies reported and alarms raised?","response_type":"text","required":true},
+        {"question_key":"evacuation_routes","prompt":"How do people evacuate?","response_type":"text","required":true},
+        {"question_key":"muster_point","prompt":"Where is the muster point?","response_type":"text","required":true},
+        {"question_key":"critical_shutdown","prompt":"Who handles critical shutdown duties?","response_type":"text","required":true},
+        {"question_key":"rescue_medical","prompt":"What rescue or medical arrangement applies?","response_type":"text","required":true}
+      ]
+    },
+    {
+      "questionnaire_schema_key":"incident_investigation_v1","program_key":"incident_investigation","version":"1.0.0","completeness":"unknown",
+      "questions":[
+        {"question_key":"first_contact","prompt":"Who is the first internal contact after an incident?","response_type":"text","required":true},
+        {"question_key":"reporting_route","prompt":"How does the crew report an incident?","response_type":"text","required":true},
+        {"question_key":"host_site","prompt":"Do you work at host sites?","response_type":"boolean","required":true},
+        {"question_key":"investigator_role","prompt":"Who leads investigations?","response_type":"text","required":true},
+        {"question_key":"corrective_owner","prompt":"Who owns corrective actions?","response_type":"text","required":true},
+        {"question_key":"records_location","prompt":"Where are investigation records kept?","response_type":"text","required":true}
+      ]
+    }
+  ]
+}

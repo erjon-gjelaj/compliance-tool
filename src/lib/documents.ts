@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import {
   MAX_FILES,
@@ -130,6 +131,11 @@ export type ConfirmedDocument = {
   fileName: string;
   mimeType: string;
   sizeBytes: number;
+  contentHash: string;
+  duplicateOf?: string;
+  versionGroupId?: string;
+  versionN?: number;
+  supersedesDocumentId?: string;
 };
 
 export type ConfirmResult = {
@@ -150,6 +156,7 @@ export async function confirmUploads(
 ): Promise<ConfirmResult> {
   const supabase = getSupabaseAdminClient();
   const accepted: ConfirmedDocument[] = [];
+  const toInsert: ConfirmedDocument[] = [];
   const rejected: ConfirmResult["rejected"] = [];
 
   for (const { path, fileName } of uploaded) {
@@ -189,22 +196,71 @@ export async function confirmUploads(
       continue;
     }
 
-    accepted.push({
+    const contentHash = createHash("sha256").update(bytes).digest("hex");
+    const { data: duplicate } = await supabase
+      .from("submission_documents")
+      .select("id, storage_path")
+      .eq("submission_id", submissionId)
+      .eq("content_hash", contentHash)
+      .maybeSingle();
+
+    if (duplicate) {
+      await removeObjects([path]);
+      accepted.push({
+        path: duplicate.storage_path,
+        fileName,
+        mimeType: sniffed,
+        sizeBytes: bytes.byteLength,
+        contentHash,
+        duplicateOf: duplicate.id,
+      });
+      continue;
+    }
+
+    const { data: previousVersion } = await supabase
+      .from("submission_documents")
+      .select("id, version_group_id, version_n")
+      .eq("submission_id", submissionId)
+      .eq("file_name", fileName)
+      .order("version_n", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const confirmed = {
       path,
       fileName,
       mimeType: sniffed,
       sizeBytes: bytes.byteLength,
-    });
+      contentHash,
+      ...(previousVersion
+        ? {
+            versionGroupId: previousVersion.version_group_id,
+            versionN: Number(previousVersion.version_n) + 1,
+            supersedesDocumentId: previousVersion.id,
+          }
+        : {}),
+    };
+    accepted.push(confirmed);
+    toInsert.push(confirmed);
   }
 
-  if (accepted.length > 0) {
+  if (toInsert.length > 0) {
     const { error } = await supabase.from("submission_documents").insert(
-      accepted.map((document) => ({
+      toInsert.map((document) => ({
         submission_id: submissionId,
         storage_path: document.path,
         file_name: document.fileName,
         mime_type: document.mimeType,
+        detected_mime_type: document.mimeType,
         size_bytes: document.sizeBytes,
+        content_hash: document.contentHash,
+        ...(document.versionGroupId
+          ? {
+              version_group_id: document.versionGroupId,
+              version_n: document.versionN,
+              supersedes_document_id: document.supersedesDocumentId,
+            }
+          : {}),
       })),
     );
 
@@ -213,11 +269,11 @@ export async function confirmUploads(
       // in the bucket that no submission points at. Remove them rather than
       // leave orphans behind.
       console.error("Could not record uploaded documents:", error.message);
-      await removeObjects(accepted.map((document) => document.path));
+      await removeObjects(toInsert.map((document) => document.path));
 
       return {
-        accepted: [],
-        rejected: accepted.map((document) => ({
+        accepted: accepted.filter((document) => document.duplicateOf),
+        rejected: toInsert.map((document) => ({
           fileName: document.fileName,
           reason: "we couldn't save it — try again, or send it by email",
         })),

@@ -93,8 +93,8 @@ export default async function RequestsPage() {
                 "this goes somewhere" was the least responsive thing in the
                 row.
 
-                `focus-within` is not needed — the anchor is the focus target
-                — but the ring has to be pulled out to the row's edge, or the
+                `focus-within` is not needed; the anchor is the focus target
+               ; but the ring has to be pulled out to the row's edge, or the
                 default outline traces the text inside a card that is itself
                 the control.
               */}

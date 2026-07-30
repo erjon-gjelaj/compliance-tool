@@ -14,6 +14,8 @@ import {
 } from "@/lib/dashboard";
 import { ReviewPanel } from "@/components/review-panel";
 import { DocumentDownload } from "@/components/document-download";
+import { listAssessmentsForSubmission } from "@/lib/assessments";
+import { programConfigByKey } from "@/lib/config";
 
 export const metadata = pageMetadata({
   title: "Your gap check",
@@ -33,10 +35,11 @@ export const dynamic = "force-dynamic";
  */
 const DOCUMENT_STATE: Record<string, string> = {
   ok: "Read",
-  ocr: "Read by text recognition — treat with caution",
-  unreadable: "Could not be read — not assessed",
-  unsupported: "Format we can't read — not assessed",
-  error: "Failed to read — not assessed",
+  ocr: "Read by text recognition; treat with caution",
+  needs_review: "Text recognition needs page review",
+  unreadable: "Could not be read; not assessed",
+  unsupported: "Format we can't read; not assessed",
+  error: "Failed to read; not assessed",
 };
 
 function DocumentRow({ document }: { document: DocumentView }) {
@@ -76,7 +79,7 @@ function DocumentRow({ document }: { document: DocumentView }) {
         the URL that reaches it is minted per click and expires in minutes, so
         there is no address here that could be copied out of the page and used
         later, or by anyone else. Minting it is also why the link has a pending
-        state — see the component.
+        state; see the component.
       */}
       <DocumentDownload
         documentId={document.id}
@@ -113,9 +116,10 @@ export default async function SubmissionPage({
   const submission = await getSubmissionForEmail(workspace.email, id);
   if (!submission) notFound();
 
-  const [documents, review] = await Promise.all([
+  const [documents, review, assessments] = await Promise.all([
     listDocumentsForSubmission(submission.id),
     getReviewForSubmission(submission.id),
+    listAssessmentsForSubmission(workspace.email, submission.id),
   ]);
 
   const unreadable = documents
@@ -182,6 +186,61 @@ export default async function SubmissionPage({
           )}
         </div>
       </section>
+
+      {assessments.map((assessment) => (
+        <section
+          key={assessment.id}
+          className="mt-8 border border-zinc-dust bg-paper p-5"
+        >
+          <p className="tag">Element report</p>
+          <h2 className="type-h3 mt-2 text-millscale">
+            {programConfigByKey(assessment.program_key)?.title ??
+              assessment.program_key}
+          </h2>
+          <ul className="mt-4 grid gap-2">
+            {assessment.element_results.map((element) => (
+              <li
+                key={element.elementKey}
+                className="border-t border-zinc-dust pt-3"
+              >
+                <div className="flex justify-between gap-4 text-sm">
+                  <span className="font-medium text-millscale">
+                    {element.title}
+                  </span>
+                  <span className="text-slate-wash">{element.state}</span>
+                </div>
+                <p className="mt-1 text-sm text-slate-wash">
+                  {element.page
+                    ? `Page ${element.page}. `
+                    : "No reliable page found. "}
+                  {element.basis}
+                </p>
+              </li>
+            ))}
+          </ul>
+          {assessment.answer_key ? (
+            <div className="mt-5">
+              <h3 className="font-medium text-millscale">
+                Approximate answer key
+              </h3>
+              <ol className="mt-3 grid gap-2 text-sm">
+                {assessment.answer_key.items.map((item) => (
+                  <li key={item.questionId}>
+                    {item.questionText} <strong>{item.answer}</strong>; pages{" "}
+                    {item.pageRange ?? "review required"}
+                  </li>
+                ))}
+              </ol>
+              <a
+                href={`/api/answer-keys/${assessment.answer_key.id}`}
+                className="btn-primary mt-4 inline-flex"
+              >
+                Download printable PDF
+              </a>
+            </div>
+          ) : null}
+        </section>
+      ))}
     </main>
   );
 }
@@ -191,13 +250,13 @@ export default async function SubmissionPage({
  *
  * None of these pretend a review is coming when it is not. "fallback" in
  * particular means the automated review failed its own checks and a generic
- * explainer was emailed instead — which is a real outcome this pipeline is
+ * explainer was emailed instead; which is a real outcome this pipeline is
  * designed to reach, and hiding it behind a spinner would be a lie.
  */
 function NoReview({ status }: { status: string | null }) {
   const copy =
     status === "pending"
-      ? "Your review is being produced now. It usually takes under a minute — refresh this page shortly, and it will arrive by email either way."
+      ? "Your review is being produced now. It usually takes under a minute; refresh this page shortly, and it will arrive by email either way."
       : status === "fallback"
         ? "We couldn't produce a review we were confident enough to show for this submission, so we emailed you a general explainer instead. This is us declining to guess rather than something you did wrong."
         : "There's no review against this submission yet. If you stopped partway through the form, finishing it is what starts one.";

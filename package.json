@@ -10,13 +10,15 @@
     "verify:citations": "tsx scripts/verify-citations.mts",
     "test:revision-model": "node --env-file=.env.local --conditions react-server --import \"data:text/javascript,process.geteuid=()=>0\" --import tsx scripts/probe-revision-model.mts",
     "test": "npm run test:lib && npm run test:ui",
-    "test:lib": "tsx --test --conditions react-server \"src/lib/**/*.test.mts\"",
-    "test:ui": "tsx --test \"src/components/**/*.test.mts\""
+    "test:lib": "node --import \"data:text/javascript,process.geteuid=()=>0\" --conditions react-server --import tsx --test \"src/lib/**/*.test.mts\"",
+    "test:ui": "node --import \"data:text/javascript,process.geteuid=()=>0\" --import tsx --test \"src/components/**/*.test.mts\""
   },
   "dependencies": {
     "@fontsource/bricolage-grotesque": "^5.3.0",
     "@headlessui/react": "^2.2.10",
+    "@napi-rs/canvas": "^1.0.3",
     "@supabase/supabase-js": "^2.110.8",
+    "@tesseract.js-data/eng": "^1.0.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "docx": "^9.7.1",
@@ -26,10 +28,13 @@
     "mammoth": "^1.12.0",
     "next": "16.2.11",
     "nodemailer": "^9.0.3",
+    "pdfjs-dist": "^6.2.108",
     "pdfkit": "^0.19.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "server-only": "^0.0.1",
+    "sharp": "^0.35.3",
+    "tesseract.js": "^7.0.0",
     "unpdf": "^1.8.0",
     "word-extractor": "^1.0.4",
     "zod": "^4.4.3"

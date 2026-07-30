@@ -17,7 +17,16 @@ const nextConfig: NextConfig = {
    * were in the deployment all along, under their real path, which is why
    * `outputFileTracingIncludes` would have changed nothing.
    */
-  serverExternalPackages: ["unpdf", "pdfkit", "mammoth", "word-extractor"],
+  serverExternalPackages: [
+    "@napi-rs/canvas",
+    "@tesseract.js-data/eng",
+    "unpdf",
+    "pdfkit",
+    "mammoth",
+    "sharp",
+    "tesseract.js",
+    "word-extractor",
+  ],
 };
 
 export default nextConfig;

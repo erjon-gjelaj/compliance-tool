@@ -28,6 +28,7 @@ import {
   reminderState,
   todayIso,
 } from "@/lib/maintenance";
+import { listCurrentRequirements } from "@/lib/domain-dashboard";
 
 export const metadata = pageMetadata({
   title: "Overview",
@@ -51,11 +52,11 @@ function formatDate(value: string): string {
  *
  * The brief asked for these to separate clearly from the page. They sit on
  * `paper` against the `galvanise` body with a full border, and the one
- * representing work waiting on the customer takes the warning treatment — so
+ * representing work waiting on the customer takes the warning treatment; so
  * the only tile that draws the eye is the only one that is their move.
  *
  * A figure with nothing behind it renders as a dash rather than a zero. "0
- * documents" reads as a measurement; "—" reads as nothing here yet, which is
+ * documents" reads as a measurement; ":" reads as nothing here yet, which is
  * what it is.
  */
 function Tile({
@@ -65,11 +66,11 @@ function Tile({
   alert = false,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   href: string;
   alert?: boolean;
 }) {
-  const loud = alert && value > 0;
+  const loud = alert && typeof value === "number" && value > 0;
 
   return (
     <Link
@@ -83,7 +84,7 @@ function Tile({
       <p
         className={`text-2xl font-semibold ${loud ? "text-rust-flag" : "text-millscale"}`}
       >
-        {value === 0 ? "—" : value}
+        {value === 0 ? "Start here" : value}
       </p>
       <p className="mt-1 text-xs leading-tight text-slate-wash">{label}</p>
     </Link>
@@ -143,13 +144,13 @@ function Section({
 function SubmissionRow({ row }: { row: DashboardSubmission }) {
   const state =
     row.status === "partial"
-      ? { label: `Unfinished — step ${row.last_step} of 4`, tone: "text-rust-flag" }
+      ? { label: `Unfinished: step ${row.last_step} of 4`, tone: "text-rust-flag" }
       : row.analysis_status === "ok"
         ? { label: "Review ready", tone: "text-verdigris" }
         : row.analysis_status === "pending"
           ? { label: "Review running", tone: "text-slate-wash" }
           : row.analysis_status === "fallback"
-            ? { label: "No review — emailed instead", tone: "text-slate-wash" }
+            ? { label: "No review; emailed instead", tone: "text-slate-wash" }
             : { label: "Received", tone: "text-slate-wash" };
 
   return (
@@ -203,7 +204,7 @@ export default async function DashboardPage() {
 
   /*
    * Both derived from the event log rather than from a stored column, so
-   * neither figure can be stale — which is the whole point of task 055. A
+   * neither figure can be stale; which is the whole point of task 055. A
    * count on an overview is exactly where a wrong status does the most damage,
    * because nobody clicks through to check it.
    */
@@ -218,6 +219,10 @@ export default async function DashboardPage() {
   const maintenanceDue = maintenance.filter(
     (entry) => reminderState(entry.due_date, today) !== "later",
   );
+  const requirements = company ? await listCurrentRequirements(company.id) : [];
+  const requirementsInPlace = requirements.filter((entry) =>
+    ["draft", "submitted", "under_review", "accepted"].includes(entry.status),
+  ).length;
 
   return (
     <main>
@@ -249,30 +254,20 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <Tile
+          label="file items in place"
+          value={`${requirementsInPlace} of ${requirements.length}`}
+          href="/dashboard/file"
+        />
         <Tile
           label="need something from you"
           value={yourMove.length}
           href="/dashboard/requests"
           alert
         />
-        <Tile label="open requests" value={open.length} href="/dashboard/requests" />
         <Tile
-          label="items your file looks short on"
-          value={workspace.blockers.length}
-          href={
-            workspace.activeSubmission
-              ? `/dashboard/${workspace.activeSubmission.id}`
-              : "/dashboard/documents"
-          }
-        />
-        <Tile
-          label="documents held"
-          value={documents.length}
-          href="/dashboard/documents"
-        />
-        <Tile
-          label="document dates due soon"
+          label="dates due or overdue"
           value={maintenanceDue.length}
           href="/dashboard/maintenance"
           alert

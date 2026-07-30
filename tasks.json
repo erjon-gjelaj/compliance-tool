@@ -503,8 +503,486 @@
       "status": "done",
       "notes": "Done. Updated the shared EntryPage form section used by /setup, /rejection, and /documents to match the dedicated /gap-check treatment: a centered max-w-3xl intake, centered explanatory heading, roomier vertical spacing, and a calm paper background. The route-specific hero and result expectations remain unchanged.",
       "needs_human_review": false
+    },
+    {
+      "id": "078",
+      "title": "Phase 1A: freeze the config boundary and preserve existing joins",
+      "status": "pending",
+      "phase": 1,
+      "build_order": 1,
+      "depends_on": [],
+      "spec_sections": ["3", "4", "11"],
+      "notes": "Inventory every hardcoded requirement, program identity, release state, recognition phrase, required element, questionnaire definition, citation reference, and rejection path currently spread across src/lib/requirements, src/lib/programs, and src/lib/analysis. Define the old-to-new key map before moving data so stored requirement labels, generated-document template IDs, review findings, and version history remain readable. This is a rework inside the existing App Router, TypeScript, Supabase, and CSS architecture.",
+      "acceptance": [
+        "The inventory names every existing consumer and persisted join that phase 1 must preserve.",
+        "No route, component, migration, template renderer, footer, Terms copy, or product behavior changes in this task.",
+        "The phase boundary explicitly excludes extraction, requirement generation, scoring, answer keys, dashboard IA, parsers, public pages, and quote acceptance."
+      ],
+      "needs_human_review": false
+    },
+    {
+      "id": "079",
+      "title": "Phase 1B: establish the versioned config schema and validation contract",
+      "status": "pending",
+      "phase": 1,
+      "build_order": 2,
+      "depends_on": ["078"],
+      "spec_sections": ["3", "4", "11"],
+      "notes": "Create the data-only file contract documented in docs/certloop-config-schema.md. Config records carry stable keys, schema/content versions, source provenance, verification state, nullable uncertain values, and explicit unknown states. The eventual loader may validate and index these records, but must not contain catalog entries, element lists, rejection codes, platform weights, client thresholds, or fallback guesses.",
+      "acceptance": [
+        "Unknown, false, zero, not-applicable, and unverified cannot collapse into one value.",
+        "Grade weights and other disputed platform or client values default to null with verification_state unknown; no predicted-grade field or computation is introduced.",
+        "Cross-file references are machine-checkable: program keys, element-set keys, questionnaire keys, rejection codes, category keys, and citation keys must resolve.",
+        "Validation rejects duplicate stable keys, dangling references, missing provenance, and executable values in config.",
+        "No config field can contain functions or source-code predicates; trigger predicates use a declarative expression tree."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "080",
+      "title": "Phase 1C: add shared taxonomy and platform data files",
+      "status": "pending",
+      "phase": 1,
+      "build_order": 3,
+      "depends_on": ["079"],
+      "spec_sections": ["1", "2", "3"],
+      "notes": "Seed data files for the six evidence categories, known platforms named by the spec, normalized company-profile predicate fields, trade/scope vocabulary needed by program triggers, and source/verification metadata. Platform and hiring-client weighting fields remain nullable and unknown. Do not add OSHA citations, client requirements, trades, platforms, or thresholds not present in the domain spec.",
+      "acceptance": [
+        "The six category keys are stable and shared by later requirement generation and dashboard work.",
+        "ISNetworld, Avetta, Veriforce, ComplyWorks, and BROWZ are represented without claiming identical rules.",
+        "Platform/client grade weights and thresholds are null unless sourced and verified; no predicted grade is rendered or derivable from seeded defaults.",
+        "Every seeded record identifies certloop-domain-spec.md as consultancy-derived provenance and its live-account verification state."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "081",
+      "title": "Phase 1D: move the program catalog into data files",
+      "status": "pending",
+      "phase": 1,
+      "build_order": 4,
+      "depends_on": ["080"],
+      "spec_sections": ["3"],
+      "notes": "Encode every Tier 1, Tier 2, and Tier 3 program named in section 3 as catalog data with stable program_key, title, tier, citations exactly as stated by the spec, declarative triggered_by predicates, required-element-set references, questionnaire-schema references, and template-body references. Preserve aliases for the four currently generated program IDs and existing requirement IDs instead of breaking stored records. A template body remains a data reference; executable document assembly stays in the existing renderer/template layer until separately reworked.",
+      "acceptance": [
+        "Every program named in section 3 appears once, including long-tail Tier 3 entries.",
+        "Always, almost-always, commonly-requested, industrial-site, and similarly uncertain triggers are represented explicitly as unknown/needs-verification where the spec does not define a deterministic predicate.",
+        "No citation or trigger absent from the spec is invented.",
+        "Current HazCom, PPE, Emergency Action Plan, and Incident Reporting generated documents retain resolvable historical identities.",
+        "Catalog data contains no functions and no UI copy that implies compliance, approval, or a predicted platform grade."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "082",
+      "title": "Phase 1E: add universal and program-specific element-set data",
+      "status": "pending",
+      "phase": 1,
+      "build_order": 5,
+      "depends_on": ["081"],
+      "spec_sections": ["4"],
+      "notes": "Create a universal element set plus the nine program-specific sets enumerated in section 4. Each element has a stable element_key, human label, evidence description, applicability state, source provenance, verification state, and optional questionnaire linkage. Scoring rules and present/weak/missing evaluation are deliberately deferred to phase 4.",
+      "acceptance": [
+        "All twelve universal elements are present exactly once.",
+        "Confined space, respiratory, LOTO, fall protection, HazCom, hot work, excavation, electrical safety, and SSE contain every program-specific element listed in the spec.",
+        "Non-exhaustive coverage is represented as incomplete and verification-needed, not silently treated as a complete platform rubric.",
+        "Element records contain no scoring logic and do not claim that presence means compliance or approval.",
+        "Element references from the program catalog resolve without hardcoded fallback sets."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "083",
+      "title": "Phase 1F: move rejection taxonomy into data files",
+      "status": "pending",
+      "phase": 1,
+      "build_order": 6,
+      "depends_on": ["082"],
+      "spec_sections": ["11"],
+      "notes": "Encode R01 through R15 as rejection data with cause, fix_path, target subsystem, recognition terms only where grounded by existing behavior or the spec, public slug, in-product action key, provenance, and verification state. Classification and routing logic remain separate consumers. Preserve the current pasted-feedback flow while replacing requirement-phrase coupling with stable rejection-code references.",
+      "acceptance": [
+        "R01 through R15 exist exactly once and match the causes and fix paths in section 11.",
+        "Every code has a stable public slug and action key for later phase-8 pages and in-product routing.",
+        "No classifier claims certainty from ambiguous reviewer text; config supports unknown/unclassified.",
+        "No rejection data contains guaranteed-approval language or a compliance determination."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "084",
+      "title": "Phase 1G: cut existing readers over to validated config without changing behavior",
+      "status": "pending",
+      "phase": 1,
+      "build_order": 7,
+      "depends_on": ["083"],
+      "spec_sections": ["3", "4", "11"],
+      "notes": "Introduce a narrow read-only config access layer and migrate existing requirement review, generated-program registry metadata, and rejection handling to read the phase-1 data files. Keep template assembly functions in their current files and join them by stable keys. Add schema, referential-integrity, compatibility, and forbidden-language tests. Create VERIFY.md with every consultancy-derived or live-account-dependent fact surfaced by phase 1. Do not begin phase 2.",
+      "acceptance": [
+        "Requirement lists, program metadata, element sets, and rejection codes have one config source of truth and no duplicate hardcoded copies remain.",
+        "Existing generated documents, historical reviews, and stored labels/IDs continue to resolve through explicit aliases.",
+        "Build, lint, existing tests, config validation, referential-integrity tests, and compatibility tests pass.",
+        "A repository scan guards against predicted grades, compliance determinations, guaranteed approval language, testimonials, customer logos, stat counters, Stripe/payment processor code, and bare dashboard em dashes.",
+        "Footer and Terms not-affiliation disclaimer text is byte-for-byte unchanged.",
+        "VERIFY.md lists every phase-1 item requiring confirmation against a live ISN or Avetta account, including program triggers, platform/client requirement lists, element completeness, question sets, rejection wording, and all weights/thresholds.",
+        "No implementation from phases 2 through 9 is included."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "085",
+      "title": "Phase 2A: evolve document storage for extraction, pages, hashes, and versions",
+      "status": "pending",
+      "phase": 2,
+      "build_order": 1,
+      "depends_on": ["084"],
+      "spec_sections": ["2", "13"],
+      "notes": "Extend the existing submission-document model rather than replacing it. Store content_hash, detected MIME, page count, extraction method/status/confidence, page_map, classified doc_type, version_group_id, version_n, and low-confidence page state. Preserve existing document rows and private storage paths through a backward-compatible migration and backfill.",
+      "acceptance": [
+        "Existing uploads and signed download URLs remain usable.",
+        "Every extraction can retain page-level text and confidence without flattening away page numbers.",
+        "Document type and extraction failure are explicit unknown/error states, not empty strings.",
+        "Content hashes are scoped safely and do not expose document contents."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "086",
+      "title": "Phase 2B: implement digital extraction and OCR fallback for every required format",
+      "status": "pending",
+      "phase": 2,
+      "build_order": 2,
+      "depends_on": ["085"],
+      "spec_sections": ["13"],
+      "notes": "Rework the existing extractor to accept PDF, DOC, DOCX, JPG, PNG, and multi-image uploads. Extract digital text first, retain page boundaries, and invoke OCR only for missing or low-confidence text. Keep OCR mechanical and evidence-preserving; never let a model invent document text.",
+      "acceptance": [
+        "Digital PDFs, scanned PDFs, DOC, DOCX, JPG, PNG, and ordered multi-image documents reach a terminal extraction state.",
+        "A scan no longer ends at unreadable when OCR can recover usable text.",
+        "Each extracted text span maps to a source page or image.",
+        "OCR confidence is retained per page and cannot support a missing finding when reliability is insufficient.",
+        "Provider/runtime limits and any OCR facts needing production verification are recorded in VERIFY.md."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "087",
+      "title": "Phase 2C: classify, deduplicate, version, and add low-confidence page review",
+      "status": "pending",
+      "phase": 2,
+      "build_order": 3,
+      "depends_on": ["086"],
+      "spec_sections": ["13"],
+      "notes": "Classify ingest into the spec's doc_type values, deduplicate exact content by hash, and create a new version when a distinct file supersedes an existing document. Add a page-image review flow for OCR pages that remain low confidence, allowing the contractor to confirm a constrained set of extracted facts without discarding the document.",
+      "acceptance": [
+        "Exact duplicate content is not stored as a second independent document.",
+        "Distinct revisions remain accessible in one version group.",
+        "Classification can return other/unknown and never forces a parser.",
+        "Low-confidence pages are visible and correctable with an audit trail.",
+        "Downstream parsers receive the original evidence, page map, and confidence."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "088",
+      "title": "Phase 3A: add company, platform, hiring-client, and requirement-set domain records",
+      "status": "pending",
+      "phase": 3,
+      "build_order": 1,
+      "depends_on": ["087"],
+      "spec_sections": ["1", "2", "8"],
+      "notes": "Evolve the existing company profile and workspace records to represent the spec's company facts, platform subscriptions, hiring-client connections, and versioned requirement sets. Preserve existing company rows and provenance. Grade weights and client thresholds stay nullable and unknown unless explicitly entered from a source the contractor can verify.",
+      "acceptance": [
+        "Profile fields needed by declarative triggers have explicit unknown states and provenance.",
+        "Hiring clients link to platforms without assuming platform-wide client rules.",
+        "No predicted grade, compliance determination, or inferred client threshold is introduced.",
+        "MSQ changes can be recorded as a future requirement-regeneration cause."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "089",
+      "title": "Phase 3B: generate Requirement[] and enforce its status machine",
+      "status": "pending",
+      "phase": 3,
+      "build_order": 2,
+      "depends_on": ["088"],
+      "spec_sections": ["2", "3", "8"],
+      "notes": "Evaluate phase-1 declarative config against company profile, trade, scope, platform, and hiring client to generate a versioned RequirementSet. Implement missing, draft, submitted, under_review, accepted, rejected, and expired transitions with timestamps and evidence links. Regeneration after an MSQ/profile/client change produces a diff rather than mutating history invisibly.",
+      "acceptance": [
+        "Every generated requirement identifies the config release and predicates that caused it.",
+        "Unknown predicates surface as needs-verification decisions instead of silently including or excluding an item.",
+        "Invalid status transitions fail and valid transitions retain an audit trail.",
+        "Regeneration shows added, removed, and unchanged requirements.",
+        "Output language describes a working requirement list, never a compliance verdict."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "090",
+      "title": "Phase 4A: score program elements against extracted page evidence",
+      "status": "pending",
+      "phase": 4,
+      "build_order": 1,
+      "depends_on": ["089"],
+      "spec_sections": ["4"],
+      "notes": "Build the element evaluator over phase-1 element sets and phase-2 page maps. Score uploaded and generated programs as present, weak, or missing and retain page hits, snippets, confidence, evaluator version, and basis. Generated programs may emit authoritative render-time element/page metadata; uploads remain evidence-based and reviewable.",
+      "acceptance": [
+        "Every scored element references config, document version, and source page evidence.",
+        "Weak is distinct from missing and explains why the evidence is insufficient.",
+        "Low-confidence OCR cannot independently prove absence.",
+        "Scoring does not calculate compliance, approval probability, or a platform grade.",
+        "Program-specific and universal elements are both evaluated without hardcoded lists."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "091",
+      "title": "Phase 4B: deliver the per-program element report and review corrections",
+      "status": "pending",
+      "phase": 4,
+      "build_order": 2,
+      "depends_on": ["090"],
+      "spec_sections": ["4"],
+      "notes": "Add the per-program present/weak/missing report with direct page navigation and a constrained correction workflow. Corrections preserve machine output and reviewer confirmation separately so later reruns remain auditable.",
+      "acceptance": [
+        "Every row shows a meaningful state, basis, and page or an explicit no-page explanation.",
+        "A contractor can confirm or correct a finding without overwriting original extraction evidence.",
+        "Generated programs are labeled drafts for contractor review and self-submission.",
+        "Unverified element-set completeness is visible where applicable."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "092",
+      "title": "Phase 5A: configure answer-key questions and page-range generation",
+      "status": "pending",
+      "phase": 5,
+      "build_order": 1,
+      "depends_on": ["087", "091"],
+      "spec_sections": ["5"],
+      "notes": "Add versioned per-program answer-key question data, explicitly labeled approximate until verified against a live account. Generate yes/no, page_range, confidence, and snippet from phase-2 page maps plus phase-4 element results. For CertLoop-generated programs, consume page ranges emitted at render time rather than re-deriving them.",
+      "acceptance": [
+        "Questions live in config and identify platform, program, version, provenance, and verification state.",
+        "Page ranges are traceable to pages and never guessed across missing evidence.",
+        "Generated-document page ranges remain stable for the exact rendered version.",
+        "Approximate questions are not presented as official platform questions."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "093",
+      "title": "Phase 5B: ship the on-screen answer-key checklist and printable PDF",
+      "status": "pending",
+      "phase": 5,
+      "build_order": 2,
+      "depends_on": ["092"],
+      "spec_sections": ["5"],
+      "notes": "Provide a working checklist optimized for use beside the contractor's own platform session and a printable PDF generated from the same answer-key record. Keep edits versioned and never imply CertLoop submits to or is affiliated with a platform.",
+      "acceptance": [
+        "Screen and PDF contain the same ordered questions, answers, ranges, and uncertainty labels.",
+        "Missing ranges require contractor review rather than rendering a bare dash.",
+        "The PDF passes text extraction and visual rendering checks.",
+        "The contractor is told to review and submit the answers themselves."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "094",
+      "title": "Phase 6A: centralize every date in the clock model",
+      "status": "pending",
+      "phase": 6,
+      "build_order": 1,
+      "depends_on": ["093"],
+      "spec_sections": ["10", "14"],
+      "notes": "Implement one clock service for overdue, due_soon, upcoming, scheduled, and no_date plus 60/30/7 reminder milestones. Model the spec's recurring obligations as typed records. Pages consume clock state and do not independently calculate recency.",
+      "acceptance": [
+        "Every past date produces a visible state change on every page where it appears.",
+        "Overdue items sort first and change the Overview header.",
+        "No-date is explicit and never rendered as a bare em dash.",
+        "Uncertain cadences such as typical RAVS revalidation are configurable and flagged in VERIFY.md.",
+        "Date-boundary and timezone tests cover today, 7, 14, 30, and 60 days."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "095",
+      "title": "Phase 6B: rework dashboard IA around real requirement and clock data",
+      "status": "pending",
+      "phase": 6,
+      "build_order": 2,
+      "depends_on": ["094"],
+      "spec_sections": ["14"],
+      "notes": "Rework the existing dashboard navigation and pages into Overview, File, Documents, generator-focused Programs entry points, Training, Insurance, Statistics, Calendar, and Company. Reuse the current App Router and globals.css/Tailwind approach. Merge uploaded/prepared document views without losing versions or extraction status.",
+      "acceptance": [
+        "Overview shows per-client n-of-m completeness, overdue stack, and one next action using real requirement data.",
+        "File is the six-category, hiring-client-filterable working checklist.",
+        "No empty stat tile exists; at most three tiles each provide an instruction and link when empty.",
+        "No dashboard surface renders a bare em dash.",
+        "All past dates visibly alter their page.",
+        "The unchanged footer and Terms disclaimer remain byte-for-byte intact."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "096",
+      "title": "Phase 7A: parse ACORD 25 and compare coverage lines",
+      "status": "pending",
+      "phase": 7,
+      "build_order": 1,
+      "depends_on": ["095"],
+      "spec_sections": ["7"],
+      "notes": "Route classified ACORD 25 documents into a page-evidenced parser for GL, WC, AUTO, UMBRELLA, POLLUTION, and PROFESSIONAL coverage fields. Compare only against configured or contractor-entered ClientInsuranceRequirement records and generate a plain-language gap sentence suitable for an insurance agent.",
+      "acceptance": [
+        "Parsed values retain page, snippet, and confidence.",
+        "Unknown endorsements or limits remain unknown and require confirmation.",
+        "No client minimum is invented.",
+        "The agent sentence is factual, editable, and does not determine compliance."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "097",
+      "title": "Phase 7B: parse OSHA 300A statistics and reconcile reported rates",
+      "status": "pending",
+      "phase": 7,
+      "build_order": 2,
+      "depends_on": ["096"],
+      "spec_sections": ["6"],
+      "notes": "Parse the 300A fields needed for three-year TRIR, DART, and LTIR calculations, retaining page evidence. Recompute using the formulas in the spec and compare with contractor-reported values. Model EMR year slots and carrier-letter uncertainty without inventing thresholds or legal conclusions.",
+      "acceptance": [
+        "TRIR, DART, and LTIR calculations are deterministic and tested for zero/unknown hours.",
+        "Reported-versus-derived mismatches show both inputs and the calculation.",
+        "A client threshold comparison supports an explicit unknown threshold.",
+        "EMR policy year and target slot are first-class and mismatches are visible.",
+        "No additional OSHA citation or requirement is added beyond the spec."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "098",
+      "title": "Phase 7C: parse training rosters and build the evidence matrix",
+      "status": "pending",
+      "phase": 7,
+      "build_order": 3,
+      "depends_on": ["097"],
+      "spec_sections": ["9"],
+      "notes": "Parse training topic, date, instructor, signature presence, attendees, source, and page evidence from roster documents. Build the program-by-training-evidence matrix, employee certification records with expiry, and a roster/sign-in-sheet PDF generator.",
+      "acceptance": [
+        "Any submitted program without linked roster evidence is visibly surfaced as an exposure, not a compliance verdict.",
+        "Instructor signature absence is distinct from unreadable or unknown.",
+        "Roster PDFs include instructor and signature blocks and pass render/text QA.",
+        "Employee expiry dates use the central clock and visibly change when past.",
+        "One roster per topic and toolbox-talk sufficiency remain marked for live-account verification."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "099",
+      "title": "Phase 8A: generate the public requirement explorer from config",
+      "status": "pending",
+      "phase": 8,
+      "build_order": 1,
+      "depends_on": ["098"],
+      "spec_sections": ["12"],
+      "notes": "Build public trade-by-platform requirement pages from the same config and declarative generation inputs used in-product. Unknown client-specific requirements and unverified platform facts must be visible. Add generated routes to metadata and sitemap using current Next.js conventions.",
+      "acceptance": [
+        "Public and in-product requirement labels share config keys and cannot drift.",
+        "Pages explain that actual client portal requirements may differ.",
+        "Unknown triggers and unverified facts are not converted into definitive requirement claims.",
+        "No customer logos, testimonials, stat counters, predicted grades, or guaranteed-approval language appears."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "100",
+      "title": "Phase 8B: publish TRIR, DART, and LTIR calculators",
+      "status": "pending",
+      "phase": 8,
+      "build_order": 2,
+      "depends_on": ["099"],
+      "spec_sections": ["6", "12"],
+      "notes": "Publish free calculators using the same deterministic formulas and validation as the private statistics parser. Include an EMR explainer limited to the spec's claims. Calculator results are arithmetic outputs, not compliance or client-acceptance determinations.",
+      "acceptance": [
+        "Public and private calculations share one formula implementation.",
+        "Unknown or zero hours produce a clear validation state rather than Infinity or a bare dash.",
+        "No threshold is shown without a configured, attributed value.",
+        "Pages include appropriate uncertainty and non-affiliation framing."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "101",
+      "title": "Phase 8C: generate rejection pages and glossary from config",
+      "status": "pending",
+      "phase": 8,
+      "build_order": 3,
+      "depends_on": ["100"],
+      "spec_sections": ["11", "12"],
+      "notes": "Generate one public explainer per R01-R15 code plus glossary pages for the terms enumerated in section 12. Reuse rejection causes/fix paths and category/platform labels from config. Do not add consultancy price/timeline claims or other section-12 ideas not supported by the requested build order.",
+      "acceptance": [
+        "Every configured rejection code has one canonical public page and an in-product action destination.",
+        "Glossary entries distinguish platform terminology from legal requirements.",
+        "Ambiguous reviewer feedback can remain unclassified.",
+        "Metadata and sitemap entries are generated without hardcoded duplicate lists."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "102",
+      "title": "Phase 9A: model request, quote, and acceptance without payments",
+      "status": "pending",
+      "phase": 9,
+      "build_order": 1,
+      "depends_on": ["101"],
+      "spec_sections": ["2", "15"],
+      "notes": "Evolve the existing append-only request event model for requested, quoted, accepted, in_progress, and delivered. Add versioned quote line items, currency, terms snapshot, expiry, sent/accepted timestamps, accepter identity, and immutable acceptance evidence. There is no checkout, charge, invoice payment, Stripe, or other processor integration.",
+      "acceptance": [
+        "A quote can be revised without overwriting the version previously sent.",
+        "Only the current valid quote can be accepted and acceptance is idempotent.",
+        "Accepted terms and amount remain auditable after later pricing/config changes.",
+        "No payment credential, processor customer ID, checkout URL, or charge state exists."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "103",
+      "title": "Phase 9B: deliver customer and operator quote workflow",
+      "status": "pending",
+      "phase": 9,
+      "build_order": 2,
+      "depends_on": ["102"],
+      "spec_sections": ["15"],
+      "notes": "Add operator quote preparation/sending and contractor review/acceptance to the existing request thread and internal console. Re-authorize every mutation, constrain returned data, notify both sides, and transition to in_progress only from a stored acceptance.",
+      "acceptance": [
+        "The contractor can review scope, price, expiry, and terms before explicitly accepting.",
+        "Expired or superseded quotes cannot be accepted.",
+        "Every action checks workspace ownership and request access.",
+        "Notifications cannot create duplicate acceptance events.",
+        "The flow ends at stored quote acceptance and never presents a payment step."
+      ],
+      "needs_human_review": true
+    },
+    {
+      "id": "104",
+      "title": "Final cross-phase integrity, safety, and regression gate",
+      "status": "pending",
+      "phase": 9,
+      "build_order": 3,
+      "depends_on": ["103"],
+      "spec_sections": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"],
+      "notes": "Run the complete migration, config, extraction, parser, page-map, requirement-generation, status-machine, scoring, PDF, clock, dashboard, public-route, authorization, and quote-acceptance regression suite. Audit user-facing language and unchanged legal copy before release. Resolve or explicitly gate every live-account verification item in VERIFY.md.",
+      "acceptance": [
+        "All migrations are backward-compatible and tested from the current production schema.",
+        "Build, lint, unit, integration, PDF render/text, and representative scanned-document fixtures pass.",
+        "No requirement list, element set, rejection code, question set, client threshold, or platform weight is hardcoded outside config.",
+        "No predicted grade, compliance determination, guaranteed approval, testimonial, customer logo, stat counter, Stripe, or payment processor appears.",
+        "The footer and Terms non-affiliation disclaimer is byte-for-byte unchanged.",
+        "No dashboard page renders a bare em dash and every past date visibly changes its page.",
+        "Every unresolved live-account fact remains explicitly unknown and is listed in VERIFY.md.",
+        "Generated programs remain labeled drafts for contractor review and self-submission."
+      ],
+      "needs_human_review": true
     }
   ],
-  "current_task_id": null,
+  "current_task_id": "078",
   "blocked_on": null
 }

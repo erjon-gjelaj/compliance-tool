@@ -21,6 +21,7 @@ import type { EntryReason } from "@/lib/entry-points";
 
 export type SubmissionRow = {
   id: string;
+  company_id: string | null;
   created_at: string;
   updated_at: string;
   status: "partial" | "complete";

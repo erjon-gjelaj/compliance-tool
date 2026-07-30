@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "2026-07-30.1",
+  "effective_from": "2026-07-30",
+  "supersedes": null,
+  "provenance": {"source_kind":"domain_spec","source_ref":"docs/certloop-domain-spec.md#1","source_date":"2026-07-30","verification_state":"consultancy_only","verified_at":null,"verification_note":"Weights and platform packaging are unknown until verified against live accounts."},
+  "records": [
+    {"platform_key":"isnetworld","title":"ISNetworld","support_state":"supported","grade_weighting":{"state":"unknown","value":null,"unit":null,"hiring_client_key":null},"aliases":["ISN"]},
+    {"platform_key":"avetta","title":"Avetta","support_state":"supported","grade_weighting":{"state":"unknown","value":null,"unit":null,"hiring_client_key":null},"aliases":[]},
+    {"platform_key":"veriforce","title":"Veriforce","support_state":"planned","grade_weighting":{"state":"unknown","value":null,"unit":null,"hiring_client_key":null},"aliases":[]},
+    {"platform_key":"complyworks","title":"ComplyWorks","support_state":"planned","grade_weighting":{"state":"unknown","value":null,"unit":null,"hiring_client_key":null},"aliases":[]},
+    {"platform_key":"browz","title":"BROWZ","support_state":"planned","grade_weighting":{"state":"unknown","value":null,"unit":null,"hiring_client_key":null},"aliases":[]},
+    {"platform_key":"appruv","title":"Appruv","support_state":"unknown","grade_weighting":{"state":"unknown","value":null,"unit":null,"hiring_client_key":null},"aliases":[]},
+    {"platform_key":"canqualify","title":"CanQualify","support_state":"unknown","grade_weighting":{"state":"unknown","value":null,"unit":null,"hiring_client_key":null},"aliases":[]},
+    {"platform_key":"highwire","title":"Highwire","support_state":"unknown","grade_weighting":{"state":"unknown","value":null,"unit":null,"hiring_client_key":null},"aliases":[]}
+  ]
+}

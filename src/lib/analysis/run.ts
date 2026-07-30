@@ -9,6 +9,18 @@ import { sendAnalysisEmails, sendExplainerEmails } from "@/lib/notify";
 import { buildAnalysis } from "@/lib/analysis/match";
 import { validateAnalysis, type Analysis } from "@/lib/analysis/schema";
 import type { ExtractedDocument } from "@/lib/analysis/documents";
+import {
+  classifyDocument,
+  identifyProgramKey,
+} from "@/lib/document-classification";
+import { scoreProgramElements } from "@/lib/programs/element-scoring";
+import { generateAnswerKey } from "@/lib/programs/answer-key";
+import { parseAcord25 } from "@/lib/parsers/acord25";
+import {
+  calculateSafetyRates,
+  parse300A,
+} from "@/lib/parsers/statistics";
+import { parseTrainingRoster } from "@/lib/parsers/training";
 
 /**
  * The analysis pipeline: extract, diff, validate, send.
@@ -29,7 +41,10 @@ import type { ExtractedDocument } from "@/lib/analysis/documents";
 type RunOutcome = "ok" | "fallback";
 
 /** Pulls the text out of every uploaded document, recording how each went. */
-async function extractAll(submissionId: string): Promise<ExtractedDocument[]> {
+async function extractAll(
+  submissionId: string,
+  companyId: string | null,
+): Promise<ExtractedDocument[]> {
   const documents = await listDocuments(submissionId);
   if (documents.length === 0) return [];
 
@@ -54,6 +69,11 @@ async function extractAll(submissionId: string): Promise<ExtractedDocument[]> {
       mimeType: document.mime_type,
       fileName: document.file_name,
     });
+    const classification = classifyDocument(extraction.text);
+    const programKey =
+      classification.type === "program"
+        ? identifyProgramKey(extraction.text)
+        : null;
 
     // Stored so a human can see what was actually searched. Reading the
     // extracted text is usually how you find out why a review looked odd.
@@ -63,11 +83,173 @@ async function extractAll(submissionId: string): Promise<ExtractedDocument[]> {
         extracted_text: extraction.text || null,
         text_status: extraction.status,
         extracted_at: new Date().toISOString(),
+        page_count: extraction.pages || null,
+        extraction_status:
+          extraction.status === "ok" || extraction.status === "ocr"
+            ? "ready"
+            : extraction.status === "needs_review"
+              ? "needs_review"
+              : extraction.status === "unsupported"
+                ? "unsupported"
+                : "error",
+        extraction_method: extraction.method,
+        extraction_confidence: extraction.confidence,
+        page_map: extraction.pageMap,
+        doc_type: classification.type,
       })
       .eq("id", document.id);
 
     if (error) {
       console.error("Could not record extraction:", error.message);
+    }
+
+    if (programKey) {
+      const assessment = scoreProgramElements({
+        programKey,
+        pageMap: extraction.pageMap,
+      });
+      const { data: assessmentRow, error: assessmentError } = await supabase
+        .from("program_assessments")
+        .upsert(
+          {
+            document_id: document.id,
+            program_key: assessment.programKey,
+            config_release: assessment.configRelease,
+            evaluator_version: assessment.evaluatorVersion,
+            element_results: assessment.results,
+          },
+          {
+            onConflict:
+              "document_id,program_key,config_release,evaluator_version",
+          },
+        )
+        .select("id")
+        .single();
+
+      if (assessmentError || !assessmentRow) {
+        console.error(
+          "Could not record element assessment:",
+          assessmentError?.message,
+        );
+      } else {
+        const answerKey = generateAnswerKey({
+          programKey,
+          elementResults: assessment.results,
+        });
+        const { error: answerError } = await supabase.from("answer_keys").upsert(
+          {
+            assessment_id: assessmentRow.id,
+            program_key: programKey,
+            question_version: answerKey.questionVersion,
+            verification_state: answerKey.verificationState,
+            items: answerKey.items,
+          },
+          { onConflict: "assessment_id,question_version" },
+        );
+        if (answerError) {
+          console.error("Could not record answer key:", answerError.message);
+        }
+      }
+    }
+
+    if (classification.type === "coi") {
+      const coverages = parseAcord25(extraction.pageMap);
+      if (coverages.length > 0) {
+        const { error: coverageError } = await supabase
+          .from("insurance_coverages")
+          .upsert(
+            coverages.map((coverage) => ({
+              document_id: document.id,
+              coverage_type: coverage.type,
+              carrier: coverage.carrier,
+              policy_number: coverage.policyNumber,
+              eff_date: coverage.effDate,
+              exp_date: coverage.expDate,
+              each_occurrence: coverage.eachOccurrence,
+              general_aggregate: coverage.generalAggregate,
+              products_comp_op: coverage.productsCompOp,
+              additional_insured: coverage.additionalInsured,
+              waiver_of_subrogation: coverage.waiverOfSubrogation,
+              primary_noncontributory: coverage.primaryNoncontributory,
+              notice_of_cancellation_days: coverage.noticeOfCancellationDays,
+              evidence: {
+                page: coverage.page,
+                snippet: coverage.snippet,
+                confidence: extraction.confidence,
+              },
+            })),
+            { onConflict: "document_id,coverage_type,policy_number" },
+          );
+        if (coverageError) {
+          console.error("Could not record insurance coverage:", coverageError.message);
+        }
+      }
+    }
+
+    if (classification.type === "osha_300a" && companyId) {
+      const parsed = parse300A(extraction.pageMap);
+      if (
+        parsed.year &&
+        parsed.hoursWorked &&
+        parsed.recordableIncidents !== null &&
+        parsed.dartCases !== null &&
+        parsed.lostTimeCases !== null
+      ) {
+        const rates = calculateSafetyRates({
+          hoursWorked: parsed.hoursWorked,
+          recordableIncidents: parsed.recordableIncidents,
+          dartCases: parsed.dartCases,
+          lostTimeCases: parsed.lostTimeCases,
+        });
+        const { error: statisticsError } = await supabase
+          .from("safety_statistics")
+          .upsert(
+            {
+              document_id: document.id,
+              company_id: companyId,
+              report_year: parsed.year,
+              hours_worked: parsed.hoursWorked,
+              recordable_incidents: parsed.recordableIncidents,
+              dart_cases: parsed.dartCases,
+              lost_time_cases: parsed.lostTimeCases,
+              trir: rates.trir,
+              dart: rates.dart,
+              ltir: rates.ltir,
+              evidence: parsed.evidence,
+            },
+            { onConflict: "company_id,report_year" },
+          );
+        if (statisticsError) {
+          console.error("Could not record safety statistics:", statisticsError.message);
+        }
+      }
+    }
+
+    if (classification.type === "training_roster" && companyId) {
+      const training = parseTrainingRoster(extraction.pageMap);
+      if (training.length > 0) {
+        const { error: trainingError } = await supabase
+          .from("training_records")
+          .insert(
+            training.map((record) => ({
+              document_id: document.id,
+              company_id: companyId,
+              program_key: record.programKey,
+              training_date: record.date,
+              instructor_name: record.instructorName,
+              instructor_signature: record.instructorSignature,
+              attendees: record.attendees,
+              source: record.source,
+              evidence: {
+                page: record.page,
+                confidence: record.confidence,
+              },
+            })),
+          );
+        if (trainingError) {
+          console.error("Could not record training roster:", trainingError.message);
+        }
+      }
     }
 
     results.push({ document, ...extraction });
@@ -120,7 +302,10 @@ async function logRun(input: LogInput): Promise<void> {
 
 function countDocuments(documents: ExtractedDocument[]) {
   const read = documents.filter(
-    (entry) => entry.status === "ok" || entry.status === "ocr",
+    (entry) =>
+      entry.status === "ok" ||
+      entry.status === "ocr" ||
+      entry.status === "needs_review",
   ).length;
 
   return { read, unreadable: documents.length - read };
@@ -141,7 +326,7 @@ export async function runAnalysis(submissionId: string): Promise<RunOutcome> {
 
     await updateSubmission(submissionId, { analysis_status: "pending" });
 
-    documents = await extractAll(submissionId);
+    documents = await extractAll(submissionId, submission.company_id);
     const counts = countDocuments(documents);
 
     const analysis = buildAnalysis({ submission, documents });

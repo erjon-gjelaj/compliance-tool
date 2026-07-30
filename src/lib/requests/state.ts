@@ -19,6 +19,8 @@ export const REQUEST_STATES = [
   "waiting_on_certloop",
   "in_review",
   "waiting_on_customer",
+  "quote_ready",
+  "accepted",
   "draft_ready",
   "completed",
   "closed",
@@ -30,9 +32,12 @@ export const EVENT_KINDS = [
   "submitted",
   "customer_message",
   "certloop_message",
+  "quoted",
+  "quote_accepted",
   "in_review",
   "draft_ready",
   "completed",
+  "delivered",
   "reopened",
   "closed",
 ] as const;
@@ -111,7 +116,14 @@ export function deriveStatus(events: RequestEvent[]): RequestStatus {
         return { state: "closed", nextParty: null, lastActivityAt };
 
       case "completed":
+      case "delivered":
         return { state: "completed", nextParty: null, lastActivityAt };
+
+      case "quote_accepted":
+        return { state: "accepted", nextParty: "certloop", lastActivityAt };
+
+      case "quoted":
+        return { state: "quote_ready", nextParty: "customer", lastActivityAt };
 
       case "draft_ready":
         // Ready for them to look at, so it is their move.
@@ -163,6 +175,8 @@ export const STATE_LABEL: Record<RequestState, string> = {
   waiting_on_certloop: "With CertLoop",
   in_review: "Being worked on",
   waiting_on_customer: "Needs something from you",
+  quote_ready: "Quote ready for review",
+  accepted: "Quote accepted",
   draft_ready: "Ready for you to look at",
   completed: "Done",
   closed: "Closed",
@@ -179,6 +193,8 @@ export const STATE_LABEL: Record<RequestState, string> = {
 export const STATE_TONE: Record<RequestState, "action" | "waiting" | "ready" | "done"> =
   {
     waiting_on_customer: "action",
+    quote_ready: "action",
+    accepted: "ready",
     waiting_on_certloop: "waiting",
     in_review: "waiting",
     draft_ready: "ready",

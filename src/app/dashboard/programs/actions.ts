@@ -24,7 +24,7 @@ import type {
  *
  * Answers live in the form itself rather than in a table. The whole flow is
  * two or three minutes long, and a half-finished questionnaire is not worth a
- * row — what is worth keeping is the finished document, and the answers are
+ * row. What is worth keeping is the finished document, and the answers are
  * stored on the version when one is produced. That also means a revision can
  * start from exactly what was answered last time.
  */
@@ -65,7 +65,7 @@ export async function answerProgramStep(
     return {
       status: "error",
       answers: {},
-      error: "Add your company name first — the document is prepared in its name.",
+      error: "Add your company name first. The document is prepared in its name.",
     };
   }
 
@@ -76,7 +76,7 @@ export async function answerProgramStep(
    *
    * Someone who says yes to multi-employer sites, answers the unlabelled-pipes
    * question, then goes back and says no, would otherwise carry a stale answer
-   * that the validator correctly rejects as contradictory — leaving them stuck
+   * that the validator correctly rejects as contradictory, leaving them stuck
    * on a form with no visible problem. Clearing it here means changing your
    * mind just works.
    */
@@ -139,7 +139,7 @@ export async function reviseDocument(
   /*
    * On the first pass the request comes from the textarea. On a clarification
    * retry it rides in a hidden field, because nothing about a revision is
-   * persisted until a version is actually produced — an abandoned
+   * persisted until a version is actually produced. An abandoned
    * clarification leaves no row anywhere, which is the right outcome for a
    * question the customer decided not to answer.
    */

@@ -68,7 +68,7 @@ export default async function ProgramsPage() {
                   <p className="type-label text-millscale">{program.title}</p>
                   <p className="mt-1 text-sm text-slate-wash">
                     {existing
-                      ? `Version ${existing.current.version} — ready to download`
+                      ? `Version ${existing.current.version}: ready to download`
                       : "About two minutes"}
                   </p>
                 </div>

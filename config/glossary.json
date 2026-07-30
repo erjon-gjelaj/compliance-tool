@@ -1,0 +1,21 @@
+{
+  "schema_version":"1.0.0",
+  "content_version":"2026-07-30.1",
+  "effective_from":"2026-07-30",
+  "supersedes":null,
+  "provenance":{"source_kind":"domain_spec","source_ref":"docs/certloop-domain-spec.md#1-12","source_date":"2026-07-30","verification_state":"consultancy_only","verified_at":null,"verification_note":"Platform terminology requires live-account verification."},
+  "records":[
+    {"slug":"ravs","term":"RAVS","definition":"ISNetworld's label for written safety programs reviewed as part of a contractor file."},
+    {"slug":"ravs-360","term":"RAVS 360","definition":"A platform term whose current meaning must be confirmed in the contractor's own account."},
+    {"slug":"msq","term":"MSQ","definition":"Management System Questionnaire; answers may affect which written-program tasks appear."},
+    {"slug":"q-and-a","term":"Q&A","definition":"The statistics portion of an ISNetworld file in the terminology used by the domain specification."},
+    {"slug":"trir","term":"TRIR","definition":"Total Recordable Incident Rate, calculated from recordable incidents and hours worked."},
+    {"slug":"dart","term":"DART","definition":"A rate based on cases involving days away, restricted work, or job transfer and hours worked."},
+    {"slug":"ltir","term":"LTIR","definition":"Lost Time Incident Rate, calculated from lost-time cases and hours worked."},
+    {"slug":"emr","term":"EMR","definition":"Experience Modification Rate shown on an annual carrier or rating-bureau document."},
+    {"slug":"sse","term":"SSE","definition":"Short Service Employee."},
+    {"slug":"acord-25","term":"ACORD 25","definition":"A standard certificate of liability insurance form."},
+    {"slug":"additional-insured","term":"Additional insured","definition":"An insurance status or endorsement that may be requested by a hiring client."},
+    {"slug":"waiver-of-subrogation","term":"Waiver of subrogation","definition":"Insurance wording that may be requested by a hiring client."}
+  ]
+}

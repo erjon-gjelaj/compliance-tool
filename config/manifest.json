@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "release_id": "2026-07-30.1",
+  "effective_from": "2026-07-30",
+  "files": [
+    {"key":"categories","path":"config/categories.json","content_version":"2026-07-30.1"},
+    {"key":"platforms","path":"config/platforms.json","content_version":"2026-07-30.1"},
+    {"key":"predicate_fields","path":"config/predicate-fields.json","content_version":"2026-07-30.1"},
+    {"key":"requirements","path":"config/requirements.json","content_version":"2026-07-30.1"},
+    {"key":"evidence_requirements","path":"config/evidence-requirements.json","content_version":"2026-07-30.1"},
+    {"key":"programs","path":"config/programs.json","content_version":"2026-07-30.1"},
+    {"key":"element_sets","path":"config/element-sets.json","content_version":"2026-07-30.1"},
+    {"key":"questionnaires","path":"config/questionnaires.json","content_version":"2026-07-30.1"},
+    {"key":"rejection_codes","path":"config/rejection-codes.json","content_version":"2026-07-30.1"},
+    {"key":"glossary","path":"config/glossary.json","content_version":"2026-07-30.1"}
+  ]
+}

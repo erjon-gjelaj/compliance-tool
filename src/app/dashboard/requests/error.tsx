@@ -8,13 +8,13 @@ import { RotateCw, TriangleAlert } from "lucide-react";
  *
  * This route used to have no error state and could not have used one: the
  * store swallowed a failed query and returned an empty array, so a database
- * outage rendered as "No requests yet" — a calm, confident, wrong answer, and
+ * outage rendered as "No requests yet"; a calm, confident, wrong answer, and
  * the worst thing this page could tell somebody with work in flight. The
  * store's throwing variant exists to reach this file.
  *
  * `reset()` re-runs the server component. That is the right retry for what
- * actually goes wrong here — a dropped connection, a cold database, a
- * timeout — none of which need a full reload to clear, and a reload would
+ * actually goes wrong here; a dropped connection, a cold database, a
+ * timeout; none of which need a full reload to clear, and a reload would
  * cost the whole workspace shell to retry one query.
  *
  * The copy does not guess at a cause. We know the list could not be read and
@@ -42,7 +42,7 @@ export default function RequestsError({
       </div>
 
       {/*
-        The same card as the empty state — border, paper, p-8, icon above the
+        The same card as the empty state; border, paper, p-8, icon above the
         heading. The four states of this page are meant to be recognisably the
         same page, so what changes between them is the icon's colour and the
         words, not the layout.
@@ -68,7 +68,7 @@ export default function RequestsError({
 
         {/*
           The digest is the only thing that makes a support email actionable,
-          and it is not always present — Next only attaches one to errors
+          and it is not always present; Next only attaches one to errors
           thrown on the server.
         */}
         {error.digest ? (

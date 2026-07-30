@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import {
   Building2,
   CalendarClock,
-  FileSignature,
   FileStack,
   LayoutDashboard,
-  LifeBuoy,
-  MessageSquare,
+  ListChecks,
+  ShieldCheck,
+  ChartNoAxesCombined,
+  GraduationCap,
   Users,
 } from "lucide-react";
 
@@ -30,12 +31,13 @@ import {
 
 const SECTIONS = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/requests", label: "Requests", icon: MessageSquare },
+  { href: "/dashboard/file", label: "File", icon: ListChecks },
   { href: "/dashboard/documents", label: "Documents", icon: FileStack },
-  { href: "/dashboard/programs", label: "Programs", icon: FileSignature },
-  { href: "/dashboard/maintenance", label: "Maintenance", icon: CalendarClock },
+  { href: "/dashboard/training", label: "Training", icon: GraduationCap },
+  { href: "/dashboard/insurance", label: "Insurance", icon: ShieldCheck },
+  { href: "/dashboard/statistics", label: "Statistics", icon: ChartNoAxesCombined },
+  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarClock },
   { href: "/dashboard/company", label: "Company", icon: Building2 },
-  { href: "/dashboard/help", label: "Ask for help", icon: LifeBuoy },
 ] as const;
 
 export function DashboardNav({
@@ -46,9 +48,8 @@ export function DashboardNav({
   const pathname = usePathname();
   const sections = canManageClients
     ? [
-        ...SECTIONS.slice(0, 6),
+        ...SECTIONS,
         { href: "/dashboard/clients", label: "Clients", icon: Users },
-        ...SECTIONS.slice(6),
       ]
     : SECTIONS;
 

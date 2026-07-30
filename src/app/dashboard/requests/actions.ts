@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { currentWorkspace } from "@/lib/workspaces";
 import { getRequestForEmail, recordEvent } from "@/lib/requests/store";
 import { notifyCustomerReply } from "@/lib/notify";
+import { acceptQuote } from "@/lib/quotes";
 
 export type ReplyState = {
   status: "editing" | "sent";
@@ -17,7 +18,7 @@ const MAX_REPLY = 4000;
 /**
  * The customer adding something to a request.
  *
- * Recording the message is the whole of the state change — a customer message
+ * Recording the message is the whole of the state change: a customer message
  * puts the request back on us by derivation, so there is nothing else to set.
  * That is the point of the events model: replying and "changing the status"
  * are the same act, and cannot come apart.
@@ -86,4 +87,20 @@ export async function replyToRequest(
   revalidatePath("/dashboard");
 
   return { status: "sent" };
+}
+
+export async function acceptRequestQuote(formData: FormData): Promise<void> {
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
+  const requestId = String(formData.get("request_id") ?? "");
+  const quoteId = String(formData.get("quote_id") ?? "");
+  const request = await getRequestForEmail(workspace.email, requestId);
+  if (!request || !quoteId) throw new Error("Quote not found.");
+  await acceptQuote({
+    requestId: request.id,
+    quoteId,
+    email: workspace.email,
+  });
+  revalidatePath(`/dashboard/requests/${request.id}`);
+  revalidatePath("/dashboard");
 }

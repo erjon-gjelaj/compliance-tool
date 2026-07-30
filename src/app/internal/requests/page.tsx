@@ -14,6 +14,7 @@ import { SERVICE_LABELS } from "@/lib/service-kinds";
 import { listAllRequests, recordEvent } from "@/lib/requests/store";
 import { notifyCertLoopReply } from "@/lib/notify";
 import type { EventKind } from "@/lib/requests/state";
+import { createAndSendQuote, latestQuote } from "@/lib/quotes";
 
 /**
  * The operator console.
@@ -87,6 +88,40 @@ async function act(formData: FormData) {
   redirect("/internal/requests");
 }
 
+async function sendQuote(formData: FormData) {
+  "use server";
+  if (!(await hasInternalSession())) redirect("/internal/requests");
+  const requestId = String(formData.get("request_id") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  const amount = Number(formData.get("amount_dollars"));
+  const terms = String(formData.get("terms") ?? "").trim();
+  const expiresAt = String(formData.get("expires_at") ?? "");
+  if (
+    !requestId ||
+    !description ||
+    !terms ||
+    !Number.isFinite(amount) ||
+    amount < 0 ||
+    !expiresAt
+  ) {
+    throw new Error("Complete every quote field.");
+  }
+  await createAndSendQuote({
+    requestId,
+    currency: "USD",
+    lines: [
+      {
+        description,
+        quantity: 1,
+        unitMinor: Math.round(amount * 100),
+      },
+    ],
+    terms,
+    expiresAt: new Date(`${expiresAt}T23:59:59Z`).toISOString(),
+  });
+  redirect("/internal/requests");
+}
+
 function Gate({ denied }: { denied: boolean }) {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
@@ -150,7 +185,9 @@ export default async function InternalRequestsPage({
         <p className="mt-8 text-sm text-slate-wash">Nothing has been asked for yet.</p>
       ) : (
         <ul className="mt-8 grid gap-4">
-          {requests.map((request) => (
+          {requests.map(async (request) => {
+            const quote = await latestQuote(request.id);
+            return (
             <li key={request.id} className="border border-zinc-dust bg-paper p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -215,8 +252,25 @@ export default async function InternalRequestsPage({
                   </SubmitButton>
                 </div>
               </form>
+              <form action={sendQuote} className="mt-4 border-t border-zinc-dust pt-4">
+                <input type="hidden" name="request_id" value={request.id} />
+                <p className="text-sm font-medium text-millscale">
+                  {quote
+                    ? `Latest quote: version ${quote.version}`
+                    : "Prepare a quote"}
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <input name="description" required placeholder="Scope of work" className="border border-zinc-dust bg-galvanise px-3 py-2 text-sm" />
+                  <input name="amount_dollars" type="number" min="0" step="0.01" required placeholder="Amount in USD" className="border border-zinc-dust bg-galvanise px-3 py-2 text-sm" />
+                  <input name="expires_at" type="date" required className="border border-zinc-dust bg-galvanise px-3 py-2 text-sm" />
+                  <textarea name="terms" required placeholder="Acceptance terms" className="border border-zinc-dust bg-galvanise px-3 py-2 text-sm" />
+                </div>
+                <SubmitButton pendingLabel="Sending quote…" className="btn-primary mt-3">
+                  Send stored quote
+                </SubmitButton>
+              </form>
             </li>
-          ))}
+          )})}
         </ul>
       )}
     </main>

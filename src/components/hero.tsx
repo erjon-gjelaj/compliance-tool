@@ -38,50 +38,21 @@ export function Hero() {
               Find out what your ISNetworld or Avetta file is missing
             </h1>
             <p className="type-lede mt-6 max-w-xl">
-              A plant told your crew to get prequalified before the next
-              shutdown. Tell us your trade and who&apos;s asking, attach what
-              you already have, and get back a plain list of the paperwork
-              still to put together. Free, and it takes about a minute.
+              A client asked your company to get prequalified. Tell us your
+              trade and who&apos;s asking, then attach whatever you already
+              have. We&apos;ll show you what looks present, what still appears
+              to be missing, and what to do next.
             </p>
 
-            {/*
-             * TODO-VERIFY: consultant cost ($1,500-$4,000) and turnaround
-             * (30-45 days) in business-model.md are flagged as unverified
-             * early research, so the copy stays qualitative until someone
-             * confirms current market rates.
-             */}
-            <ul className="mt-8 space-y-3">
-              <li className="type-body flex gap-3">
-                <span
-                  aria-hidden="true"
-                  className="mt-[0.6em] h-px w-4 shrink-0 bg-verdigris"
-                />
-                <span>
-                  A compliance consultant will sort it out, on a retainer and a
-                  timeline that doesn&apos;t fit a shutdown window.
-                </span>
-              </li>
-              <li className="type-body flex gap-3">
-                <span
-                  aria-hidden="true"
-                  className="mt-[0.6em] h-px w-4 shrink-0 bg-verdigris"
-                />
-                <span>
-                  Template packs sold online aren&apos;t written for your trade
-                  or for the specific client asking you to register.
-                </span>
-              </li>
-            </ul>
-
-            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               <a
                 href="#gap-check"
                 className="btn-primary"
               >
-                Get your free gap check
+                Start your free gap check
               </a>
-              <span className="text-xs text-slate-wash">
-                One short screen to start. No account, no card.
+              <span className="text-sm text-slate-wash">
+                About a minute to start. No account or card.
               </span>
             </div>
           </div>

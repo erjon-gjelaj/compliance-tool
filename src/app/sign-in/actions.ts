@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 
 import { SITE_URL } from "@/lib/constants";
 import { emailHasSubmissions, emailHasWorkspace } from "@/lib/dashboard";
@@ -18,6 +18,7 @@ import {
   signToken,
 } from "@/lib/auth/tokens";
 import { closeClientSession } from "@/lib/auth/session";
+import { signOutDestination } from "@/lib/auth/sign-out-destination";
 
 /**
  * Requesting a sign-in link, and signing out.
@@ -103,7 +104,10 @@ export async function requestSignInLink(formData: FormData): Promise<never> {
   redirect(sent);
 }
 
-export async function signOut(): Promise<never> {
+export async function signOut(formData: FormData): Promise<never> {
   await closeClientSession();
-  redirect("/sign-in?signedout=1");
+  redirect(
+    signOutDestination(formData.get("return_to")),
+    RedirectType.replace,
+  );
 }

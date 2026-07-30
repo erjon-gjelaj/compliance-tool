@@ -146,6 +146,7 @@ export function SiteHeader() {
               */}
               <li>
                 <form action={signOut}>
+                  <input type="hidden" name="return_to" value={pathname} />
                   <SubmitButton
                     pendingLabel="Signing out…"
                     className={`inline-flex items-center gap-2 ${LINK_CLASS}`}

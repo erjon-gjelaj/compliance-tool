@@ -92,14 +92,13 @@ export default async function SignInPage({
   searchParams: Promise<{
     sent?: string;
     error?: string;
-    signedout?: string;
   }>;
 }) {
   // Already signed in is not an error, it is someone who bookmarked the wrong
   // page. Send them where they were going.
   if (await currentClient()) redirect("/dashboard");
 
-  const { sent, error, signedout } = await searchParams;
+  const { sent, error } = await searchParams;
 
   if (sent) return <Sent email={sent} />;
 
@@ -111,12 +110,6 @@ export default async function SignInPage({
         the gap check in with. Enter it and we&rsquo;ll send a link &mdash;
         there is no password to remember.
       </p>
-
-      {signedout ? (
-        <p className="mt-4 border-l-2 border-verdigris bg-galvanise px-3 py-2 text-sm text-millscale">
-          You&rsquo;re signed out on this device.
-        </p>
-      ) : null}
 
       <form action={requestSignInLink} className="mt-6">
         <label htmlFor="email" className="type-label block text-millscale">

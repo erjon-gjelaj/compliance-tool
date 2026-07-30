@@ -447,6 +447,13 @@
       "status": "done",
       "notes": "Done. Replaced the stale manual 'Have a document prepared' request entry with a direct automatic Programs action on the Help and Requests pages. New manual requests are limited to rejection help, professional review, and other work; the historical document_preparation kind remains readable for existing rows and crafted submissions redirect safely to Programs. Updated the public documents copy and removed program-price rows from the human-help form so it no longer contradicts the automatic path.",
       "needs_human_review": false
+    },
+    {
+      "id": "070",
+      "title": "Preserve public-page location after sign-out",
+      "status": "done",
+      "notes": "Done. Explicit sign-out now keeps visitors on the public page they were viewing and shows a dismissible one-time confirmation. Dashboard, internal, API, missing, and external-looking return paths safely fall back to the homepage. The redirect replaces browser history, the confirmation marker is removed without another navigation, and expired sessions still use the sign-in flow.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": null,

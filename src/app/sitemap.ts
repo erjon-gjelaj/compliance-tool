@@ -10,9 +10,8 @@ import { ENTRY_POINTS } from "@/lib/entry-points";
  *
  * The entry points are listed above About and FAQ because they are the pages
  * worth ranking: someone searching "ISNetworld document rejected" is describing
- * their problem, and that page answers it. The gap-check door is filtered out
- * — it is a fragment on the home page, already listed above, and submitting a
- * second URL for it would only split the two.
+ * their problem, and that page answers it. The generic gap check now has its
+ * own route and is included with the other entry points.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
@@ -24,14 +23,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 1,
     },
-    ...ENTRY_POINTS.filter(({ href }) => !href.includes("#")).map(
-      ({ href }) => ({
-        url: `${SITE_URL}${href}`,
-        lastModified,
-        changeFrequency: "monthly" as const,
-        priority: 0.8,
-      }),
-    ),
+    ...ENTRY_POINTS.map(({ href }) => ({
+      url: `${SITE_URL}${href}`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
     ...[...NAV_LINKS, ...LEGAL_LINKS].map(({ href }) => ({
       url: `${SITE_URL}${href}`,
       lastModified,

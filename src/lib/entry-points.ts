@@ -77,8 +77,8 @@ export const ENTRY_POINTS: EntryPoint[] = [
     href: "/documents",
     headline: "I need a safety manual or a written program",
     detail:
-      "Tell us which programs you have been asked for. You get a list of what each one has to cover, and the option to have them prepared for you.",
-    action: "Ask about documents",
+      "Find out which programs are missing, then prepare a supported program automatically from a short company-specific questionnaire.",
+    action: "Prepare a program",
   },
 ];
 

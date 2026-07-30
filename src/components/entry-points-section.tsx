@@ -18,28 +18,36 @@ export function EntryPointsSection() {
   return (
     <section
       aria-labelledby="entry-points-heading"
-      className="border-b border-zinc-dust"
+      className="border-b border-zinc-dust bg-paper"
     >
-      <div className="mx-auto max-w-5xl px-6 py-16 md:py-20">
-        <p className="tag">Where to start</p>
-        <h2 id="entry-points-heading" className="type-h2 mt-4 max-w-2xl">
-          What brought you here?
-        </h2>
-        <p className="type-body mt-4 max-w-2xl">
-          Four ways in, one file. Whichever you pick, everything you send stays
-          in the same place.
-        </p>
+      <div className="mx-auto grid max-w-5xl gap-10 px-6 py-16 md:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] md:gap-16 md:py-20">
+        <div>
+          <p className="tag">Where to start</p>
+          <h2 id="entry-points-heading" className="type-h2 mt-4">
+            Start with the problem in front of you
+          </h2>
+          <p className="type-body mt-4">
+            You do not need to know which service or document you need.
+            Choose the situation that sounds closest. Every route feeds the
+            same company file.
+          </p>
+        </div>
 
-        <ul className="mt-12 grid gap-px border border-zinc-dust bg-zinc-dust sm:grid-cols-2">
-          {ENTRY_POINTS.map(({ reason, href, headline, detail, action }) => (
-            <li key={reason} className="bg-paper">
+        <ol className="divide-y divide-zinc-dust border-y border-zinc-dust">
+          {ENTRY_POINTS.map(({ reason, href, headline, detail, action }, index) => (
+            <li key={reason}>
               <Link
                 href={href}
-                className="group flex h-full flex-col p-6 transition-colors hover:bg-galvanise md:p-7"
+                className="group grid gap-4 py-6 transition-colors hover:bg-galvanise sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] sm:items-start sm:px-4"
               >
-                <h3 className="type-h3">{headline}</h3>
-                <p className="type-body mt-3 flex-1">{detail}</p>
-                <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-verdigris">
+                <span className="tag text-verdigris">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <div>
+                  <h3 className="type-h3">{headline}</h3>
+                  <p className="type-body mt-2">{detail}</p>
+                </div>
+                <span className="inline-flex items-center gap-2 text-sm font-medium whitespace-nowrap text-verdigris sm:pt-1">
                   {action}
                   <ArrowRight
                     aria-hidden="true"
@@ -50,7 +58,7 @@ export function EntryPointsSection() {
               </Link>
             </li>
           ))}
-        </ul>
+        </ol>
       </div>
     </section>
   );

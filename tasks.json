@@ -454,6 +454,13 @@
       "status": "done",
       "notes": "Done. Explicit sign-out now keeps visitors on the public page they were viewing and shows a dismissible one-time confirmation. Dashboard, internal, API, missing, and external-looking return paths safely fall back to the homepage. The redirect replaces browser history, the confirmation marker is removed without another navigation, and expired sessions still use the sign-in flow.",
       "needs_human_review": false
+    },
+    {
+      "id": "071",
+      "title": "Improve shared page labels and homepage clarity",
+      "status": "done",
+      "notes": "Done. Increased the shared uppercase page tag from 11px to 13px with a readable line-height, moderate weight, and less tracking. Simplified the homepage hero around the visitor's task, removed two competitor-focused bullets that delayed the primary action, moved the gap-check CTA higher, and made its time/account reassurance readable. The existing four-door section remains the single place for choosing a more specific path.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": null,

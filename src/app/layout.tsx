@@ -6,6 +6,7 @@ import "./globals.css";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { NavigationProgress } from "@/components/nav-progress";
+import { SignedOutNotice } from "@/components/signed-out-notice";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/constants";
 
 /*
@@ -58,6 +59,7 @@ export default function RootLayout({
         {/* Header and footer live here so all four pages share the same
             chrome and nothing drifts as pages are added. */}
         <SiteHeader />
+        <SignedOutNotice />
         {children}
         <SiteFooter />
         {/* Vercel Speed Insights. Reports Core Web Vitals to the Vercel

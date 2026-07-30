@@ -468,6 +468,13 @@
       "status": "done",
       "notes": "Done. The notice lived in the persistent root layout and checked the URL only on its first mount, so returning to the same public pathname with signed_out=1 changed the query without rerunning the effect. It now observes Next's reactive search parameters inside a Suspense boundary, removes the marker, and preserves the scheduled acknowledgement across the resulting search-param update.",
       "needs_human_review": false
+    },
+    {
+      "id": "073",
+      "title": "Add email-code sign-in",
+      "status": "done",
+      "notes": "Done. The sign-in page now offers either the existing 15-minute magic link or a six-digit email code. Codes expire after 10 minutes, allow five attempts, use a signed HTTP-only challenge cookie, store only an HMAC digest, and open the same seven-day session on success. Request throttling and account-enumeration protections are shared with magic links. Added plain-text and HTML code emails plus token isolation, matching, attempt, and email rendering tests; no database migration is required.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": null,

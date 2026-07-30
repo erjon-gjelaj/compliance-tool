@@ -134,3 +134,31 @@ test("only the domain is lowercased", () => {
   assert.equal(normaliseEmail("a@b@Example.COM"), "a@b@example.com");
   assert.equal(normaliseEmail("not-an-email"), "not-an-email");
 });
+
+test("an email code challenge verifies the code and counts attempts", async () => {
+  const {
+    createSignInCodeChallenge,
+    incrementSignInCodeAttempts,
+    signInCodeMatches,
+    verifySignInCodeChallenge,
+  } = await import("./tokens.ts");
+
+  const token = await createSignInCodeChallenge("Sam@Example.COM", "042731");
+  const challenge = await verifySignInCodeChallenge(token);
+
+  assert.equal(challenge?.email, "Sam@example.com");
+  assert.equal(signInCodeMatches(challenge!, "042731"), true);
+  assert.equal(signInCodeMatches(challenge!, "042732"), false);
+
+  const retried = await incrementSignInCodeAttempts(challenge!);
+  assert.equal((await verifySignInCodeChallenge(retried))?.attempts, 1);
+});
+
+test("an email code challenge cannot be replayed as a session", async () => {
+  const { createSignInCodeChallenge } = await import("./tokens.ts");
+  const challenge = await createSignInCodeChallenge(
+    "sam@example.com",
+    "123456",
+  );
+  assert.equal(await verifyToken(challenge, "session"), null);
+});

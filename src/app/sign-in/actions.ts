@@ -1,10 +1,15 @@
 "use server";
 
 import { redirect, RedirectType } from "next/navigation";
+import { cookies } from "next/headers";
 
 import { SITE_URL } from "@/lib/constants";
 import { emailHasSubmissions, emailHasWorkspace } from "@/lib/dashboard";
-import { sendSignInLink, smtpConfigured } from "@/lib/notify";
+import {
+  sendSignInCode,
+  sendSignInLink,
+  smtpConfigured,
+} from "@/lib/notify";
 import {
   SIGN_IN_CALLER_LIMIT,
   SIGN_IN_EMAIL_LIMIT,
@@ -13,12 +18,21 @@ import {
 } from "@/lib/rate-limit";
 import {
   SIGN_IN_TTL_SECONDS,
+  SIGN_IN_CODE_MAX_ATTEMPTS,
+  SIGN_IN_CODE_TTL_SECONDS,
   authConfigured,
+  createSignInCodeChallenge,
+  generateSignInCode,
+  incrementSignInCodeAttempts,
   normaliseEmail,
+  signInCodeMatches,
   signToken,
+  verifySignInCodeChallenge,
 } from "@/lib/auth/tokens";
 import { closeClientSession } from "@/lib/auth/session";
 import { signOutDestination } from "@/lib/auth/sign-out-destination";
+import { SIGN_IN_CODE_COOKIE } from "@/lib/auth/cookie-names";
+import { openClientSession } from "@/lib/auth/session";
 
 /**
  * Requesting a sign-in link, and signing out.
@@ -63,7 +77,14 @@ export async function requestSignInLink(formData: FormData): Promise<never> {
     redirect("/sign-in?error=unavailable");
   }
 
-  const sent = `/sign-in?sent=${encodeURIComponent(email)}`;
+  const method = formData.get("method") === "code" ? "code" : "link";
+  const sent =
+    method === "code"
+      ? `/sign-in?code_sent=${encodeURIComponent(email)}`
+      : `/sign-in?sent=${encodeURIComponent(email)}`;
+
+  const jar = await cookies();
+  if (method === "code") jar.delete(SIGN_IN_CODE_COOKIE);
 
   const caller = await callerKey();
 
@@ -87,10 +108,28 @@ export async function requestSignInLink(formData: FormData): Promise<never> {
     redirect(sent);
   }
 
-  const token = await signToken(email, "sign-in");
-  const url = `${SITE_URL}/sign-in/verify?token=${encodeURIComponent(token)}`;
-
-  const delivered = await sendSignInLink(email, url, SIGN_IN_TTL_SECONDS / 60);
+  let delivered: boolean;
+  if (method === "code") {
+    const code = generateSignInCode();
+    const challenge = await createSignInCodeChallenge(email, code);
+    jar.set(SIGN_IN_CODE_COOKIE, challenge, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/sign-in",
+      maxAge: SIGN_IN_CODE_TTL_SECONDS,
+    });
+    delivered = await sendSignInCode(
+      email,
+      code,
+      SIGN_IN_CODE_TTL_SECONDS / 60,
+    );
+    if (!delivered) jar.delete(SIGN_IN_CODE_COOKIE);
+  } else {
+    const token = await signToken(email, "sign-in");
+    const url = `${SITE_URL}/sign-in/verify?token=${encodeURIComponent(token)}`;
+    delivered = await sendSignInLink(email, url, SIGN_IN_TTL_SECONDS / 60);
+  }
 
   // An individual send failing does NOT change the response, even though it
   // means the person is now waiting for nothing. Surfacing it would be an
@@ -102,6 +141,47 @@ export async function requestSignInLink(formData: FormData): Promise<never> {
   }
 
   redirect(sent);
+}
+
+export async function verifySignInCode(formData: FormData): Promise<never> {
+  const jar = await cookies();
+  const rawChallenge = jar.get(SIGN_IN_CODE_COOKIE)?.value;
+  const suppliedEmail = normaliseEmail(String(formData.get("email") ?? ""));
+  const destination = `/sign-in?code_sent=${encodeURIComponent(suppliedEmail)}`;
+  const code = String(formData.get("code") ?? "").replace(/\s/g, "");
+
+  const challenge = rawChallenge
+    ? await verifySignInCodeChallenge(rawChallenge)
+    : null;
+  if (!challenge) {
+    jar.delete(SIGN_IN_CODE_COOKIE);
+    redirect("/sign-in?error=code_expired");
+  }
+
+  if (!/^\d{6}$/.test(code) || !signInCodeMatches(challenge, code)) {
+    const attempts = challenge.attempts + 1;
+    if (attempts >= SIGN_IN_CODE_MAX_ATTEMPTS) {
+      jar.delete(SIGN_IN_CODE_COOKIE);
+      redirect("/sign-in?error=code_attempts");
+    }
+
+    const updated = await incrementSignInCodeAttempts(challenge);
+    jar.set(SIGN_IN_CODE_COOKIE, updated, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/sign-in",
+      maxAge: Math.max(
+        1,
+        challenge.expiresAt - Math.floor(Date.now() / 1000),
+      ),
+    });
+    redirect(`${destination}&error=code`);
+  }
+
+  jar.delete(SIGN_IN_CODE_COOKIE);
+  await openClientSession(challenge.email);
+  redirect("/dashboard");
 }
 
 export async function signOut(formData: FormData): Promise<never> {

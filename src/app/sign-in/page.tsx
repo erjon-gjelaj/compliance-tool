@@ -6,7 +6,10 @@ import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
 import { GAP_CHECK_HREF } from "@/lib/nav";
 import { pageMetadata } from "@/lib/metadata";
 import { currentClient } from "@/lib/auth/session";
-import { requestSignInLink } from "@/app/sign-in/actions";
+import {
+  requestSignInLink,
+  verifySignInCode,
+} from "@/app/sign-in/actions";
 import { SubmitButton } from "@/components/submit-button";
 
 /**
@@ -54,6 +57,8 @@ const ERRORS: Record<string, string> = {
     "That link has expired or has already been used. Ask for a new one below.",
   unavailable:
     "Sign-in isn't available right now. This is a fault at our end, not yours.",
+  code_expired: "That code has expired. Ask for a new one below.",
+  code_attempts: "Too many incorrect attempts. Ask for a new code below.",
 };
 
 function Sent({ email }: { email: string }) {
@@ -86,11 +91,58 @@ function Sent({ email }: { email: string }) {
   );
 }
 
+function CodeSent({ email, error }: { email: string; error?: string }) {
+  return (
+    <Panel>
+      <MailCheck aria-hidden className="mb-4 h-6 w-6 text-verdigris" />
+      <h1 className="type-h3 text-millscale">Enter your sign-in code</h1>
+      <p className="type-body mt-3">
+        If <span className="font-medium text-millscale">{email}</span> has a
+        workspace, a six-digit code is on its way. It works for 10 minutes.
+      </p>
+      <form action={verifySignInCode} className="mt-6">
+        <input type="hidden" name="email" value={email} />
+        <label htmlFor="code" className="type-label block text-millscale">
+          Six-digit code
+        </label>
+        <input
+          id="code"
+          name="code"
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          pattern="[0-9]{6}"
+          maxLength={6}
+          required
+          autoFocus
+          aria-describedby={error ? "code-error" : undefined}
+          className="mt-2 w-full border border-zinc-dust bg-galvanise px-3 py-3 text-center text-2xl tracking-[0.35em] text-millscale"
+        />
+        {error === "code" ? (
+          <p id="code-error" role="alert" className="mt-3 text-sm text-rust-flag">
+            That code isn&rsquo;t right. Check the email and try again.
+          </p>
+        ) : null}
+        <SubmitButton pendingLabel="Checking code…" className="btn-primary mt-5 w-full">
+          Sign in
+        </SubmitButton>
+      </form>
+      <Link
+        href="/sign-in"
+        className="mt-6 inline-block text-sm font-medium text-verdigris underline underline-offset-4"
+      >
+        Use another method
+      </Link>
+    </Panel>
+  );
+}
+
 export default async function SignInPage({
   searchParams,
 }: {
   searchParams: Promise<{
     sent?: string;
+    code_sent?: string;
     error?: string;
   }>;
 }) {
@@ -98,17 +150,18 @@ export default async function SignInPage({
   // page. Send them where they were going.
   if (await currentClient()) redirect("/dashboard");
 
-  const { sent, error } = await searchParams;
+  const { sent, code_sent: codeSent, error } = await searchParams;
 
   if (sent) return <Sent email={sent} />;
+  if (codeSent) return <CodeSent email={codeSent} error={error} />;
 
   return (
     <Panel>
       <h1 className="type-h3 text-millscale">Open your dashboard</h1>
       <p className="type-body mt-3">
-        Your documents and your review live behind the email address you filled
-        the gap check in with. Enter it and we&rsquo;ll send a link &mdash;
-        there is no password to remember.
+        Your documents and review live behind your email address. Choose a
+        magic link or a six-digit code &mdash; there is no password to
+        remember.
       </p>
 
       <form action={requestSignInLink} className="mt-6">
@@ -127,6 +180,28 @@ export default async function SignInPage({
           className="mt-2 w-full border border-zinc-dust bg-galvanise px-3 py-2 text-sm text-millscale"
         />
 
+        <fieldset className="mt-5">
+          <legend className="type-label text-millscale">
+            How should we sign you in?
+          </legend>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <label className="cursor-pointer border border-zinc-dust p-3 text-sm text-millscale has-checked:border-verdigris has-checked:bg-verdigris/8">
+              <input
+                type="radio"
+                name="method"
+                value="link"
+                defaultChecked
+                className="mr-2"
+              />
+              Magic link
+            </label>
+            <label className="cursor-pointer border border-zinc-dust p-3 text-sm text-millscale has-checked:border-verdigris has-checked:bg-verdigris/8">
+              <input type="radio" name="method" value="code" className="mr-2" />
+              Email code
+            </label>
+          </div>
+        </fieldset>
+
         {error ? (
           <p id="sign-in-error" role="alert" className="mt-3 text-sm text-rust-flag">
             {ERRORS[error] ?? ERRORS.unavailable}
@@ -140,10 +215,10 @@ export default async function SignInPage({
           press it again, and three presses is the per-address rate limit.
         */}
         <SubmitButton
-          pendingLabel="Sending your link…"
+          pendingLabel="Sending…"
           className="btn-primary mt-5 w-full"
         >
-          Email me a link
+          Continue
         </SubmitButton>
       </form>
 

@@ -478,6 +478,29 @@ ${heading("Didn't ask for this?")}
   );
 }
 
+export function signInCodeHtml(code: string, minutes: number): string {
+  const safeCode = esc(code);
+  const inner = `${paragraph("Here is your sign-in code.")}
+${paragraph(`Enter it on ${SITE_NAME} to open your dashboard.`, 14)}
+
+<tr><td style="padding:18px 32px 12px 32px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;background-color:${GALVANISE};border:1px solid ${ZINC_DUST};">
+    <tr><td style="padding:18px;text-align:center;font-family:${MONO_FONT};font-size:30px;font-weight:700;letter-spacing:8px;color:${MILLSCALE};">${safeCode}</td></tr>
+  </table>
+</td></tr>
+
+${paragraph(`The code stops working after ${minutes} minutes. Signing in keeps you signed in on this device for 7 days.`, 13)}
+
+${heading("Didn't ask for this?")}
+${paragraph("Ignore this email. Nothing has been opened and nothing has changed.", 13)}`;
+
+  return shell(
+    inner,
+    `Your sign-in code — good for ${minutes} minutes.`,
+    "Sign-in code",
+  );
+}
+
 /** The HTML twin of the explainer, sent when there is no analysis to send. */
 export function explainerHtml(row: SubmissionRow, unreadable: string[]): string {
   const inner = `${preliminaryNotice()}

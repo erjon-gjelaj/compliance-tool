@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { pageMetadata } from "@/lib/metadata";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { programById } from "@/lib/programs/registry";
 import { isOfferable } from "@/lib/programs/types";
 import { companyContextFor } from "@/lib/programs/store";
@@ -27,8 +27,8 @@ export default async function ProgramPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const { id } = await params;
   const template = programById(id);
@@ -38,7 +38,7 @@ export default async function ProgramPage({
   // thing this product avoids everywhere else.
   if (!template || !isOfferable(template.release)) notFound();
 
-  const context = await companyContextFor(session.email);
+  const context = await companyContextFor(workspace.email);
 
   // The document is prepared in the company's name, so there is nothing
   // sensible to generate without one. Sent to the profile rather than shown a

@@ -294,3 +294,14 @@ export async function emailHasSubmissions(email: string): Promise<boolean> {
 
   return (count ?? 0) > 0;
 }
+
+export async function emailHasWorkspace(email: string): Promise<boolean> {
+  const supabase = getSupabaseAdminClient();
+  const { count, error } = await supabase
+    .from("companies")
+    .select("id", { count: "exact", head: true })
+    .ilike("email", emailPattern(email));
+
+  if (error) return false;
+  return (count ?? 0) > 0;
+}

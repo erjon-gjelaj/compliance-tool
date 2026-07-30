@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { signedUrlFor } from "@/lib/documents";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { getDocumentForEmail } from "@/lib/dashboard";
 
 /**
@@ -25,12 +25,12 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await currentClient();
+  const workspace = await currentWorkspace();
 
   // 401 rather than a redirect to sign-in: this is a file endpoint, and a
   // signed-out request for it is usually a stale tab rather than a person
   // navigating.
-  if (!session) {
+  if (!workspace) {
     return new NextResponse("Sign in to download your documents.", {
       status: 401,
       headers: { "Cache-Control": "no-store" },
@@ -38,7 +38,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const document = await getDocumentForEmail(session.email, id);
+  const document = await getDocumentForEmail(workspace.email, id);
 
   // Not found and not yours are the same response deliberately. Telling the
   // two apart would confirm that a guessed id belongs to somebody.

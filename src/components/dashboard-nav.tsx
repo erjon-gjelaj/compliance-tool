@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Building2,
+  CalendarClock,
   FileSignature,
   FileStack,
   LayoutDashboard,
   LifeBuoy,
   MessageSquare,
+  Users,
 } from "lucide-react";
 
 /**
@@ -31,12 +33,24 @@ const SECTIONS = [
   { href: "/dashboard/requests", label: "Requests", icon: MessageSquare },
   { href: "/dashboard/documents", label: "Documents", icon: FileStack },
   { href: "/dashboard/programs", label: "Programs", icon: FileSignature },
+  { href: "/dashboard/maintenance", label: "Maintenance", icon: CalendarClock },
   { href: "/dashboard/company", label: "Company", icon: Building2 },
   { href: "/dashboard/help", label: "Ask for help", icon: LifeBuoy },
 ] as const;
 
-export function DashboardNav() {
+export function DashboardNav({
+  canManageClients = false,
+}: {
+  canManageClients?: boolean;
+}) {
   const pathname = usePathname();
+  const sections = canManageClients
+    ? [
+        ...SECTIONS.slice(0, 6),
+        { href: "/dashboard/clients", label: "Clients", icon: Users },
+        ...SECTIONS.slice(6),
+      ]
+    : SECTIONS;
 
   /*
    * Overview must match exactly. Every other section owns its subtree, so a
@@ -49,7 +63,7 @@ export function DashboardNav() {
   return (
     <nav aria-label="Workspace" className="lg:w-52 lg:shrink-0">
       <ul className="flex gap-1 overflow-x-auto border-b border-zinc-dust lg:flex-col lg:gap-0.5 lg:border-b-0">
-        {SECTIONS.map(({ href, label, icon: Icon }) => {
+        {sections.map(({ href, label, icon: Icon }) => {
           const active = isActive(href);
 
           return (

@@ -37,6 +37,8 @@ export type DocumentMeta = {
   version: number;
   effectiveDate: string;
   revisionDate: string | null;
+  /** Optional consultant brand, printed without adding product branding. */
+  preparedBy?: string | null;
   /** PNG or JPEG bytes. Absent is normal and changes only the cover. */
   logo?: Uint8Array;
 };
@@ -160,6 +162,17 @@ export async function renderDocx(
       spacing: { after: 1200 },
       children: [new TextRun({ text: meta.title, size: 36 })],
     }),
+    ...(meta.preparedBy
+      ? [
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 600 },
+            children: [
+              new TextRun({ text: `Prepared by ${meta.preparedBy}`, size: 22 }),
+            ],
+          }),
+        ]
+      : []),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 60 },

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { getCompanyForEmail } from "@/lib/companies";
 import { recordServiceRequest } from "@/lib/service-requests";
 import { MAX_SERVICE_NOTE, isServiceKind } from "@/lib/service-kinds";
@@ -25,8 +25,8 @@ export async function requestHelp(
   _previous: HelpState,
   formData: FormData,
 ): Promise<HelpState> {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const kind = formData.get("kind");
 
@@ -47,10 +47,10 @@ export async function requestHelp(
   const submissionId = formData.get("submission_id");
 
   try {
-    const company = await getCompanyForEmail(session.email);
+    const company = await getCompanyForEmail(workspace.email);
 
     await recordServiceRequest({
-      email: session.email,
+      email: workspace.email,
       kind,
       note: note || null,
       companyId: company?.id ?? null,
@@ -71,7 +71,7 @@ export async function requestHelp(
    * sitting in the table, would be the worse error of the two.
    */
   try {
-    await notifyServiceRequest({ email: session.email, kind, note: note || null });
+    await notifyServiceRequest({ email: workspace.email, kind, note: note || null });
   } catch (cause) {
     console.error("Could not notify about a service request:", cause);
   }

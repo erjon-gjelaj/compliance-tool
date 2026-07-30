@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { programById } from "@/lib/programs/registry";
 import { isOfferable } from "@/lib/programs/types";
 import {
@@ -49,8 +49,8 @@ export async function answerProgramStep(
   _previous: ProgramFormState,
   formData: FormData,
 ): Promise<ProgramFormState> {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const programId = String(formData.get("program_id") ?? "");
   const template = programById(programId);
@@ -59,7 +59,7 @@ export async function answerProgramStep(
     return { status: "error", answers: {}, error: "That program isn't available." };
   }
 
-  const context = await companyContextFor(session.email);
+  const context = await companyContextFor(workspace.email);
 
   if (!context) {
     return {
@@ -96,7 +96,7 @@ export async function answerProgramStep(
   }
 
   const outcome = await generateVersion({
-    email: session.email,
+    email: workspace.email,
     programId,
     answers,
   });
@@ -131,8 +131,8 @@ export async function reviseDocument(
   _previous: RevisionState,
   formData: FormData,
 ): Promise<RevisionState> {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const documentId = String(formData.get("document_id") ?? "");
 
@@ -175,7 +175,7 @@ export async function reviseDocument(
   }
 
   const outcome = await reviseVersion({
-    email: session.email,
+    email: workspace.email,
     documentId,
     request,
     clarifications,

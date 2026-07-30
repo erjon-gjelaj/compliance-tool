@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { SITE_URL } from "@/lib/constants";
-import { emailHasSubmissions } from "@/lib/dashboard";
+import { emailHasSubmissions, emailHasWorkspace } from "@/lib/dashboard";
 import { sendSignInLink, smtpConfigured } from "@/lib/notify";
 import {
   SIGN_IN_CALLER_LIMIT,
@@ -81,7 +81,7 @@ export async function requestSignInLink(formData: FormData): Promise<never> {
   // Checked before signing, so an address with nothing behind it never
   // receives a working token. It costs one query to avoid mailing a
   // credential to someone who never gave us anything.
-  if (!(await emailHasSubmissions(email))) {
+  if (!(await emailHasSubmissions(email)) && !(await emailHasWorkspace(email))) {
     console.warn("Sign-in link requested for an address with no submissions.");
     redirect(sent);
   }

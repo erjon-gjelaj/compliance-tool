@@ -26,11 +26,12 @@ import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
 const ISSUER = "certloop";
 
-export type TokenPurpose = "session" | "sign-in";
+export type TokenPurpose = "session" | "sign-in" | "company-invite";
 
 /** How long each kind of token lives. The link is short on purpose. */
 export const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 export const SIGN_IN_TTL_SECONDS = 15 * 60;
+export const COMPANY_INVITE_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 export type ClientToken = {
   /** The email address the token speaks for, already normalised. */
@@ -110,7 +111,12 @@ export async function signToken(
   email: string,
   purpose: TokenPurpose,
 ): Promise<string> {
-  const ttl = purpose === "session" ? SESSION_TTL_SECONDS : SIGN_IN_TTL_SECONDS;
+  const ttl =
+    purpose === "session"
+      ? SESSION_TTL_SECONDS
+      : purpose === "company-invite"
+        ? COMPANY_INVITE_TTL_SECONDS
+        : SIGN_IN_TTL_SECONDS;
 
   return new SignJWT({ purpose } satisfies JWTPayload & { purpose: TokenPurpose })
     .setProtectedHeader({ alg: "HS256" })

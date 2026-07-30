@@ -2,6 +2,7 @@ import "server-only";
 
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { getCompanyForEmail } from "@/lib/companies";
+import { can, planOf } from "@/lib/entitlements";
 import { PROGRAMS, programById } from "@/lib/programs/registry";
 import { assembleProgram } from "@/lib/programs/assemble";
 import { validateDocument } from "@/lib/programs/validate";
@@ -118,6 +119,16 @@ export async function companyContextFor(
   const company = await getCompanyForEmail(email);
   if (!company?.name?.trim()) return null;
 
+  const manager = company.managed_by_email
+    ? await getCompanyForEmail(company.managed_by_email)
+    : null;
+  const preparedBy =
+    manager &&
+    can(planOf(manager), "white_label") &&
+    manager.consultant_brand_name?.trim()
+      ? manager.consultant_brand_name.trim()
+      : null;
+
   return {
     companyName: company.name,
     trade: company.trade,
@@ -129,6 +140,7 @@ export async function companyContextFor(
     // Logos are not stored yet — the profile takes a website, not a file.
     // Null here is the ordinary case and the cover handles it.
     logoUrl: null,
+    preparedBy,
   };
 }
 
@@ -336,6 +348,7 @@ export async function generateVersion({
             year: "numeric",
           })
         : null,
+    preparedBy: context.preparedBy,
   };
 
   return publishVersion({
@@ -598,6 +611,7 @@ export async function reviseVersion({
       version,
       effectiveDate: formatted,
       revisionDate: formatted,
+      preparedBy: context.preparedBy,
     },
     sections: analysis.revisedDocument,
     // The answers ride along unchanged: they are still what the customer told

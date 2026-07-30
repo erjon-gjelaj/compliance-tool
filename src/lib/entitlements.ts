@@ -39,9 +39,9 @@ export const CAPABILITIES = [
   "document_preparation",
   /** Word and PDF exports of prepared documents. Not built. */
   "document_export",
-  /** Hold and switch between several contractors' workspaces. Not built. */
+  /** Hold and switch between several contractors' workspaces. */
   "multiple_companies",
-  /** Remove CertLoop branding from deliverables. Not built. */
+  /** Put the consultancy's brand on client deliverables. */
   "white_label",
   /** Read anyone's submissions. Ours. */
   "internal_admin",
@@ -106,8 +106,8 @@ export const LOCKED_COPY: Record<Capability, string> = {
   document_export:
     "Formatted Word and PDF versions aren't automatic yet. Ask and we'll put them together.",
   multiple_companies:
-    "Managing several companies isn't available yet. Tell us about your setup and we'll talk it through.",
+    "Managing several companies is available on consultant workspaces.",
   white_label:
-    "Unbranded deliverables aren't available yet. Tell us what you need.",
+    "Consultant-branded deliverables are available on consultant workspaces.",
   internal_admin: "",
 };

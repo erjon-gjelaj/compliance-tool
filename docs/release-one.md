@@ -17,12 +17,12 @@ Judged by "a subcontractor could rely on it", not by "a route exists".
 | Requests for review | **Broken** | Status is a manual label and goes stale. No conversation at all. |
 | Messaging / replies | **Missing** | There is no way for either side to reply in the product. |
 | Reports | **Done** | Hierarchy fixed in 050. |
-| Document library | **Partial** | Uploads only. No drafts, versions, or expiry. |
-| Document generation | **Missing** | Task 040, blocked on source prose. |
+| Document library | **Done** | Uploads, generated versions, and customer-supplied maintenance dates. |
+| Document generation | **Done** | Controlled Word/PDF programs with revisions and version history. |
 | Plans / entitlements | **Partial** | `can()` exists; nothing calls it. No admin way to grant a plan. |
 | Pricing presentation | **Missing** | No prices anywhere, public or private. |
 | Paid workflow | **Partial** | Intent is captured; no order, no quote, no fulfilment. |
-| Consultant support | **Prepared** | Column exists, deliberately unread. |
+| Consultant support | **Done** | Plan-gated client invitations, workspace switching, and eligible export branding. |
 | Admin workflow | **Weak** | Read-only submissions list. No way to reply, set a stage, or grant a plan. |
 | Email notifications | **Partial** | Submission and service request only. Nothing on reply or delivery. |
 | Empty states | **Done** | — |

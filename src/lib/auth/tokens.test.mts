@@ -50,6 +50,17 @@ test("a session token cannot be replayed as a sign-in link", async () => {
   assert.equal(await verifyToken(session, "sign-in"), null);
 });
 
+test("a company invitation cannot be replayed as a session", async () => {
+  const invitation = await signToken("client@example.com", "company-invite");
+
+  assert.equal(await verifyToken(invitation, "session"), null);
+  assert.equal(await verifyToken(invitation, "sign-in"), null);
+  assert.equal(
+    (await verifyToken(invitation, "company-invite"))?.email,
+    "client@example.com",
+  );
+});
+
 test("a tampered payload is refused", async () => {
   const token = await signToken("sam@example.com", "session");
   const [header, payload, signature] = token.split(".");

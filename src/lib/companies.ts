@@ -46,6 +46,11 @@ export type CompanyRow = {
   hiring_clients: string[] | null;
   operations: string | null;
   field_sources: Record<string, FieldProvenance>;
+  plan: string;
+  managed_by_email: string | null;
+  consultant_brand_name: string | null;
+  invited_at: string | null;
+  accepted_at: string | null;
 };
 
 /** The fields a profile holds, in the order they are asked for. */
@@ -90,6 +95,114 @@ export function unconfirmedFields(
 
 function emailPattern(email: string): string {
   return email.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
+/** Companies a consultant is explicitly recorded as managing. */
+export async function listManagedCompanies(
+  consultantEmail: string,
+): Promise<CompanyRow[]> {
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("companies")
+    .select("*")
+    .ilike("managed_by_email", emailPattern(consultantEmail))
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw new Error(`Could not list managed companies: ${error.message}`);
+  }
+
+  return (data ?? []) as CompanyRow[];
+}
+
+/** A managed company, only when this consultant owns that relationship. */
+export async function getManagedCompany(
+  consultantEmail: string,
+  companyId: string,
+): Promise<CompanyRow | null> {
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("companies")
+    .select("*")
+    .eq("id", companyId)
+    .ilike("managed_by_email", emailPattern(consultantEmail))
+    .maybeSingle();
+
+  if (error) return null;
+  return (data as CompanyRow | null) ?? null;
+}
+
+/**
+ * Creates or updates a client workspace and records that an invitation was
+ * sent. The owner email remains the workspace identity.
+ */
+export async function inviteManagedCompany({
+  consultantEmail,
+  clientEmail,
+  companyName,
+}: {
+  consultantEmail: string;
+  clientEmail: string;
+  companyName: string;
+}): Promise<CompanyRow> {
+  const supabase = getSupabaseAdminClient();
+  const existing = await getCompanyForEmail(clientEmail);
+  const invitedAt = new Date().toISOString();
+
+  if (existing) {
+    if (
+      existing.managed_by_email &&
+      existing.managed_by_email.toLowerCase() !== consultantEmail.toLowerCase()
+    ) {
+      throw new Error("That company is already managed by another account.");
+    }
+
+    const { data, error } = await supabase
+      .from("companies")
+      .update({
+        name: companyName,
+        managed_by_email: consultantEmail,
+        invited_at: invitedAt,
+      })
+      .eq("id", existing.id)
+      .select("*")
+      .single();
+
+    if (error || !data) {
+      throw new Error(`Could not update the client workspace: ${error?.message}`);
+    }
+    return data as CompanyRow;
+  }
+
+  const { data, error } = await supabase
+    .from("companies")
+    .insert({
+      email: clientEmail,
+      name: companyName,
+      managed_by_email: consultantEmail,
+      invited_at: invitedAt,
+      field_sources: {},
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    throw new Error(`Could not create the client workspace: ${error?.message}`);
+  }
+  return data as CompanyRow;
+}
+
+export async function markCompanyInvitationAccepted(email: string): Promise<void> {
+  const supabase = getSupabaseAdminClient();
+  const { error } = await supabase
+    .from("companies")
+    .update({ accepted_at: new Date().toISOString() })
+    .ilike("email", emailPattern(email))
+    .is("accepted_at", null);
+
+  if (error) {
+    console.warn(`Could not mark invitation accepted: ${error.message}`);
+  }
 }
 
 export async function getCompanyForEmail(

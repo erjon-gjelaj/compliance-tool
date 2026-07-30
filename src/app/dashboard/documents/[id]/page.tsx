@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, FileDown, History } from "lucide-react";
 
 import { pageMetadata } from "@/lib/metadata";
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { getDocumentForEmail } from "@/lib/programs/store";
 import { programById } from "@/lib/programs/registry";
 import { REVISION_PROMISE } from "@/lib/pricing";
@@ -34,11 +34,11 @@ export default async function GeneratedDocumentPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await currentClient();
-  if (!session) redirect("/sign-in");
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
 
   const { id } = await params;
-  const document = await getDocumentForEmail(session.email, id);
+  const document = await getDocumentForEmail(workspace.email, id);
 
   /*
    * Not yours, not real, and never successfully generated all render

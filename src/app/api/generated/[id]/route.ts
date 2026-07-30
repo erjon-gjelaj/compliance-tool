@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { currentClient } from "@/lib/auth/session";
+import { currentWorkspace } from "@/lib/workspaces";
 import { signedUrlForVersion } from "@/lib/programs/store";
 
 /**
@@ -15,18 +15,18 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await currentClient();
+  const workspace = await currentWorkspace();
 
   // A signed-out request here is usually a stale tab, so it is a redirect to
   // sign in rather than a bare 401.
-  if (!session) {
+  if (!workspace) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
   const { id } = await params;
   const format = request.nextUrl.searchParams.get("format") === "docx" ? "docx" : "pdf";
 
-  const url = await signedUrlForVersion({ email: session.email, versionId: id, format });
+  const url = await signedUrlForVersion({ email: workspace.email, versionId: id, format });
 
   // Not found and not yours are the same response, so a guessed uuid tells
   // you nothing about whether it is real.

@@ -325,15 +325,15 @@
     {
       "id": "052",
       "title": "Stage 8: consultant workspace (later)",
-      "status": "todo",
-      "notes": "Partially prepared by 051: companies.managed_by_email exists, the consultant plan holds multiple_companies and white_label in lib/entitlements, and nothing reads either yet. What remains is the workspace switcher, client invitations and branded exports - none of which should be started until there is a consultant asking for them.",
+      "status": "done",
+      "notes": "Done. Consultant-plan accounts now get a guarded workspace switcher and Clients section; contractor accounts never see either. Every selected workspace is re-authorized against plan capability and companies.managed_by_email on every request, so a forged workspace cookie grants nothing. Consultants can create client company rows, send seven-day invitation links, see invitation acceptance, and set the consultancy name printed as Prepared by on generated Word/PDF exports. Client owners accept through an isolated invitation-token purpose and can subsequently request ordinary sign-in links even before making a submission. All dashboard reads, writes, request replies, generation/revision actions, and both download APIs scope to the authorized active contractor while retaining the consultant as the signed-in viewer. Added migration 0011 and focused workspace/token tests; lint and production build pass. NEEDS MIGRATION 0011 RUN.",
       "needs_human_review": false
     },
     {
       "id": "053",
-      "title": "Stage 9: maintenance and expiries (later)",
-      "status": "todo",
-      "notes": "Revision dates, expiries, annual reminders, version history - only about dates we were given, never about changes we are guessing at.",
+      "title": "Stage 9: maintenance and expiries",
+      "status": "done",
+      "notes": "Done. Added customer-supplied expiry and review reminders attached to owned uploaded or generated documents. The maintenance page lists overdue and due-soon dates, supports notes and removal, and the overview surfaces dates within 60 days. Ownership is checked before every write, workspace reads remain email-scoped, and no date is inferred from a file, platform, regulation, or requirement change. Existing generated-document version history completes the maintenance scope. Requires supabase/migrations/0012_document_maintenance.sql.",
       "needs_human_review": false
     },
     {

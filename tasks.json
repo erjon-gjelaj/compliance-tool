@@ -388,8 +388,8 @@
     {
       "id": "061",
       "title": "Program 4: Incident Reporting and Investigation",
-      "status": "todo",
-      "notes": "IN PROGRESS — paused at user request on 2026-07-30. Draft implementation exists locally and is uncommitted in src/lib/programs/incident-reporting.ts, with draft regression tests in src/lib/programs/incident-reporting.test.mts and a registry entry in src/lib/programs/registry.ts. The draft is customer-available with 6 questions: first internal contact, reporting route, host-site work, investigator role, corrective-action owner, and records location. It deliberately has no requirementId because lib/requirements and the intake contain no incident-reporting category; do not invent a platform requirement join without a separate product decision. The policy covers report scope, immediate response and notification order, scene/evidence control, cause-focused investigation, information recorded, conditional host-site coordination, event-specific external reporting review, corrective actions, records, and review. It avoids hard-coded external reporting deadlines and does not declare a specific event recordable or reportable. Official references reviewed: OSHA 1904.35 employee reporting/anti-retaliation, 1904.39 severe-event reporting, and OSHA Incident Investigation guidance. NOT YET DONE: no targeted tests, full suite, lint, production build, or final diff review have been run after these edits; task must remain todo until they pass. After verification, update this note/status and current_task_id, then commit/push/merge only if requested.",
+      "status": "done",
+      "notes": "Done. Added a deterministic, customer-available Incident Reporting and Investigation Program with 6 questions covering the first internal contact, reporting route, host-site work, investigator role, corrective-action owner, and records location. The policy covers report scope and anti-retaliation, immediate response and notification order, scene/evidence control, cause-focused investigation, information recorded, conditional host-site coordination, event-specific external reporting review, corrective actions, records, and programme review. It deliberately has no requirementId because lib/requirements and the intake contain no incident-reporting category; no platform requirement was invented. It avoids hard-coded external reporting deadlines and does not declare a specific event recordable or reportable. Official references reviewed: OSHA 1904.35 employee reporting/anti-retaliation, 1904.39 severe-event reporting, and OSHA Incident Investigation guidance. Added 8 regression tests; full suite 227 passing, lint passing, and production build passing.",
       "needs_human_review": false
     },
     {
@@ -442,6 +442,6 @@
       "needs_human_review": false
     }
   ],
-  "current_task_id": "061",
+  "current_task_id": null,
   "blocked_on": null
 }

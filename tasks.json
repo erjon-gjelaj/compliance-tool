@@ -475,6 +475,13 @@
       "status": "done",
       "notes": "Done. The sign-in page now offers either the existing 15-minute magic link or a six-digit email code. Codes expire after 10 minutes, allow five attempts, use a signed HTTP-only challenge cookie, store only an HMAC digest, and open the same seven-day session on success. Request throttling and account-enumeration protections are shared with magic links. Added plain-text and HTML code emails plus token isolation, matching, attempt, and email rendering tests; no database migration is required.",
       "needs_human_review": false
+    },
+    {
+      "id": "074",
+      "title": "Improve homepage layout and visual hierarchy",
+      "status": "done",
+      "notes": "Done. Reworked the homepage's repeated card-grid rhythm into three distinct visual stages. The entry routes now use a guided split layout with numbered, scan-friendly rows; the process is a compact dark sequence band with shorter copy; and the hero and intake remain calm light anchors. Updated the written-program route to describe automatic preparation accurately. The information architecture and four existing entry destinations are unchanged.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": null,

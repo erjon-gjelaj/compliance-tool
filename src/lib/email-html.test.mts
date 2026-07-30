@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 
-import { signInHtml } from "./email-html.ts";
+import { signInCodeHtml, signInHtml } from "./email-html.ts";
 
 /**
  * The sign-in email carries a credential, so the properties worth testing are
@@ -58,4 +58,11 @@ test("it says nothing about the account it belongs to", () => {
 
   assert.doesNotMatch(html, /submission/i);
   assert.doesNotMatch(html, /gap check/i);
+});
+
+test("the code email carries the code and its expiry without a link", () => {
+  const html = signInCodeHtml("042731", 10);
+  assert.match(html, /042731/);
+  assert.match(html, /after 10 minutes/);
+  assert.doesNotMatch(html, /href=/);
 });

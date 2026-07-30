@@ -8,6 +8,7 @@ import {
   analysisHtml,
   confirmationHtml,
   explainerHtml,
+  signInCodeHtml,
   signInHtml,
 } from "@/lib/email-html";
 
@@ -778,6 +779,42 @@ export async function sendSignInLink(
     // Server-side only: SMTP errors can carry the host and username, and this
     // one would also carry the address that asked.
     console.error("Sign-in link failed to send:", cause);
+    return false;
+  } finally {
+    transport.close();
+  }
+}
+
+export async function sendSignInCode(
+  email: string,
+  code: string,
+  minutes: number,
+): Promise<boolean> {
+  const config = readSmtpConfig();
+  if (!config) return false;
+  const transport = buildTransport(config);
+
+  try {
+    await transport.sendMail({
+      from: config.from,
+      to: email,
+      subject: `Your ${SITE_NAME} sign-in code`,
+      text: [
+        `Your ${SITE_NAME} sign-in code is:`,
+        "",
+        code,
+        "",
+        `The code stops working after ${minutes} minutes.`,
+        "Signing in keeps you signed in on this device for 7 days.",
+        "",
+        "If you did not ask for this code, ignore this email. Nothing has",
+        "been opened and nothing has changed.",
+      ].join("\n"),
+      html: signInCodeHtml(code, minutes),
+    });
+    return true;
+  } catch (cause) {
+    console.error("Sign-in code failed to send:", cause);
     return false;
   } finally {
     transport.close();

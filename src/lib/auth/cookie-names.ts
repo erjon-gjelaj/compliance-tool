@@ -27,3 +27,6 @@ export const SESSION_HINT_COOKIE = "certloop_signed_in";
  * decision is ever allowed to consult.
  */
 export const SESSION_COOKIE = "certloop_session";
+
+/** Short-lived, signed challenge used while entering an emailed code. */
+export const SIGN_IN_CODE_COOKIE = "certloop_sign_in_code";

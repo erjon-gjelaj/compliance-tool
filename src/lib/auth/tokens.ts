@@ -1,6 +1,7 @@
 import "server-only";
 
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
+import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 
 /**
  * Signing and verifying the two tokens this project uses.
@@ -26,11 +27,17 @@ import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
 const ISSUER = "certloop";
 
-export type TokenPurpose = "session" | "sign-in" | "company-invite";
+export type TokenPurpose =
+  | "session"
+  | "sign-in"
+  | "sign-in-code"
+  | "company-invite";
 
 /** How long each kind of token lives. The link is short on purpose. */
 export const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 export const SIGN_IN_TTL_SECONDS = 15 * 60;
+export const SIGN_IN_CODE_TTL_SECONDS = 10 * 60;
+export const SIGN_IN_CODE_MAX_ATTEMPTS = 5;
 export const COMPANY_INVITE_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 export type ClientToken = {
@@ -116,6 +123,8 @@ export async function signToken(
       ? SESSION_TTL_SECONDS
       : purpose === "company-invite"
         ? COMPANY_INVITE_TTL_SECONDS
+        : purpose === "sign-in-code"
+          ? SIGN_IN_CODE_TTL_SECONDS
         : SIGN_IN_TTL_SECONDS;
 
   return new SignJWT({ purpose } satisfies JWTPayload & { purpose: TokenPurpose })
@@ -126,6 +135,110 @@ export async function signToken(
     .setIssuedAt()
     .setExpirationTime(`${ttl}s`)
     .sign(signingKey());
+}
+
+export type EmailCodeChallenge = ClientToken & {
+  purpose: "sign-in-code";
+  digest: string;
+  attempts: number;
+};
+
+function digestCode(code: string): string {
+  return createHmac("sha256", signingKey()).update(code).digest("base64url");
+}
+
+export function generateSignInCode(): string {
+  return randomInt(0, 1_000_000).toString().padStart(6, "0");
+}
+
+async function signCodeChallenge({
+  email,
+  digest,
+  attempts,
+  expiresAt,
+}: {
+  email: string;
+  digest: string;
+  attempts: number;
+  expiresAt?: number;
+}): Promise<string> {
+  return new SignJWT({
+    purpose: "sign-in-code",
+    code_digest: digest,
+    attempts,
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuer(ISSUER)
+    .setAudience("sign-in-code")
+    .setSubject(normaliseEmail(email))
+    .setIssuedAt()
+    .setExpirationTime(expiresAt ?? `${SIGN_IN_CODE_TTL_SECONDS}s`)
+    .sign(signingKey());
+}
+
+export async function createSignInCodeChallenge(
+  email: string,
+  code: string,
+): Promise<string> {
+  return signCodeChallenge({ email, digest: digestCode(code), attempts: 0 });
+}
+
+export async function verifySignInCodeChallenge(
+  token: string,
+): Promise<EmailCodeChallenge | null> {
+  try {
+    const { payload } = await jwtVerify(token, signingKey(), {
+      issuer: ISSUER,
+      audience: "sign-in-code",
+      algorithms: ["HS256"],
+    });
+
+    if (payload.purpose !== "sign-in-code") return null;
+    if (typeof payload.sub !== "string" || !payload.sub) return null;
+    if (typeof payload.exp !== "number") return null;
+    if (typeof payload.code_digest !== "string") return null;
+    if (
+      typeof payload.attempts !== "number" ||
+      !Number.isInteger(payload.attempts) ||
+      payload.attempts < 0
+    ) {
+      return null;
+    }
+
+    return {
+      email: payload.sub,
+      purpose: "sign-in-code",
+      expiresAt: payload.exp,
+      digest: payload.code_digest,
+      attempts: payload.attempts,
+    };
+  } catch (cause) {
+    const reason = cause instanceof Error ? cause.message : "unknown";
+    console.warn(`Rejected a sign-in-code token: ${reason}`);
+    return null;
+  }
+}
+
+export function signInCodeMatches(
+  challenge: EmailCodeChallenge,
+  code: string,
+): boolean {
+  const expected = Buffer.from(challenge.digest);
+  const received = Buffer.from(digestCode(code));
+  return (
+    expected.length === received.length && timingSafeEqual(expected, received)
+  );
+}
+
+export async function incrementSignInCodeAttempts(
+  challenge: EmailCodeChallenge,
+): Promise<string> {
+  return signCodeChallenge({
+    email: challenge.email,
+    digest: challenge.digest,
+    attempts: challenge.attempts + 1,
+    expiresAt: challenge.expiresAt,
+  });
 }
 
 /**

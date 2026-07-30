@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, MailCheck } from "lucide-react";
+import { ArrowLeft, KeyRound, Link2, MailCheck } from "lucide-react";
 
 import { CONTACT_EMAIL, SITE_NAME } from "@/lib/constants";
 import { GAP_CHECK_HREF } from "@/lib/nav";
@@ -37,8 +37,10 @@ export const dynamic = "force-dynamic";
 
 function Panel({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col justify-center px-6 py-16">
-      <div className="border border-zinc-dust bg-paper p-8">{children}</div>
+    <main className="mx-auto flex min-h-[72vh] w-full max-w-xl flex-col justify-center px-6 py-16">
+      <div className="border border-zinc-dust bg-paper p-8 sm:p-10">
+        {children}
+      </div>
       <Link
         href="/"
         className="mt-6 inline-flex items-center gap-2 text-sm text-slate-wash underline-offset-4 hover:underline"
@@ -180,28 +182,6 @@ export default async function SignInPage({
           className="mt-2 w-full border border-zinc-dust bg-galvanise px-3 py-2 text-sm text-millscale"
         />
 
-        <fieldset className="mt-5">
-          <legend className="type-label text-millscale">
-            How should we sign you in?
-          </legend>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <label className="cursor-pointer border border-zinc-dust p-3 text-sm text-millscale has-checked:border-verdigris has-checked:bg-verdigris/8">
-              <input
-                type="radio"
-                name="method"
-                value="link"
-                defaultChecked
-                className="mr-2"
-              />
-              Magic link
-            </label>
-            <label className="cursor-pointer border border-zinc-dust p-3 text-sm text-millscale has-checked:border-verdigris has-checked:bg-verdigris/8">
-              <input type="radio" name="method" value="code" className="mr-2" />
-              Email code
-            </label>
-          </div>
-        </fieldset>
-
         {error ? (
           <p id="sign-in-error" role="alert" className="mt-3 text-sm text-rust-flag">
             {ERRORS[error] ?? ERRORS.unavailable}
@@ -214,12 +194,26 @@ export default async function SignInPage({
           Without feedback the honest response to a dead-looking button is to
           press it again, and three presses is the per-address rate limit.
         */}
-        <SubmitButton
-          pendingLabel="Sending…"
-          className="btn-primary mt-5 w-full"
-        >
-          Continue
-        </SubmitButton>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <SubmitButton
+            name="method"
+            value="link"
+            pendingLabel="Sending…"
+            className="btn-primary min-h-12 w-full justify-center"
+            icon={<Link2 aria-hidden className="h-4 w-4" />}
+          >
+            Send me a magic link
+          </SubmitButton>
+          <SubmitButton
+            name="method"
+            value="code"
+            pendingLabel="Sending…"
+            className="btn-primary min-h-12 w-full justify-center"
+            icon={<KeyRound aria-hidden className="h-4 w-4" />}
+          >
+            Send me a sign-in code
+          </SubmitButton>
+        </div>
       </form>
 
       <p className="type-body mt-6 border-t border-zinc-dust pt-5">

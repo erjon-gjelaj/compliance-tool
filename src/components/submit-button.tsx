@@ -23,6 +23,8 @@ export function SubmitButton({
   pendingLabel,
   className,
   icon,
+  name,
+  value,
 }: {
   children: React.ReactNode;
   /**
@@ -34,11 +36,20 @@ export function SubmitButton({
   className?: string;
   /** Shown only at rest, so it never sits next to the spinner. */
   icon?: React.ReactNode;
+  /** Lets one form expose multiple explicit submit actions. */
+  name?: string;
+  value?: string;
 }) {
   const { pending } = useFormStatus();
 
   return (
-    <button type="submit" disabled={pending} className={className}>
+    <button
+      type="submit"
+      disabled={pending}
+      className={className}
+      name={name}
+      value={value}
+    >
       {pending ? pendingLabel : children}
       {pending ? <Spinner /> : icon}
     </button>

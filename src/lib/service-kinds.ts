@@ -20,6 +20,18 @@ export const SERVICE_KINDS = [
 
 export type ServiceKind = (typeof SERVICE_KINDS)[number];
 
+/**
+ * Work that still starts a conversation with a person.
+ *
+ * `document_preparation` remains in ServiceKind because historical request
+ * rows use it. New document work goes through /dashboard/programs instead.
+ */
+export const MANUAL_SERVICE_KINDS = [
+  "rejection_help",
+  "professional_review",
+  "other",
+] as const satisfies readonly ServiceKind[];
+
 /** What each request is, in the customer's words rather than the schema's. */
 export const SERVICE_LABELS: Record<ServiceKind, string> = {
   document_preparation: "Have a document prepared",

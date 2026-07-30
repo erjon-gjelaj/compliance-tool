@@ -12,7 +12,7 @@ import { HelpForm } from "@/components/help-form";
 
 export const metadata = pageMetadata({
   title: "Ask for help",
-  description: `Ask ${SITE_NAME} for work that is done by hand — a document prepared, a rejection sorted out, a second opinion.`,
+  description: `Prepare a safety program automatically, or ask ${SITE_NAME} for rejection help and professional review.`,
   path: "/dashboard/help",
   robots: { index: false, follow: false },
 });
@@ -42,8 +42,8 @@ export default async function HelpPage({
 
       <h1 className="type-h2 mt-4 text-millscale">Ask for help</h1>
       <p className="type-lede mt-3">
-        Some of this is work a person does rather than software. Say what you
-        need and someone will reply with what it involves.
+        Prepare an available program immediately, or start a conversation for
+        work that still needs a person.
       </p>
 
       <div className="mt-8">

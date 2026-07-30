@@ -30,6 +30,10 @@ export async function requestHelp(
 
   const kind = formData.get("kind");
 
+  // Kept as a database vocabulary value for old requests, but new document
+  // preparation is an automatic questionnaire rather than a service request.
+  if (kind === "document_preparation") redirect("/dashboard/programs");
+
   if (!isServiceKind(kind)) {
     return { status: "editing", error: "Pick what you need a hand with." };
   }

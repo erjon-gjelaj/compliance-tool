@@ -440,6 +440,13 @@
       "status": "done",
       "notes": "Production-sized testing showed that echoing the entire 12-section document was the root reliability and fidelity problem: the random free router returned malformed JSON and zero-byte envelopes, while a pinned model sometimes rewrote an entire target section or guessed through ambiguity. The model now returns only remove_section or exact oldText-to-newText operations. Deterministic code requires an explicitly named existing heading, grounds replacement text in the customer's words, requires explicit removal/replace-all intent, catches contradictions, and applies the patch to the source document so untouched content never passes through model output. Complete malformed JSON can be repaired and revalidated; truncation is never repaired. Empty, malformed, timeout and transient provider failures receive one retry inside the original 45-second budget. The full six-scenario, 12-section live matrix passed on nvidia/nemotron-nano-9b-v2:free; openrouter/free is not production-safe and must not be configured.",
       "needs_human_review": false
+    },
+    {
+      "id": "069",
+      "title": "Route document preparation to automatic generation",
+      "status": "done",
+      "notes": "Done. Replaced the stale manual 'Have a document prepared' request entry with a direct automatic Programs action on the Help and Requests pages. New manual requests are limited to rejection help, professional review, and other work; the historical document_preparation kind remains readable for existing rows and crafted submissions redirect safely to Programs. Updated the public documents copy and removed program-price rows from the human-help form so it no longer contradicts the automatic path.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": null,

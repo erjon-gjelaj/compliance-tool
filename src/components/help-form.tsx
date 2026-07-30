@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { Check } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Check } from "lucide-react";
 
 import { requestHelp, type HelpState } from "@/app/dashboard/help/actions";
 import { SubmitButton } from "@/components/submit-button";
-import { SERVICE_KINDS, SERVICE_LABELS } from "@/lib/service-kinds";
+import { MANUAL_SERVICE_KINDS, SERVICE_LABELS } from "@/lib/service-kinds";
 import { ONE_TIME_SERVICES, PRICING_NOTE, formatMoney } from "@/lib/pricing";
 
 /**
@@ -19,6 +20,9 @@ import { ONE_TIME_SERVICES, PRICING_NOTE, formatMoney } from "@/lib/pricing";
  */
 
 const initial: HelpState = { status: "editing" };
+const HUMAN_OFFERS = ONE_TIME_SERVICES.filter(
+  (offer) => offer.id === "rejection_fix",
+);
 
 export function HelpForm({ submissionId }: { submissionId?: string }) {
   const [state, formAction] = useActionState(requestHelp, initial);
@@ -42,17 +46,34 @@ export function HelpForm({ submissionId }: { submissionId?: string }) {
   }
 
   return (
-    <form action={formAction} className="border border-zinc-dust bg-paper p-6 md:p-8">
+    <div className="grid gap-4">
+      <section className="border-l-2 border-verdigris bg-paper p-6 md:p-8">
+        <p className="tag">Automatic</p>
+        <h2 className="type-h3 mt-2 text-millscale">Prepare a safety program</h2>
+        <p className="type-body mt-2 max-w-xl">
+          Choose a program, answer a few questions about how your company
+          works, and receive finished Word and PDF files.
+        </p>
+        <Link
+          href="/dashboard/programs"
+          className="btn-primary mt-5 inline-flex items-center gap-2"
+        >
+          Choose a program
+          <ArrowRight aria-hidden className="h-4 w-4" />
+        </Link>
+      </section>
+
+      <form action={formAction} className="border border-zinc-dust bg-paper p-6 md:p-8">
       {submissionId ? (
         <input type="hidden" name="submission_id" value={submissionId} />
       ) : null}
 
       <fieldset>
         <legend className="type-label text-millscale">
-          What do you need a hand with?
+          Ask a person for help
         </legend>
         <div className="mt-3 grid gap-2">
-          {SERVICE_KINDS.map((kind, index) => (
+          {MANUAL_SERVICE_KINDS.map((kind, index) => (
             <label
               key={kind}
               className="flex cursor-pointer items-center gap-3 border border-zinc-dust px-4 py-3 text-sm text-millscale hover:border-verdigris"
@@ -106,9 +127,9 @@ export function HelpForm({ submissionId }: { submissionId?: string }) {
         these cannot drift from the pricing page.
       */}
       <div className="mt-6 border-t border-zinc-dust pt-5">
-        <p className="type-label text-millscale">Roughly what paid work costs</p>
+        <p className="type-label text-millscale">Roughly what human work costs</p>
         <ul className="mt-3 grid gap-1.5">
-          {ONE_TIME_SERVICES.map((offer) => (
+          {HUMAN_OFFERS.map((offer) => (
             <li
               key={offer.id}
               className="flex justify-between gap-4 text-sm text-slate-wash"
@@ -125,6 +146,7 @@ export function HelpForm({ submissionId }: { submissionId?: string }) {
         This asks a person to get in touch. There is no payment step, and
         nothing here signs you up to anything.
       </p>
-    </form>
+      </form>
+    </div>
   );
 }

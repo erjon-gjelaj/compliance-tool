@@ -45,12 +45,20 @@ export default async function RequestsPage() {
       */}
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h1 className="type-h2 text-millscale">Requests</h1>
-        <Link
-          href="/dashboard/help"
-          className="text-sm font-medium text-verdigris underline-offset-4 transition-opacity duration-150 hover:underline hover:opacity-80"
-        >
-          Ask for something new
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/dashboard/programs"
+            className="text-sm font-medium text-verdigris underline-offset-4 transition-opacity duration-150 hover:underline hover:opacity-80"
+          >
+            Prepare a program
+          </Link>
+          <Link
+            href="/dashboard/help"
+            className="text-sm font-medium text-verdigris underline-offset-4 transition-opacity duration-150 hover:underline hover:opacity-80"
+          >
+            Ask for help
+          </Link>
+        </div>
       </div>
 
       {requests.length === 0 ? (
@@ -58,13 +66,20 @@ export default async function RequestsPage() {
           <MessageSquare aria-hidden className="mb-4 h-5 w-5 text-slate-wash" />
           <h2 className="type-h3 text-millscale">No requests yet</h2>
           <p className="type-body mt-3 max-w-xl">
-            When you ask us to prepare a document, sort out a rejection, or look
-            over something, it lives here &mdash; with everything either side
-            has said about it.
+            Human help with a rejection, professional review, or another
+            request lives here with everything either side has said about it.
           </p>
-          <Link href="/dashboard/help" className="btn-primary mt-6">
-            Ask for help
-          </Link>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/dashboard/programs" className="btn-primary">
+              Prepare a program
+            </Link>
+            <Link
+              href="/dashboard/help"
+              className="border border-zinc-dust px-4 py-2 text-sm font-medium text-millscale hover:border-verdigris"
+            >
+              Ask for help
+            </Link>
+          </div>
         </div>
       ) : (
         <ul className="mt-8 grid gap-3">

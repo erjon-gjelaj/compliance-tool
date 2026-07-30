@@ -461,6 +461,13 @@
       "status": "done",
       "notes": "Done. Increased the shared uppercase page tag from 11px to 13px with a readable line-height, moderate weight, and less tracking. Simplified the homepage hero around the visitor's task, removed two competitor-focused bullets that delayed the primary action, moved the gap-check CTA higher, and made its time/account reassurance readable. The existing four-door section remains the single place for choosing a more specific path.",
       "needs_human_review": false
+    },
+    {
+      "id": "072",
+      "title": "Signed-out notice did not react to same-page redirects",
+      "status": "done",
+      "notes": "Done. The notice lived in the persistent root layout and checked the URL only on its first mount, so returning to the same public pathname with signed_out=1 changed the query without rerunning the effect. It now observes Next's reactive search parameters inside a Suspense boundary, removes the marker, and preserves the scheduled acknowledgement across the resulting search-param update.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": null,

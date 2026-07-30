@@ -496,6 +496,13 @@
       "status": "done",
       "notes": "Done. Moved the generic intake from a homepage fragment to /gap-check and updated every shared gap-check link plus the generic entry route. The new page uses its available width for a concise expectation panel and a centered max-width form, while the homepage now closes with reassurance and a focused CTA instead of embedding the full intake. Added the new canonical route to the sitemap and retained /setup and the other problem-specific intake routes.",
       "needs_human_review": false
+    },
+    {
+      "id": "077",
+      "title": "Match specialized intake form widths",
+      "status": "done",
+      "notes": "Done. Updated the shared EntryPage form section used by /setup, /rejection, and /documents to match the dedicated /gap-check treatment: a centered max-w-3xl intake, centered explanatory heading, roomier vertical spacing, and a calm paper background. The route-specific hero and result expectations remain unchanged.",
+      "needs_human_review": false
     }
   ],
   "current_task_id": null,

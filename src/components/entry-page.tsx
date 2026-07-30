@@ -67,19 +67,17 @@ export function EntryPage({
       <section
         id="start"
         aria-labelledby="entry-form-heading"
-        className="scroll-mt-8 border-b border-zinc-dust"
+        className="scroll-mt-8 border-b border-zinc-dust bg-paper"
       >
-        <div className="mx-auto max-w-5xl px-6 py-14 md:py-16">
-          <div className="grid gap-10 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-14">
-            <div>
-              <h2 id="entry-form-heading" className="type-h2">
-                {formHeading}
-              </h2>
-              <p className="type-body mt-5">{formNote}</p>
-            </div>
-
-            <IntakeForm entryReason={entryReason} />
+        <div className="mx-auto max-w-3xl px-6 py-14 md:py-20">
+          <div className="mx-auto mb-9 max-w-2xl text-center">
+            <p className="tag">Your company and job</p>
+            <h2 id="entry-form-heading" className="type-h2 mt-4">
+              {formHeading}
+            </h2>
+            <p className="type-body mt-4">{formNote}</p>
           </div>
+          <IntakeForm entryReason={entryReason} />
         </div>
       </section>
     </main>

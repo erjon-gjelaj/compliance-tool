@@ -36,9 +36,9 @@ export default function PricingPage() {
     <main className="flex-1">
       <PageIntro tag="Pricing" tickId="tick-pricing" title="What this costs">
         <p>
-          The gap check is free and stays free. Paid work is the part a person
-          does: writing the programs you are missing, or sorting out a rejection
-          with you.
+          Software analysis is free. Four supported program generators are
+          available in the workspace. Human-assisted preparation, rejection
+          repair, and maintenance are quoted before work starts.
         </p>
       </PageIntro>
 
@@ -48,14 +48,14 @@ export default function PricingPage() {
             <div>
               <p className="tag">Free</p>
               <h2 id="free-heading" className="type-h2 mt-3">
-                No card, no account to create
+                Free software workspace
               </h2>
               <p className="type-body mt-4">
-                Enough to find out where you actually stand. Most people never
-                need more than this.
+                No card is needed for the gap check. Email sign-in keeps your
+                results and documents available when you return.
               </p>
-              <Link href="/" className="btn-primary mt-6 inline-block">
-                Start a gap check
+              <Link href="/gap-check" className="btn-primary mt-6 inline-block">
+                Check my file free
               </Link>
             </div>
 
@@ -79,11 +79,11 @@ export default function PricingPage() {
         <div className="mx-auto max-w-5xl px-6 py-14 md:py-16">
           <p className="tag">Paid, one job at a time</p>
           <h2 id="paid-heading" className="type-h2 mt-3 max-w-2xl">
-            Pay for the thing you need, not a subscription
+            Human help is scoped one job at a time
           </h2>
           <p className="type-body mt-4 max-w-2xl">
-            Most people arrive with one problem, get it sorted, and do not need
-            us again for months. That should not cost a monthly plan.
+            These ranges apply to human-assisted work, not the free software
+            analysis. The exact amount depends on the document set and scope.
           </p>
 
           <ul className="mt-10 grid gap-px border border-zinc-dust bg-zinc-dust md:grid-cols-3">
@@ -130,8 +130,8 @@ export default function PricingPage() {
             you, nothing has happened.
           </p>
           <p className="type-body mt-4 max-w-2xl">
-            Card payment is coming. Until it is, {SITE_NAME} invoices you
-            directly for work you have already agreed to.
+            There is no online checkout. {SITE_NAME} invoices directly only
+            after you have agreed to a written scope and price.
           </p>
           <Link href="/dashboard/help" className="btn-primary mt-6 inline-block">
             Ask what something would cost

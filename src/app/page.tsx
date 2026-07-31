@@ -3,6 +3,7 @@ import { EntryPointsSection } from "@/components/entry-points-section";
 import { Hero } from "@/components/hero";
 import { HomeCta } from "@/components/home-cta";
 import { HowItWorks } from "@/components/how-it-works";
+import { ProductStory } from "@/components/product-story";
 import { OrganizationSchema } from "@/components/organization-schema";
 import { SITE_NAME } from "@/lib/constants";
 
@@ -44,6 +45,7 @@ export default function Home() {
       <main className="flex-1">
         <Hero />
         <EntryPointsSection />
+        <ProductStory />
         <HowItWorks />
         <HomeCta />
       </main>

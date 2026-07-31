@@ -27,9 +27,8 @@ export default function AboutPage() {
         title="What this is"
       >
         <p>
-          {SITE_NAME} tells a small industrial subcontractor what their
-          ISNetworld or Avetta file is still missing — before they put a
-          consultant on retainer to find out.
+          {SITE_NAME} is a guided contractor-document workspace for small
+          industrial companies preparing for ISNetworld or Avetta.
         </p>
       </PageIntro>
 
@@ -75,10 +74,10 @@ export default function AboutPage() {
         <p className="type-body">
           Software reads the text of the documents you attach and compares it
           against a reference list of what your trade is normally asked to hold
-          for that platform. It is not a language model, and nothing about your
-          file is generated or guessed at. The same submission produces the same
-          answer twice, and every item points at the file and the phrase behind
-          it.
+          for that platform. Gap checks use deterministic extraction and matching
+          rather than a language model. Generated programs are a separate workflow
+          built only from the company details and questionnaire answers you provide.
+          Every gap-check item points at the file and phrase behind it.
         </p>
         <p className="type-body">
           The limits of that are stated in the review itself rather than left
@@ -114,11 +113,12 @@ export default function AboutPage() {
             />
             <span>
               <strong className="font-semibold text-millscale">
-                Not a consultant.
+                Not your portal operator.
               </strong>{" "}
-              We do not write your programs, gather your records, or submit
-              anything on your behalf. Your account stays yours and you file
-              your own submission.
+              We do not enter your private platform account or submit on your
+              behalf. CertLoop can automatically generate the four supported
+              program types; other preparation may be offered as separately
+              scoped human assistance. You still review and file the work.
             </span>
           </li>
           <li className="type-body flex gap-3">

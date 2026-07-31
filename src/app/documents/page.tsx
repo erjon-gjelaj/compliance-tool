@@ -1,42 +1,16 @@
 import type { Metadata } from "next";
-import { EntryPage } from "@/components/entry-page";
+import Link from "next/link";
+import { ArrowRight, Check, Clock3, FileDown, LockKeyhole } from "lucide-react";
 import { pageMetadata } from "@/lib/metadata";
+import { offerablePrograms } from "@/lib/programs/registry";
 
-export const maxDuration = 60;
+export const metadata: Metadata = pageMetadata({ title: "Company-specific safety program generators", description: "See the safety programs CertLoop can generate today, what the questionnaire asks, and what happens when a program is not yet supported.", path: "/documents" });
 
-export const metadata: Metadata = pageMetadata({
-  title: "Safety programs and manuals",
-  description:
-    "Told to produce a written safety program or a manual you don't have. " +
-    "Find out which programs your file is short on, and ask about having " +
-    "them prepared.",
-  path: "/documents",
-});
-
-/*
- * The honest state, and why this page does not have a buy button.
- *
- * This public door still begins with the file review because an anonymous
- * visitor may not know which program is missing. Once signed in, supported
- * programs are prepared automatically from short, company-specific
- * questionnaires. Unsupported or bespoke work remains a human request.
- */
 export default function DocumentsPage() {
-  return (
-    <EntryPage
-      entryReason="documents"
-      tag="Written programs"
-      tickId="tick-documents"
-      title="You've been asked for a program you don't have"
-      lede="Start by finding out which written programs your file is actually short on — including any you already have and didn't know counted. Supported programs can then be prepared automatically in your workspace."
-      expect={[
-        "Which written programs your file already covers, quoting where we found them.",
-        "Which ones aren't mentioned anywhere in what you sent.",
-        "What each missing one is for, in plain terms, and the OSHA standard behind it where one exists.",
-        "Automatic Word and PDF preparation for supported programs after a short company-specific questionnaire.",
-      ]}
-      formHeading="Start with what you already have"
-      formNote="Attach whatever documents exist, even old or half-finished ones. A program you already hold may only need revision; a missing supported program can be generated from your workspace."
-    />
-  );
+  const programs = offerablePrograms();
+  return <main className="flex-1">
+    <section className="border-b border-zinc-dust"><div className="mx-auto max-w-6xl px-6 py-16 md:py-24"><p className="tag">Safety-program generation</p><div className="mt-5 grid gap-10 md:grid-cols-[1fr_.75fr]"><div><h1 className="type-h1">Create the written program you already know you need</h1><p className="type-lede mt-6 max-w-2xl">Choose one of the working generators below. CertLoop asks about your company and operations, prepares Word and PDF files, and keeps every version in your dashboard.</p></div><ul className="grid content-start gap-3 text-sm text-slate-wash"><li className="flex gap-3"><Clock3 className="h-5 w-5 text-verdigris"/>Short company-specific questionnaire</li><li className="flex gap-3"><FileDown className="h-5 w-5 text-verdigris"/>Word and PDF output</li><li className="flex gap-3"><LockKeyhole className="h-5 w-5 text-verdigris"/>Sign in required to store and generate</li></ul></div></div></section>
+    <section aria-labelledby="available-heading" className="border-b border-zinc-dust bg-paper"><div className="mx-auto max-w-6xl px-6 py-16 md:py-20"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="tag">Available today</p><h2 id="available-heading" className="type-h2 mt-3">{programs.length} working generators</h2></div><Link href="/sign-in" className="text-sm font-semibold text-verdigris underline underline-offset-4">Open my document library</Link></div><ul className="mt-9 grid gap-px border border-zinc-dust bg-zinc-dust md:grid-cols-2">{programs.map((program)=><li key={program.id} className="bg-paper p-6 md:p-7"><div className="flex items-start justify-between gap-4"><div><p className="type-h3">{program.shortName}</p><p className="type-body mt-3">Prepared from your company profile and a focused questionnaire.</p></div><Check className="h-5 w-5 shrink-0 text-verdigris"/></div><Link href="/sign-in" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-verdigris">Sign in to generate <ArrowRight className="h-4 w-4"/></Link></li>)}</ul></div></section>
+    <section className="border-b border-zinc-dust"><div className="mx-auto grid max-w-6xl gap-10 px-6 py-16 md:grid-cols-2 md:py-20"><div><p className="tag">Need something else?</p><h2 className="type-h2 mt-3">Unsupported programs are not generated</h2><p className="type-body mt-4">The dashboard lists a broader program catalog, but only the four programs above have working generators. For another type, ask about human-assisted preparation; we will confirm scope and price before work begins.</p><Link href="/contact" className="btn-secondary mt-6">Ask about another program</Link></div><div className="border-l-2 border-verdigris bg-paper p-6"><p className="type-label">Important before you use a generated program</p><p className="type-body mt-3">Review the document for accuracy, complete any supporting records it calls for, and compare it with the private instructions supplied by your hiring client. CertLoop cannot see those instructions unless you provide them, and generation does not guarantee acceptance or regulatory compliance.</p></div></div></section>
+  </main>;
 }

@@ -45,17 +45,17 @@ const FAQS: { question: string; answer: string[] }[] = [
     ],
   },
   {
-    question: "Is it AI?",
+    question: "Is this software analysis, AI, or human review?",
     answer: [
-      "No. There is no language model anywhere in this product, deliberately. The review is text extracted from your documents, compared against a reference list of what your trade is normally asked to hold for that platform.",
-      "That choice costs some polish and buys three things: the same submission produces the same answer twice, every item points at a file and a phrase you can check, and nothing about your paperwork can be invented.",
+      "Gap checks use deterministic text extraction and matching, not a language model. Every finding points back to evidence you can inspect. Rejection analysis may use software classification, and supported written programs are assembled from your company profile and questionnaire answers.",
+      "Human-assisted preparation is separate paid work. It is quoted and agreed before a person starts; a free analysis does not silently enter a human review queue.",
     ],
   },
   {
     question: "What does it cost?",
     answer: [
-      "The gap check is free. There is no card, no account, and nothing that turns into a subscription later.",
-      "Paid help assembling the documents with you is a separate thing you would ask for on purpose. Nothing here starts a trial that becomes a bill.",
+      "The gap check and software analysis are free, with no card. Email sign-in is how you return to stored results and documents.",
+      "Four supported program generators are available in the workspace. Human-assisted repair, unsupported program preparation, and maintenance are separate paid work, confirmed before anything is charged. Nothing starts a trial that becomes a bill.",
     ],
   },
   {
@@ -97,6 +97,37 @@ const FAQS: { question: string; answer: string[] }[] = [
     answer: [
       "Pick Other. The field for who is asking you to register is free text, so put the actual plant or client name in there and we will work from that.",
       "The trades in the dropdown are the ones we see most, not a limit on who we will help.",
+    ],
+  },
+  {
+    question: "Can CertLoop generate a written safety program?",
+    answer: [
+      "Yes, for four supported types today: Hazard Communication, Personal Protective Equipment, Emergency Action Plan, and Incident Reporting & Investigation. You answer a short company-specific questionnaire and receive Word and PDF files stored in your dashboard.",
+      "The wider catalog is not the same as generator availability. If the program you need is unsupported, CertLoop will not fabricate it; you can request separately scoped human assistance instead.",
+    ],
+  },
+  {
+    question: "Can CertLoop see my client's private requirement list?",
+    answer: [
+      "No. CertLoop cannot see a hiring client's portal, private instructions, or your account. The analysis can only use the platform context, company details, reviewer comments, and files you provide. Confirm private or uncertain requirements directly with the hiring client.",
+    ],
+  },
+  {
+    question: "What if my scan cannot be read?",
+    answer: [
+      "It is marked unreadable rather than treated as missing evidence. Upload the original digital file when possible, or make a clearer scan with every page upright and visible. You can still continue without that file and return later.",
+    ],
+  },
+  {
+    question: "Do I need an account, and can I continue later?",
+    answer: [
+      "You can begin the gap check without creating a password or entering a card. Your email address connects the submission to a workspace, and a magic link or six-digit code lets you return to results and completed documents later.",
+    ],
+  },
+  {
+    question: "Can CertLoop guarantee approval?",
+    answer: [
+      "No. CertLoop helps you prepare and organize evidence. ISNetworld, Avetta, and the hiring client control their own review decisions, and CertLoop cannot promise acceptance, regulatory compliance, or a particular score.",
     ],
   },
   {

@@ -6,10 +6,10 @@
  * The home page is deliberately not listed — the wordmark links there.
  */
 export const NAV_LINKS = [
+  { href: "/#product", label: "Product" },
+  { href: "/documents", label: "Programs" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/about", label: "About" },
   { href: "/faq", label: "FAQ" },
-  { href: "/contact", label: "Contact" },
 ] as const;
 
 /**
@@ -20,7 +20,11 @@ export const NAV_LINKS = [
  * looking for — it is linked from the upload step, where it is actually
  * relevant, rather than competing for space with About and FAQ.
  */
-export const LEGAL_LINKS = [{ href: "/privacy", label: "Privacy" }] as const;
+export const LEGAL_LINKS = [
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
+  { href: "/privacy", label: "Privacy" },
+] as const;
 
 /**
  * The generic intake has its own focused page. Named entry pages such as

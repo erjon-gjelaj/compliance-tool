@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Bricolage_Grotesque } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
@@ -23,12 +22,6 @@ import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/constants";
  * Swapping the whole site to a different face is a one-line change here plus
  * the matching --font-sans in globals.css.
  */
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-bricolage",
-  subsets: ["latin"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -36,10 +29,9 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    `${SITE_NAME} helps small industrial subcontractors see which safety ` +
-    "programs, training records, and insurance documents their ISNetworld or " +
-    "Avetta prequalification file still needs. Free gap check, no consultant " +
-    "retainer.",
+    `${SITE_NAME} helps small industrial contractors check ISNetworld or ` +
+    "Avetta paperwork, understand rejected documents, and generate supported " +
+    "company-specific safety programs.",
 };
 
 export default function RootLayout({
@@ -50,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bricolage.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
       <body className="flex min-h-full flex-col">
         {/* Route transitions, for every page in the app. It lives at the root

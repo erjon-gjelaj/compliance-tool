@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@fontsource/bricolage-grotesque/latin.css";
 
 /*
  * Palette — "galvanised steel and oxidised copper".
@@ -38,7 +39,7 @@
    * value, so a stray `font-mono` or `font-display` utility fails loudly in
    * review instead of silently falling back to a system stack.
    */
-  --font-sans: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
 }
 
 /*
@@ -324,6 +325,21 @@ details[open] > summary .disclosure-icon-closed {
   cursor: not-allowed;
   opacity: 0.7;
 }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.25rem;
+  border: 1px solid var(--color-zinc-dust);
+  background: var(--color-paper);
+  color: var(--color-millscale);
+  font-weight: 600;
+  transition: border-color 150ms, background-color 150ms;
+}
+.btn-secondary:hover { border-color: var(--color-verdigris); background: var(--color-galvanise); }
+.product-window { overflow: hidden; border: 1px solid var(--color-zinc-dust); background: var(--color-paper); box-shadow: 16px 16px 0 rgba(43,107,93,.08); }
 
 /*
  * Small uppercase label for section tags and field hints. This used to be

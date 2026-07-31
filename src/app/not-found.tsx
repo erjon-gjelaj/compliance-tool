@@ -84,8 +84,8 @@ export default function NotFound() {
  * which is untidy but not broken — and TypeScript flags the gap.
  */
 const DESCRIPTIONS: Record<(typeof NAV_LINKS)[number]["href"], string> = {
+  "/#product": "See how analysis, generation, and the workspace fit together.",
+  "/documents": "The company-specific safety programs available today.",
   "/pricing": "What's free, what's paid, and roughly what it costs.",
-  "/about": "What a gap check covers, and what it deliberately doesn't.",
   "/faq": "Cost, turnaround, and what happens to what you send us.",
-  "/contact": "One email address, and what to put in the message.",
 };

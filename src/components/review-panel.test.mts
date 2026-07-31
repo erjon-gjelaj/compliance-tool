@@ -190,7 +190,7 @@ test("an all-unknown review collapses instead of printing the catalogue", async 
 
   assert.match(html, /What we&#x27;d normally look for/);
   assert.match(html, /couldn&#x27;t check any of these against your file/);
-  assert.match(html, /Start here/);
+  assert.match(html, /Review open questions/);
 });
 
 test("an unknown price band does not promise a cost", () => {

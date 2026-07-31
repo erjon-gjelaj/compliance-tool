@@ -27,8 +27,8 @@ export default async function FilePage() {
 
   return (
     <main>
-      <p className="tag">Working checklist</p>
-      <h1 className="type-h2 mt-2 text-millscale">File</h1>
+      <p className="tag">Current approval project</p>
+      <h1 className="type-h2 mt-2 text-millscale">Requirements</h1>
       <p className="type-body mt-3 max-w-2xl">
         Grouped by the six evidence categories. Unknown items need confirmation
         from the hiring client; they are not treated as requirements by guess.
@@ -68,10 +68,10 @@ export default async function FilePage() {
                     ) : null}
                     {entry.requirement_key.startsWith("program.") ? (
                       <Link
-                        href="/dashboard/programs"
+                        href={`/dashboard/programs?selected=${encodeURIComponent(entry.requirement_key.replace(/^program\./, ""))}`}
                         className="mt-2 inline-block text-sm text-verdigris underline"
                       >
-                        Prepare a draft
+                        See document options
                       </Link>
                     ) : null}
                   </li>

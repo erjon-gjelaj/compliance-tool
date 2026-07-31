@@ -376,7 +376,7 @@ export function ReviewPanel({
           {missing.length > 0 ? (
             <Section
               title="What looks missing"
-              blurb="Not mentioned anywhere in what you sent. Start here."
+              blurb="Not mentioned anywhere in what you sent. Review this item first."
             >
               {missing.map((item) => (
                 <Finding key={item.requirement} item={item} />
@@ -411,7 +411,7 @@ export function ReviewPanel({
       {review.questionsForClient.length > 0 ? (
         <section className="mt-8">
           <h3 className="type-h3 text-millscale">
-            {collapsed ? "Start here" : "Questions for you"}
+            {collapsed ? "Review open questions" : "Questions for you"}
           </h3>
           <p className="type-body mt-1">
             {collapsed

@@ -151,6 +151,13 @@ export async function listDocumentsForSubmission(
 export type LibraryDocument = DocumentView & {
   submission_id: string;
   submission_trade: string;
+  submission_client: string;
+  doc_type: string;
+  version_n: number;
+  version_group_id: string;
+  effective_date: string | null;
+  expiry_date: string | null;
+  extraction_status: string;
 };
 
 export async function listDocumentsForEmail(
@@ -161,7 +168,7 @@ export async function listDocumentsForEmail(
   const { data, error } = await supabase
     .from("submission_documents")
     .select(
-      "id, storage_path, file_name, mime_type, size_bytes, created_at, text_status, submission_id, submissions!inner(email, trade)",
+      "id, storage_path, file_name, mime_type, size_bytes, created_at, text_status, extraction_status, doc_type, version_n, version_group_id, effective_date, expiry_date, submission_id, submissions!inner(email, trade, hiring_client)",
     )
     .ilike("submissions.email", emailPattern(email))
     .order("created_at", { ascending: false })
@@ -176,8 +183,14 @@ export async function listDocumentsForEmail(
   // than what reads naturally.
   type Row = StoredDocument & {
     text_status: string | null;
+    extraction_status: string;
+    doc_type: string;
+    version_n: number;
+    version_group_id: string;
+    effective_date: string | null;
+    expiry_date: string | null;
     submission_id: string;
-    submissions: { email: string; trade: string }[] | null;
+    submissions: { email: string; trade: string; hiring_client: string }[] | null;
   };
 
   return ((data ?? []) as unknown as Row[]).map(({ submissions, ...row }) => ({
@@ -186,6 +199,7 @@ export async function listDocumentsForEmail(
     // The joined email was only ever there to filter on, and is dropped so an
     // owner's address cannot ride along into a caller that never asked.
     submission_trade: submissions?.[0]?.trade ?? "",
+    submission_client: submissions?.[0]?.hiring_client ?? "",
   }));
 }
 

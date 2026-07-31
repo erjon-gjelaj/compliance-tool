@@ -18,7 +18,7 @@ import { listAssessmentsForSubmission } from "@/lib/assessments";
 import { programConfigByKey } from "@/lib/config";
 
 export const metadata = pageMetadata({
-  title: "Your gap check",
+  title: "Approval project",
   description: `The documents you sent ${SITE_NAME} and the preliminary review produced from them.`,
   path: "/dashboard",
   robots: { index: false, follow: false },
@@ -125,26 +125,36 @@ export default async function SubmissionPage({
   const unreadable = documents
     .filter((document) => !document.readable && document.text_status !== null)
     .map((document) => document.file_name);
+  const deadlinePassed = Boolean(submission.deadline && submission.deadline < new Date().toISOString().slice(0, 10));
 
   return (
-    <main className="max-w-3xl">
+    <main>
       <Link
-        href="/dashboard"
+        href="/dashboard/projects"
         className="inline-flex items-center gap-2 text-sm text-slate-wash underline-offset-4 hover:underline"
       >
         <ArrowLeft aria-hidden className="h-4 w-4" />
-        All submissions
+        Approval projects
       </Link>
 
       <h1 className="type-h2 mt-4 text-millscale">
-        {submission.trade} &middot; {submission.platform}
+        {submission.hiring_client || "Approval project"}
       </h1>
+      <p className="mt-2 text-sm text-slate-wash">{submission.platform} &middot; {submission.trade}</p>
+
+      <nav aria-label="Project sections" className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-y border-zinc-dust py-3 text-sm">
+        <Link href="/dashboard/projects/requirements" className="text-verdigris underline underline-offset-4">Requirements</Link>
+        <Link href="/dashboard/documents" className="text-millscale hover:text-verdigris">Documents</Link>
+        <Link href="/dashboard/training" className="text-millscale hover:text-verdigris">Training</Link>
+        <Link href="/dashboard/insurance" className="text-millscale hover:text-verdigris">Insurance</Link>
+        <Link href="/dashboard/statistics" className="text-millscale hover:text-verdigris">Safety statistics</Link>
+      </nav>
 
       <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 border border-zinc-dust bg-paper p-5 sm:grid-cols-4">
         <Field label="Hiring client" value={submission.hiring_client} />
         <Field
           label="Deadline"
-          value={submission.deadline ?? "Not known"}
+          value={submission.deadline ? `${submission.deadline}${deadlinePassed ? " (overdue)" : ""}` : "Not provided"}
         />
         <Field
           label="Sent"
@@ -162,7 +172,7 @@ export default async function SubmissionPage({
 
         {documents.length === 0 ? (
           <p className="type-body mt-3">
-            You didn&rsquo;t attach any documents to this gap check. The review
+            You didn&rsquo;t attach any documents to this project. The review
             below is based only on the answers you gave &mdash; sending the
             actual files is what turns it into something specific.
           </p>

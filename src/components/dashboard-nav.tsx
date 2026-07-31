@@ -6,11 +6,10 @@ import {
   Building2,
   CalendarClock,
   FileStack,
+  FilePlus2,
+  FolderKanban,
+  CircleHelp,
   LayoutDashboard,
-  ListChecks,
-  ShieldCheck,
-  ChartNoAxesCombined,
-  GraduationCap,
   Users,
 } from "lucide-react";
 
@@ -23,21 +22,20 @@ import {
  * On a phone it becomes a horizontal scrolling row above the content rather
  * than a hamburger. The audience is filling this in on a job site, and a menu
  * that has to be opened to find out what is in it costs a tap on every
- * navigation — a visible row costs none. There are few enough sections to fit.
+ * navigation; a visible row costs none. There are few enough sections to fit.
  *
  * Deliberately short labels and no descriptions. This is application chrome,
  * not a place to explain the product.
  */
 
 const SECTIONS = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/file", label: "File", icon: ListChecks },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/dashboard/projects", label: "Approval projects", icon: FolderKanban },
+  { href: "/dashboard/programs", label: "Generate documents", icon: FilePlus2 },
   { href: "/dashboard/documents", label: "Documents", icon: FileStack },
-  { href: "/dashboard/training", label: "Training", icon: GraduationCap },
-  { href: "/dashboard/insurance", label: "Insurance", icon: ShieldCheck },
-  { href: "/dashboard/statistics", label: "Statistics", icon: ChartNoAxesCombined },
-  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarClock },
+  { href: "/dashboard/maintenance", label: "Maintenance", icon: CalendarClock },
   { href: "/dashboard/company", label: "Company", icon: Building2 },
+  { href: "/dashboard/help", label: "Help", icon: CircleHelp },
 ] as const;
 
 export function DashboardNav({
@@ -55,7 +53,7 @@ export function DashboardNav({
 
   /*
    * Overview must match exactly. Every other section owns its subtree, so a
-   * request detail page keeps "Requests" lit — otherwise navigating into a
+   * request detail page keeps its parent lit; otherwise navigating into a
    * thread would appear to leave the section it is in.
    */
   const isActive = (href: string) =>

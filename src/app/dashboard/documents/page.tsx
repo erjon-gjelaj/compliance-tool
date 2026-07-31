@@ -8,8 +8,10 @@ import { formatBytes } from "@/lib/uploads";
 import { currentWorkspace } from "@/lib/workspaces";
 import { listDocumentsForEmail, type LibraryDocument } from "@/lib/dashboard";
 import { listDocumentsForEmail as listGenerated } from "@/lib/programs/store";
-import { offerablePrograms, programById } from "@/lib/programs/registry";
+import { programById } from "@/lib/programs/registry";
 import { DocumentDownload } from "@/components/document-download";
+import { ProjectUpload } from "@/components/project-upload";
+import { listSubmissionsForEmail } from "@/lib/dashboard";
 
 export const metadata = pageMetadata({
   title: "Your documents",
@@ -49,8 +51,10 @@ function Row({ document }: { document: LibraryDocument }) {
             {document.file_name}
           </p>
           <p className="text-xs text-slate-wash">
-            {formatBytes(document.size_bytes)} &middot; sent{" "}
+            {document.doc_type.replaceAll("_", " ")} &middot; {formatBytes(document.size_bytes)} &middot; uploaded{" "}
             {formatDate(document.created_at)}
+            {document.submission_client ? ` · ${document.submission_client}` : ""}
+            {document.version_n > 1 ? ` · version ${document.version_n}` : ""}
             {document.readable ? null : (
               <span className="text-rust-flag"> &middot; we could not read this</span>
             )}
@@ -67,27 +71,30 @@ export default async function DocumentsPage() {
   const workspace = await currentWorkspace();
   if (!workspace) redirect("/sign-in");
 
-  const [documents, generated] = await Promise.all([
+  const [documents, generated, projects] = await Promise.all([
     listDocumentsForEmail(workspace.email),
     listGenerated(workspace.email),
+    listSubmissionsForEmail(workspace.email),
   ]);
 
-  // Programmes we can prepare that this company does not already hold.
-  const held = new Set(generated.map((entry) => entry.program_id));
-  const available = offerablePrograms().filter((program) => !held.has(program.id));
-
   const unreadable = documents.filter((entry) => !entry.readable);
+  const currentUploads = documents.filter((entry) => !documents.some((candidate) => candidate.version_group_id === entry.version_group_id && candidate.version_n > entry.version_n));
+  const previousUploads = documents.filter((entry) => !currentUploads.includes(entry));
 
   return (
     <main className="max-w-3xl">
       <h1 className="type-h2 text-millscale">Documents</h1>
+
+      {projects.length > 0 ? <section id="upload" className="mt-6 border border-zinc-dust bg-paper p-5"><h2 className="type-h3 text-millscale">Add evidence to a project</h2><p className="type-body mt-2 mb-5">Upload an existing program, insurance certificate, OSHA summary, training roster, certificate or clear phone photo. CertLoop will read supported files and keep page evidence.</p><ProjectUpload projects={projects.map((project) => ({ id: project.id, label: `${project.hiring_client || "Client not entered"} · ${project.platform}` }))} /></section> : null}
 
       {/*
         Programmes first. They are the thing a contractor came to get, and
         putting the library of their own uploads above them would bury the
         action under the archive.
       */}
-      {generated.length > 0 || available.length > 0 ? (
+      {unreadable.length > 0 ? <section className="mt-6 border-l-2 border-rust-flag bg-paper p-5"><h2 className="type-h3 text-millscale">Files needing attention</h2><p className="type-body mt-2">{unreadable.length} uploaded {unreadable.length === 1 ? "file could" : "files could"} not be read. Replace these with a clearer scan or supported file.</p><Link href="#upload" className="btn-primary mt-4 inline-flex">Upload a replacement</Link></section> : null}
+
+      {generated.length > 0 ? (
         <section aria-labelledby="programs-heading" className="mt-8">
           <h2 id="programs-heading" className="type-label text-millscale">
             Safety programs
@@ -119,31 +126,11 @@ export default async function DocumentsPage() {
               );
             })}
 
-            {available.map((program) => (
-              <li key={program.id}>
-                <Link
-                  href={`/dashboard/programs/${program.id}`}
-                  className="flex items-center justify-between gap-4 border border-zinc-dust bg-paper p-4 transition-colors hover:border-verdigris"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-millscale">
-                      {program.title}
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-wash">
-                      A few questions, then Word and PDF
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-sm font-medium text-verdigris">
-                    Prepare
-                  </span>
-                </Link>
-              </li>
-            ))}
           </ul>
         </section>
       ) : null}
 
-      <h2 className="type-label mt-10 text-millscale">Files you sent us</h2>
+      <div className="mt-10 flex items-baseline justify-between gap-4"><h2 className="type-label text-millscale">Uploaded evidence</h2><Link href="#upload" className="text-sm text-verdigris underline underline-offset-4">Upload evidence</Link></div>
 
       {documents.length === 0 ? (
         <div className="mt-3 border border-zinc-dust bg-paper p-8">
@@ -176,12 +163,14 @@ export default async function DocumentsPage() {
           </p>
 
           <ul className="mt-6 grid gap-2">
-            {documents.map((document) => (
+            {currentUploads.map((document) => (
               <Row key={document.id} document={document} />
             ))}
           </ul>
         </>
       )}
+
+      {previousUploads.length > 0 ? <details className="mt-8 border border-zinc-dust bg-paper p-4"><summary className="cursor-pointer font-medium text-millscale">Previous uploaded versions ({previousUploads.length})</summary><ul className="mt-4 grid gap-2">{previousUploads.map((document) => <Row key={document.id} document={document} />)}</ul></details> : null}
 
       {/*
         Stated once, at the bottom, rather than on every row. The library holds

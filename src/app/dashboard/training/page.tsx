@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { getCompanyForEmail } from "@/lib/companies";
 import { listTrainingRecords } from "@/lib/domain-dashboard";
@@ -15,10 +16,10 @@ export default async function TrainingPage() {
     <main>
       <p className="tag">Program evidence matrix</p>
       <h1 className="type-h2 mt-2 text-millscale">Training</h1>
+      <p className="type-body mt-3 max-w-2xl">Keep completed rosters with the approval project, or create a blank sign-in sheet below. After the training, collect attendee and instructor signatures and upload the completed sheet.</p>
+      <Link href="/dashboard/documents#upload" className="btn-primary mt-5 inline-flex">Upload training evidence</Link>
       {rows.length === 0 ? (
-        <p className="type-body mt-5">
-          No roster evidence is linked yet. Upload a roster or sign-in sheet.
-        </p>
+        <section className="mt-6 border border-zinc-dust bg-paper p-6"><h2 className="type-h3 text-millscale">No completed roster evidence yet</h2><p className="type-body mt-2">Upload signed rosters or toolbox-talk sheets. CertLoop will retain the topic, date, instructor, attendee list and page evidence when readable.</p></section>
       ) : (
         <ul className="mt-6 grid gap-2">
           {rows.map((row) => (

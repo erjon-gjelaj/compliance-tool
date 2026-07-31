@@ -46,7 +46,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-galvanise">
       <div className="border-b border-zinc-dust bg-paper">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-4">
+        <div className="mx-auto flex max-w-[96rem] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-3 lg:px-8">
           <Link href="/dashboard" className="type-label text-millscale">
             {SITE_NAME}
           </Link>
@@ -70,7 +70,7 @@ export default async function DashboardLayout({
         <div className="border-b border-zinc-dust bg-galvanise">
           <form
             action={switchWorkspace}
-            className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-3"
+            className="mx-auto flex max-w-[96rem] items-center gap-3 px-5 py-3 lg:px-8"
           >
             <label htmlFor="company_id" className="type-label text-millscale">
               Workspace
@@ -100,7 +100,7 @@ export default async function DashboardLayout({
         thing that makes it read as one is that the same chrome is present
         everywhere in it.
       */}
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-6 lg:flex-row lg:gap-10 lg:py-10">
+      <div className="mx-auto flex max-w-[96rem] flex-col gap-6 px-5 py-6 lg:flex-row lg:gap-8 lg:px-8 lg:py-8">
         <DashboardNav canManageClients={workspace.canSwitch} />
         <div className="min-w-0 flex-1">{children}</div>
       </div>

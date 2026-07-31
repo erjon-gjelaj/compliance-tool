@@ -1,414 +1,60 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  ArrowRight,
-  ChevronRight,
-  FileText,
-  FileWarning,
-  HelpCircle,
-} from "lucide-react";
+import { ArrowRight, AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 
-import { SITE_NAME } from "@/lib/constants";
-import { pageMetadata } from "@/lib/metadata";
 import { currentWorkspace } from "@/lib/workspaces";
-import {
-  getReviewForSubmission,
-  listDocumentsForEmail,
-  listSubmissionsForEmail,
-  type DashboardSubmission,
-} from "@/lib/dashboard";
-import { buildWorkspace, submissionHeadline, type Workspace } from "@/lib/workspace";
 import { getCompanyForEmail, unconfirmedFields } from "@/lib/companies";
-import { listRequestsForEmail } from "@/lib/requests/store";
-import { SERVICE_LABELS } from "@/lib/service-kinds";
-import { needsCustomer } from "@/lib/requests/state";
-import { StatusChip } from "@/components/status-chip";
-import {
-  listMaintenanceDates,
-  reminderState,
-  todayIso,
-} from "@/lib/maintenance";
+import { getReviewForSubmission, listDocumentsForEmail, listSubmissionsForEmail } from "@/lib/dashboard";
+import { buildWorkspace } from "@/lib/workspace";
 import { listCurrentRequirements } from "@/lib/domain-dashboard";
-
-export const metadata = pageMetadata({
-  title: "Overview",
-  description: `Where your ${SITE_NAME} work stands.`,
-  path: "/dashboard",
-  robots: { index: false, follow: false },
-});
+import { listDocumentsForEmail as listGenerated } from "@/lib/programs/store";
+import { listMaintenanceDates, reminderState, todayIso } from "@/lib/maintenance";
+import { offerablePrograms, programById } from "@/lib/programs/registry";
 
 export const dynamic = "force-dynamic";
 
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-/**
- * The four summary figures.
- *
- * The brief asked for these to separate clearly from the page. They sit on
- * `paper` against the `galvanise` body with a full border, and the one
- * representing work waiting on the customer takes the warning treatment; so
- * the only tile that draws the eye is the only one that is their move.
- *
- * A figure with nothing behind it renders as a dash rather than a zero. "0
- * documents" reads as a measurement; ":" reads as nothing here yet, which is
- * what it is.
- */
-function Tile({
-  label,
-  value,
-  href,
-  alert = false,
-}: {
-  label: string;
-  value: number | string;
-  href: string;
-  alert?: boolean;
-}) {
-  const loud = alert && typeof value === "number" && value > 0;
-
-  return (
-    <Link
-      href={href}
-      className={`border p-4 transition-colors ${
-        loud
-          ? "border-rust-flag bg-rust-flag/8 hover:bg-rust-flag/12"
-          : "border-zinc-dust bg-paper hover:border-verdigris"
-      }`}
-    >
-      <p
-        className={`text-2xl font-semibold ${loud ? "text-rust-flag" : "text-millscale"}`}
-      >
-        {value === 0 ? "Start here" : value}
-      </p>
-      <p className="mt-1 text-xs leading-tight text-slate-wash">{label}</p>
-    </Link>
-  );
-}
-
-function NextAction({ next }: { next: Workspace["next"] }) {
-  return (
-    <section
-      aria-labelledby="next-heading"
-      className="border-l-2 border-verdigris bg-paper p-5 md:p-6"
-    >
-      <p className="tag">Do this next</p>
-      <h2 id="next-heading" className="type-h3 mt-2 text-millscale">
-        {next.title}
-      </h2>
-      <p className="type-body mt-2 max-w-xl">{next.detail}</p>
-      <Link href={next.href} className="btn-primary mt-4 inline-flex items-center gap-2">
-        {next.cta}
-        <ArrowRight aria-hidden className="h-4 w-4" />
-      </Link>
-    </section>
-  );
-}
-
-function Section({
-  heading,
-  id,
-  action,
-  children,
-}: {
-  heading: string;
-  id: string;
-  action?: { href: string; label: string };
-  children: React.ReactNode;
-}) {
-  return (
-    <section aria-labelledby={id} className="mt-8">
-      <div className="flex items-baseline justify-between gap-4">
-        <h2 id={id} className="type-label text-millscale">
-          {heading}
-        </h2>
-        {action ? (
-          <Link
-            href={action.href}
-            className="text-sm text-verdigris underline-offset-4 hover:underline"
-          >
-            {action.label}
-          </Link>
-        ) : null}
-      </div>
-      <div className="mt-3">{children}</div>
-    </section>
-  );
-}
-
-function SubmissionRow({ row }: { row: DashboardSubmission }) {
-  const state =
-    row.status === "partial"
-      ? { label: `Unfinished: step ${row.last_step} of 4`, tone: "text-rust-flag" }
-      : row.analysis_status === "ok"
-        ? { label: "Review ready", tone: "text-verdigris" }
-        : row.analysis_status === "pending"
-          ? { label: "Review running", tone: "text-slate-wash" }
-          : row.analysis_status === "fallback"
-            ? { label: "No review; emailed instead", tone: "text-slate-wash" }
-            : { label: "Received", tone: "text-slate-wash" };
-
-  return (
-    <li>
-      <Link
-        href={`/dashboard/${row.id}`}
-        className="flex items-center justify-between gap-4 border border-zinc-dust bg-paper p-4 transition-colors hover:border-verdigris"
-      >
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-millscale">
-            {submissionHeadline(row)} &middot; {row.hiring_client}
-          </p>
-          <p className="mt-0.5 text-xs text-slate-wash">
-            {formatDate(row.created_at)} &middot;{" "}
-            <span className={state.tone}>{state.label}</span>
-          </p>
-        </div>
-        <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-zinc-dust" />
-      </Link>
-    </li>
-  );
-}
+const CATEGORY_LABELS: Record<string, string> = { written_programs: "Written programs", statistics: "Safety statistics", recordkeeping: "Recordkeeping", insurance: "Insurance", questionnaire: "Client questionnaire", training: "Training evidence" };
+function date(value: string) { return new Date(`${value}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }
 
 export default async function DashboardPage() {
   const active = await currentWorkspace();
   if (!active) redirect("/sign-in");
-
-  const [submissions, documents, company, requests, maintenance] = await Promise.all([
-    listSubmissionsForEmail(active.email),
-    listDocumentsForEmail(active.email),
-    getCompanyForEmail(active.email),
-    listRequestsForEmail(active.email),
-    listMaintenanceDates(active.email),
+  const [submissions, uploaded, generated, company, reminders] = await Promise.all([
+    listSubmissionsForEmail(active.email), listDocumentsForEmail(active.email), listGenerated(active.email), getCompanyForEmail(active.email), listMaintenanceDates(active.email),
   ]);
-
-  const toConfirm = company ? unconfirmedFields(company) : [];
-
-  const activeSubmission =
-    submissions.find((row) => row.status === "complete") ?? null;
-
-  const activeReview = activeSubmission
-    ? await getReviewForSubmission(activeSubmission.id)
-    : null;
-
-  const workspace = buildWorkspace({
-    submissions,
-    documents,
-    activeReview,
-    activeSubmission,
-  });
-
-  /*
-   * Both derived from the event log rather than from a stored column, so
-   * neither figure can be stale; which is the whole point of task 055. A
-   * count on an overview is exactly where a wrong status does the most damage,
-   * because nobody clicks through to check it.
-   */
-  const yourMove = requests.filter((request) => needsCustomer(request.status));
-  const open = requests.filter(
-    (request) =>
-      request.status.state !== "completed" && request.status.state !== "closed",
-  );
-
-  const unreadable = documents.filter((entry) => !entry.readable);
-  const today = todayIso();
-  const maintenanceDue = maintenance.filter(
-    (entry) => reminderState(entry.due_date, today) !== "later",
-  );
+  const project = submissions[0] ?? null;
+  const activeReview = project?.analysis_status === "ok" ? await getReviewForSubmission(project.id) : null;
   const requirements = company ? await listCurrentRequirements(company.id) : [];
-  const requirementsInPlace = requirements.filter((entry) =>
-    ["draft", "submitted", "under_review", "accepted"].includes(entry.status),
-  ).length;
+  const workspace = buildWorkspace({ submissions, documents: uploaded, activeReview, activeSubmission: project });
+  const unconfirmedCompany = company ? unconfirmedFields(company) : [];
+  const unreadable = uploaded.filter((file) => !file.readable);
+  const unconfirmedRequirements = requirements.filter((item) => item.applicability === "unknown");
+  const overdue = reminders.filter((item) => reminderState(item.due_date, todayIso()) === "overdue");
+  const generators = offerablePrograms();
+  const missingWithGenerator = requirements.filter((item) => item.status === "missing" && item.requirement_key.startsWith("program.") && generators.some((program) => item.requirement_key.includes(program.id) || program.matchesLabel?.(item.title)));
+  const primaryAction = !project
+    ? { title: "Start an approval project", detail: "Add the hiring client and platform when you are ready to prepare a complete approval file.", href: "/gap-check", cta: "Start approval preparation" }
+    : workspace.next;
+  const attention = [
+    ...unreadable.map((file) => ({ key: file.id, title: `Replace ${file.file_name}`, detail: "We could not reliably read this file.", href: "/dashboard/documents", action: "Replace file" })),
+    ...(unconfirmedRequirements.length ? [{ key: "requirements", title: `Confirm ${unconfirmedRequirements.length} client requirement${unconfirmedRequirements.length === 1 ? "" : "s"}`, detail: "These are possible requirements, not confirmed portal requirements.", href: "/dashboard/projects/requirements", action: "Review requirements" }] : []),
+    ...(unconfirmedCompany.length ? [{ key: "company", title: `Confirm ${unconfirmedCompany.length} company detail${unconfirmedCompany.length === 1 ? "" : "s"}`, detail: "Check information that was inferred during intake.", href: "/dashboard/company", action: "Check company" }] : []),
+    ...overdue.map((item) => ({ key: item.id, title: `${item.document_name} is overdue`, detail: `${item.kind === "expiry" ? "Expired" : "Review was due"} ${date(item.due_date)}.`, href: "/dashboard/maintenance", action: "Update date" })),
+  ];
+  const categories = Object.keys(CATEGORY_LABELS).map((key) => { const rows = requirements.filter((r) => r.category_key === key); return { key, label: CATEGORY_LABELS[key], ready: rows.filter((r) => ["draft","submitted","under_review","accepted"].includes(r.status)).length, total: rows.length, unknown: rows.filter((r) => r.applicability === "unknown").length }; });
 
-  return (
-    <main>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-        <h1 className="type-h2 text-millscale">{company?.name ?? "Overview"}</h1>
-        <p className="text-sm text-slate-wash">
-          {workspace.platforms.length > 0
-            ? workspace.platforms.join(", ")
-            : "No platform set"}
-          {workspace.nextDeadline ? (
-            <>
-              {" "}
-              &middot;{" "}
-              {workspace.nextDeadline.passed ? (
-                <span className="text-rust-flag">
-                  {workspace.nextDeadline.hiringClient} wanted you approved by{" "}
-                  {formatDate(workspace.nextDeadline.date)}
-                </span>
-              ) : (
-                <>
-                  {workspace.nextDeadline.hiringClient} by{" "}
-                  <span className="text-millscale">
-                    {formatDate(workspace.nextDeadline.date)}
-                  </span>
-                </>
-              )}
-            </>
-          ) : null}
-        </p>
-      </div>
+  if (!company && submissions.length === 0 && generated.length === 0) return <main><p className="tag">Welcome to CertLoop</p><h1 className="type-h2 mt-2 text-millscale">What do you need to accomplish?</h1><p className="type-lede mt-3 max-w-2xl">Prepare for a client or platform approval, or create one safety document directly.</p><div className="mt-8 grid gap-4 md:grid-cols-2"><Link href="/gap-check" className="border border-zinc-dust bg-paper p-6 hover:border-verdigris"><h2 className="type-h3 text-millscale">Prepare for an approval</h2><p className="type-body mt-2">Enter the client and platform, upload what you have, and organize the work still needed.</p><span className="mt-5 inline-flex items-center gap-2 font-medium text-verdigris">Start an approval project <ArrowRight className="h-4 w-4" /></span></Link><Link href="/dashboard/programs" className="border border-zinc-dust bg-paper p-6 hover:border-verdigris"><h2 className="type-h3 text-millscale">Generate one document</h2><p className="type-body mt-2">Choose a working generator and prepare a Word and PDF draft in your company name.</p><span className="mt-5 inline-flex items-center gap-2 font-medium text-verdigris">Browse generators <ArrowRight className="h-4 w-4" /></span></Link></div></main>;
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <Tile
-          label="file items in place"
-          value={`${requirementsInPlace} of ${requirements.length}`}
-          href="/dashboard/file"
-        />
-        <Tile
-          label="need something from you"
-          value={yourMove.length}
-          href="/dashboard/requests"
-          alert
-        />
-        <Tile
-          label="dates due or overdue"
-          value={maintenanceDue.length}
-          href="/dashboard/maintenance"
-          alert
-        />
-      </div>
+  return <main>
+    <div className="flex flex-wrap items-start justify-between gap-5"><div><p className="tag">Current work</p><h1 className="type-h2 mt-2 text-millscale">{project?.hiring_client || company?.name || "Your workspace"}</h1><p className="mt-2 text-sm text-slate-wash">{project ? `${project.platform} · ${project.trade}${project.deadline ? ` · target ${date(project.deadline)}` : " · no target date entered"}` : "No active approval project"}</p></div>{project ? <Link href={`/dashboard/${project.id}`} className="btn-secondary">Open approval project</Link> : <Link href="/gap-check" className="btn-primary">Start approval project</Link>}</div>
+    {project ? <p className="mt-4 border-l-2 border-zinc-dust bg-paper px-4 py-3 text-sm text-slate-wash">Requirements shown here come from your profile and supplied information. CertLoop cannot see private client portal requirements unless you provide them.</p> : null}
 
-      {submissions.length === 0 && requests.length === 0 ? (
-        <div className="mt-8 border border-zinc-dust bg-paper p-8">
-          <FileText aria-hidden className="mb-4 h-5 w-5 text-slate-wash" />
-          <h2 className="type-h3 text-millscale">Nothing here yet</h2>
-          <p className="type-body mt-3 max-w-xl">
-            There are no requests against this address. If you asked us to
-            delete your file, it is gone, documents included.
-          </p>
-          <Link href="/" className="btn-primary mt-6">
-            Start a request
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div className="mt-6">
-            <NextAction next={workspace.next} />
-          </div>
+    <section className="mt-6 border-l-2 border-verdigris bg-paper p-6"><p className="tag">Next best action</p><h2 className="type-h3 mt-2 text-millscale">{missingWithGenerator[0] ? `Generate ${missingWithGenerator[0].title}` : primaryAction.title}</h2><p className="type-body mt-2 max-w-2xl">{missingWithGenerator[0] ? "This appears in your current requirement set and has a working self-service generator." : primaryAction.detail}</p><Link href={missingWithGenerator[0] ? `/dashboard/programs?selected=${missingWithGenerator[0].requirement_key.replace(/^program\./, "")}` : primaryAction.href} className="btn-primary mt-4 inline-flex items-center gap-2">{missingWithGenerator[0] ? "Generate document" : primaryAction.cta}<ArrowRight className="h-4 w-4" /></Link></section>
 
-          {toConfirm.length > 0 ? (
-            <p className="mt-3 border-l-2 border-rust-flag bg-paper px-4 py-3 text-sm text-millscale">
-              {toConfirm.length} company{" "}
-              {toConfirm.length === 1 ? "detail" : "details"} we filled in
-              hasn&rsquo;t been confirmed.{" "}
-              <Link
-                href="/dashboard/company"
-                className="text-verdigris underline underline-offset-4"
-              >
-                Check them
-              </Link>
-            </p>
-          ) : null}
+    {attention.length ? <section className="mt-8"><h2 className="type-h3 text-millscale">Needs your attention</h2><ul className="mt-3 grid gap-2 lg:grid-cols-2">{attention.slice(0,6).map((item) => <li key={item.key} className="flex items-start gap-3 border border-zinc-dust bg-paper p-4"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rust-flag" /><div className="min-w-0 flex-1"><p className="font-medium text-millscale">{item.title}</p><p className="mt-1 text-sm text-slate-wash">{item.detail}</p><Link href={item.href} className="mt-2 inline-block text-sm font-medium text-verdigris underline">{item.action}</Link></div></li>)}</ul></section> : null}
 
-          {open.length > 0 ? (
-            <Section
-              heading="Active requests"
-              id="requests-heading"
-              action={{ href: "/dashboard/requests", label: "All requests" }}
-            >
-              <ul className="grid gap-2">
-                {open.slice(0, 4).map((request) => (
-                  <li key={request.id}>
-                    <Link
-                      href={`/dashboard/requests/${request.id}`}
-                      className="flex items-center justify-between gap-4 border border-zinc-dust bg-paper p-4 transition-colors hover:border-verdigris"
-                    >
-                      <span className="min-w-0 truncate text-sm font-medium text-millscale">
-                        {SERVICE_LABELS[request.kind] ?? request.kind}
-                      </span>
-                      <StatusChip state={request.status.state} />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          ) : null}
+    {requirements.length ? <section className="mt-8"><div className="flex items-baseline justify-between"><h2 className="type-h3 text-millscale">Approval-file summary</h2><Link href="/dashboard/projects/requirements" className="text-sm text-verdigris underline">All requirements</Link></div><div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{categories.filter((c) => c.total).map((c) => <div key={c.key} className="border border-zinc-dust bg-paper p-4"><p className="font-medium text-millscale">{c.label}</p><p className="mt-2 text-sm text-slate-wash">{c.ready} of {c.total} in progress or ready{c.unknown ? ` · ${c.unknown} need confirmation` : ""}</p></div>)}</div></section> : null}
 
-          {workspace.blockers.length > 0 ? (
-            <Section
-              heading="What your file looks short on"
-              id="blockers-heading"
-              action={
-                workspace.activeSubmission
-                  ? {
-                      href: `/dashboard/${workspace.activeSubmission.id}`,
-                      label: "See the reasoning",
-                    }
-                  : undefined
-              }
-            >
-              <ul className="grid gap-2">
-                {workspace.blockers.slice(0, 5).map((item) => (
-                  <li
-                    key={item.requirement}
-                    className="border border-zinc-dust bg-paper p-4"
-                  >
-                    <p className="text-sm font-medium text-millscale">
-                      {item.requirement}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-wash">{item.action}</p>
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          ) : null}
-
-          {unreadable.length > 0 ? (
-            <Section
-              heading="Files we couldn't read"
-              id="unreadable-heading"
-              action={{ href: "/dashboard/documents", label: "All documents" }}
-            >
-              <ul className="grid gap-2">
-                {unreadable.slice(0, 3).map((entry) => (
-                  <li
-                    key={entry.id}
-                    className="flex items-center gap-3 border border-zinc-dust bg-paper p-4 text-sm text-millscale"
-                  >
-                    <FileWarning aria-hidden className="h-4 w-4 shrink-0 text-rust-flag" />
-                    <span className="min-w-0 truncate">{entry.file_name}</span>
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          ) : null}
-
-          {workspace.questions.length > 0 ? (
-            <Section heading="Still to confirm with your client" id="questions-heading">
-              <ul className="grid gap-2">
-                {workspace.questions.slice(0, 3).map((question) => (
-                  <li
-                    key={question}
-                    className="flex gap-3 border border-zinc-dust bg-paper p-4"
-                  >
-                    <HelpCircle
-                      aria-hidden
-                      className="mt-0.5 h-4 w-4 shrink-0 text-slate-wash"
-                    />
-                    <p className="text-sm text-millscale">{question}</p>
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          ) : null}
-
-          {submissions.length > 0 ? (
-            <Section heading="Recent activity" id="recent-heading">
-              <ul className="grid gap-2">
-                {submissions.slice(0, 4).map((row) => (
-                  <SubmissionRow key={row.id} row={row} />
-                ))}
-              </ul>
-            </Section>
-          ) : null}
-        </>
-      )}
-    </main>
-  );
+    <div className="mt-8 grid gap-8 xl:grid-cols-2"><section><div className="flex items-baseline justify-between"><h2 className="type-h3 text-millscale">Documents ready</h2><Link href="/dashboard/documents" className="text-sm text-verdigris underline">All documents</Link></div>{generated.length ? <ul className="mt-3 grid gap-2">{generated.slice(0,4).map((doc) => <li key={doc.id}><Link href={`/dashboard/documents/${doc.id}`} className="flex items-center justify-between border border-zinc-dust bg-paper p-4"><span className="flex items-center gap-2 text-sm font-medium text-millscale"><CheckCircle2 className="h-4 w-4 text-verdigris" />{programById(doc.program_id)?.title ?? doc.program_id}</span><span className="text-xs text-slate-wash">Version {doc.current.version}</span></Link></li>)}</ul> : <div className="mt-3 border border-zinc-dust bg-paper p-5"><FileText className="h-4 w-4 text-slate-wash" /><p className="mt-2 text-sm text-slate-wash">No generated documents yet.</p><Link href="/dashboard/programs" className="mt-2 inline-block text-sm text-verdigris underline">Browse generators</Link></div>}</section><section><h2 className="type-h3 text-millscale">Upcoming deadlines</h2>{reminders.length ? <ul className="mt-3 grid gap-2">{reminders.slice(0,4).map((item) => <li key={item.id} className="border border-zinc-dust bg-paper p-4"><p className="text-sm font-medium text-millscale">{item.document_name}</p><p className={`mt-1 text-xs ${reminderState(item.due_date, todayIso()) === "overdue" ? "text-rust-flag" : "text-slate-wash"}`}>{date(item.due_date)} · {reminderState(item.due_date, todayIso()).replace("_", " ")}</p></li>)}</ul> : <p className="mt-3 border border-zinc-dust bg-paper p-5 text-sm text-slate-wash">No document dates entered. <Link href="/dashboard/maintenance" className="text-verdigris underline">Add a reminder</Link></p>}</section></div>
+  </main>;
 }

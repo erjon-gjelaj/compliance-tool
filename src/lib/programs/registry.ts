@@ -1,14 +1,16 @@
 import { HAZCOM } from "@/lib/programs/hazcom";
 import { PPE } from "@/lib/programs/ppe";
 import { EAP } from "@/lib/programs/eap";
+import { INCIDENT } from "@/lib/programs/incident";
 import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/types";
 
 /**
  * The programme library.
  *
- * Two entries today, one of them not yet offered. The shape is what matters: adding the next programme is a
- * template file and a line here, with no change to the questionnaire, the
- * validator, the renderers, the storage, or the library UI.
+ * Four entries today, two of them not yet offered. The shape is what
+ * matters: adding the next programme is a template file and a line here,
+ * with no change to the questionnaire, the validator, the renderers, the
+ * storage, or the library UI.
  *
  * Safe to IMPORT from a client component, which is how the questionnaire
  * reads the same definitions the server validates against. It is NOT safe to
@@ -16,7 +18,7 @@ import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/ty
  * carry functions, and functions cannot be serialised. Pass an id and look it
  * up on the far side.
  */
-export const PROGRAMS: ProgramTemplate[] = [HAZCOM, PPE, EAP];
+export const PROGRAMS: ProgramTemplate[] = [HAZCOM, PPE, EAP, INCIDENT];
 
 export function programById(id: string): ProgramTemplate | undefined {
   return PROGRAMS.find((program) => program.id === id);

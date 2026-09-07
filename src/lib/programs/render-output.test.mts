@@ -5,7 +5,7 @@ import { HAZCOM } from "./hazcom.ts";
 import { assembleProgram } from "./assemble.ts";
 import { renderDocx } from "./render-docx.ts";
 import { renderPdf } from "./render-pdf.ts";
-import type { Answers, CompanyContext } from "./types.ts";
+import type { Answers, CompanyContext, Section } from "./types.ts";
 
 /**
  * The rendered files themselves.
@@ -124,4 +124,131 @@ test("no placeholder or template syntax survives into the PDF", async () => {
   assert.doesNotMatch(whole, /undefined|\[object|\{\{|\bTBD\b/);
   // Answer ids are internal. Seeing one means a label lookup fell through.
   assert.doesNotMatch(whole, /safety_manager|multi_employer|sds_format/);
+});
+
+/**
+ * A document engineered so that a page break lands in the MIDDLE of a block.
+ *
+ * The real programmes only break there when their prose happens to be the
+ * right length, so testing on one of them is testing on a coincidence — the
+ * Hazard Communication programme passed this check while the bug was live,
+ * because none of its blocks straddled a boundary. The filler is sized to
+ * push the list across the join every time.
+ */
+function straddlingPages(): Section[] {
+  const filler = Array.from({ length: 26 }, (_, index) => ({
+    type: "paragraph" as const,
+    text:
+      `Filler paragraph ${index + 1}. It exists only to consume vertical space ` +
+      "so that the list below it begins near the foot of a page and continues " +
+      "over the leaf, which is the condition the type-size bug needed.",
+  }));
+
+  return [
+    { heading: "Filler", blocks: filler },
+    {
+      heading: "A List That Crosses the Join",
+      blocks: [
+        {
+          type: "numbered",
+          items: Array.from(
+            { length: 12 },
+            (_, index) =>
+              `Step ${index + 1} of a procedure long enough that some of its steps ` +
+              "are set on one page and the rest on the next.",
+          ),
+        },
+        {
+          type: "paragraph",
+          text:
+            "A closing paragraph, which lands on the new page and is therefore " +
+            "the other shape this fault took.",
+        },
+      ],
+    },
+  ];
+}
+
+/**
+ * Reads every piece of text out of a PDF's content streams together with the
+ * size it was set in.
+ *
+ * `unpdf` gives the words but not the type, and the bug this exists for was
+ * invisible in the words: correct text, set a third too small. So the content
+ * streams are inflated and read directly — the sizes are what is on trial.
+ */
+async function typeSetInPdf(buffer: Buffer) {
+  const { inflateSync } = await import("node:zlib");
+  const raw = buffer.toString("latin1");
+
+  const runs: { size: number; text: string }[] = [];
+
+  for (const match of raw.matchAll(/stream\r?\n/g)) {
+    const start = match.index! + match[0].length;
+    const end = raw.indexOf("endstream", start);
+
+    let content: string;
+    try {
+      content = inflateSync(Buffer.from(raw.slice(start, end), "latin1")).toString("latin1");
+    } catch {
+      continue; // Not a deflated content stream — a font or an image.
+    }
+
+    let size = 0;
+
+    for (const token of content.matchAll(/\/\S+ ([\d.]+) Tf|\[(.*?)\]\s*TJ/gs)) {
+      if (token[1]) {
+        size = Number(token[1]);
+        continue;
+      }
+
+      const text = [...token[2].matchAll(/<([0-9A-Fa-f]+)>/g)]
+        .map((hex) => Buffer.from(hex[1], "hex").toString("latin1"))
+        .join("");
+
+      if (text.trim()) runs.push({ size, text });
+    }
+  }
+
+  return runs;
+}
+
+test("no body text is left set in the running header's type", async () => {
+  /*
+   * The regression, and the reason this test reads sizes rather than words.
+   *
+   * The chrome is drawn at 8pt, and a page break happens in the middle of
+   * somebody else's block — between a caller setting its font and that caller
+   * writing its text. Restoring the cursor but not the type left the first
+   * block on every new page rendered in 8pt footer type: correct content,
+   * visibly wrong document. Every structural test passed throughout, because
+   * the section tree was never at fault.
+   */
+  const buffer = await renderPdf(META, straddlingPages());
+  const runs = await typeSetInPdf(buffer);
+
+  assert.ok(runs.length > 50, `only ${runs.length} text runs — the parse failed`);
+
+  const chrome = (text: string) =>
+    text.includes(META.companyName) || /^Page \d+$/.test(text.trim());
+
+  for (const run of runs) {
+    if (run.size >= 9) continue;
+
+    assert.ok(
+      chrome(run.text),
+      `body text set at ${run.size}pt: "${run.text.slice(0, 60)}"`,
+    );
+  }
+});
+
+test("the smallest body type is still the table type, not the footer's", async () => {
+  // A guard on the other side: if the parse above ever stops finding sizes it
+  // would pass vacuously. Tables are the smallest real text in the document.
+  const runs = (await typeSetInPdf(await renderPdf(META, straddlingPages()))).filter(
+    (run) => !run.text.includes(META.companyName) && !/^Page \d+$/.test(run.text.trim()),
+  );
+
+  const smallest = Math.min(...runs.map((run) => run.size));
+  assert.ok(smallest >= 9, `body text found at ${smallest}pt`);
 });

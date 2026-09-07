@@ -388,8 +388,8 @@
     {
       "id": "061",
       "title": "Program 4: Incident Reporting and Investigation",
-      "status": "todo",
-      "notes": "Almost entirely procedural and low-risk to template - who is told, in what order, what gets recorded. Very little that could be fabricated.",
+      "status": "done",
+      "notes": "Fourth programme, built like the other three: a template file, a line in the registry, 30 negative tests. Structured around the one sentence lib/requirements uses for it - who is told, in what order, what gets written down - so the three load-bearing parts are an ordered notification ladder, a table of the fields every incident record carries, and a corrective action with an owner, a date and a check that it was actually done. The ladder puts the host site control room and the client contact IN it, in position, which is the part written for subcontractors specifically: a chain that ends at the owner describes a company that works alone. No regulatory deadline is written by hand - the document commits to reporting a death or serious injury to OSHA on the same day the Company learns of it and confirms the current requirement at that point, which is stricter than any deadline and therefore cannot be wrong in either direction. A test enforces that, matching on \"within N hours\". Release stays internal_testing pending a prose review. ALSO FIXED A REAL RENDERING DEFECT affecting all four programmes: the running header and footer draw at 8pt, page breaks happen mid-block, and the text state was never restored - so the first block on every new page rendered in 8pt footer type. Correct content, visibly broken document, and invisible to every structural test because the section tree was never at fault. Two new tests read font sizes out of the inflated PDF content streams; they pass on HazCom either way, so they run against a fixture engineered to straddle a page break.",
       "needs_human_review": false
     },
     {
@@ -407,6 +407,6 @@
       "needs_human_review": true
     }
   ],
-  "current_task_id": "061",
+  "current_task_id": "053",
   "blocked_on": null
 }

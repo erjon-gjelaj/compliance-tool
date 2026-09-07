@@ -374,9 +374,9 @@
     {
       "id": "059",
       "title": "Program 2: Personal Protective Equipment",
-      "status": "todo",
-      "notes": "Next after HazCom. Chosen because lib/requirements already carries it, the intake asks about it, and the company-specific facts it needs (who assesses hazards, what equipment is provided, how it is maintained) are answerable in the same 5-7 question shape without asserting anything about training completion or equipment owned.",
-      "needs_human_review": false
+      "status": "done",
+      "notes": "Done on branch task/063-end-to-end. Seven questions, one conditional; 13 sections at base, 15 at full branching. Built around the written hazard assessment rather than an equipment list, because lib/requirements says of this requirement \"Check it includes the written hazard assessment, not just a kit list\" - four sections are about assessing rather than about equipment. Deliberately does NOT ask for a list of equipment held, for the same reason HazCom does not ask for the chemical inventory: a list typed one afternoon is wrong by the next job. Respiratory protection is excluded IN WORDS in the Scope section rather than by omission, since silence in a safety programme reads as coverage and a respirator programme needs fit testing and medical evaluation none of these questions ask about. Nothing asserts training has happened or that any equipment is owned - every training sentence is a commitment about what happens before an assignment. 19 tests, all negative, including that no section tells the reader what the law obliges them to do, that sourceRef never reaches the page, that site rules are a floor rather than a ceiling (the inversion would commit the company to LESS than its own assessment found), and that the agreed carve-out on who pays is what they told us rather than an assumption. Verified by rendering a real 6-page PDF and DOCX and reading them: found and fixed a British \"defence\" in prose for US contractors, now guarded by a test. RELEASE IS internal_testing ON PURPOSE - docs/release-one.md says the flag is lifted per programme by a person once the prose has been reviewed by someone qualified. That review has not happened. Changing one line to customer_available is the whole of shipping it, and a test fails when it changes so the lift is deliberate.",
+      "needs_human_review": true
     },
     {
       "id": "060",
@@ -407,6 +407,6 @@
       "needs_human_review": true
     }
   ],
-  "current_task_id": "059",
+  "current_task_id": "060",
   "blocked_on": null
 }

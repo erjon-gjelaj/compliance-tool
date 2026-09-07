@@ -1,10 +1,11 @@
 import { HAZCOM } from "@/lib/programs/hazcom";
+import { PPE } from "@/lib/programs/ppe";
 import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/types";
 
 /**
  * The programme library.
  *
- * One entry today. The shape is what matters: adding the next programme is a
+ * Two entries today, one of them not yet offered. The shape is what matters: adding the next programme is a
  * template file and a line here, with no change to the questionnaire, the
  * validator, the renderers, the storage, or the library UI.
  *
@@ -14,7 +15,7 @@ import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/ty
  * carry functions, and functions cannot be serialised. Pass an id and look it
  * up on the far side.
  */
-export const PROGRAMS: ProgramTemplate[] = [HAZCOM];
+export const PROGRAMS: ProgramTemplate[] = [HAZCOM, PPE];
 
 export function programById(id: string): ProgramTemplate | undefined {
   return PROGRAMS.find((program) => program.id === id);

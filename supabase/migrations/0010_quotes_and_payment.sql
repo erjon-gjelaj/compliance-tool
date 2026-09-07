@@ -77,15 +77,19 @@ alter table public.request_events
 
 alter table public.request_events
   add constraint request_events_amounts check (
-    case
-      when kind = 'quoted' then
-        amount_low is not null
-        and amount_high is not null
-        and amount_low >= 0
-        and amount_high >= amount_low
-      else
-        amount_low is null and amount_high is null
-    end
+    (
+      kind = 'quoted'
+      and amount_low is not null
+      and amount_high is not null
+      and amount_low >= 0
+      and amount_high >= amount_low
+    )
+    or
+    (
+      kind <> 'quoted'
+      and amount_low is null
+      and amount_high is null
+    )
   );
 
 comment on column public.request_events.amount_low is

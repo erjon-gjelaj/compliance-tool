@@ -5,6 +5,8 @@ import { ArrowRight, Check } from "lucide-react";
 import { pageMetadata } from "@/lib/metadata";
 import { currentClient } from "@/lib/auth/session";
 import { offerablePrograms } from "@/lib/programs/registry";
+import { preparationAccess } from "@/lib/programs/access";
+import { PRICING_NOTE, formatMoney, offerById } from "@/lib/pricing";
 import { listDocumentsForEmail } from "@/lib/programs/store";
 import { getCompanyForEmail } from "@/lib/companies";
 
@@ -21,12 +23,14 @@ export default async function ProgramsPage() {
   const session = await currentClient();
   if (!session) redirect("/sign-in");
 
-  const [held, company] = await Promise.all([
+  const [held, company, access] = await Promise.all([
     listDocumentsForEmail(session.email),
     getCompanyForEmail(session.email),
+    preparationAccess(session.email),
   ]);
 
   const programs = offerablePrograms();
+  const offer = offerById("single_program");
 
   return (
     <main className="max-w-3xl">
@@ -35,6 +39,25 @@ export default async function ProgramsPage() {
         Answer a few questions about how you work and get a finished program in
         Word and PDF, prepared in your company&rsquo;s name.
       </p>
+
+      {/*
+        Said here, before anybody spends two minutes on a questionnaire.
+        Letting somebody answer every question and only then meeting a price
+        would be a bait and switch, and this product does not do that anywhere
+        else. What is free stays named as free in the same breath.
+      */}
+      {!access.allowed && offer ? (
+        <div className="mt-6 border-l-2 border-verdigris bg-paper p-4">
+          <p className="type-body">
+            Your gap checks are free and stay free. Having a program written
+            and prepared in your name is{" "}
+            <strong className="text-millscale">{formatMoney(offer.price)}</strong>{" "}
+            &mdash; describe what you need and we&rsquo;ll come back with the
+            number before any work starts.
+          </p>
+          <p className="mt-2 text-sm text-slate-wash">{PRICING_NOTE}</p>
+        </div>
+      ) : null}
 
       {!company?.name ? (
         <div className="mt-6 border-l-2 border-rust-flag bg-paper p-4">
@@ -69,7 +92,9 @@ export default async function ProgramsPage() {
                   <p className="mt-1 text-sm text-slate-wash">
                     {existing
                       ? `Version ${existing.current?.version ?? 1} — ready to download`
-                      : "About two minutes"}
+                      : access.allowed || !offer
+                        ? "About two minutes"
+                        : `About two minutes to describe · ${formatMoney(offer.price)} to have it prepared`}
                   </p>
                 </div>
                 {existing ? (

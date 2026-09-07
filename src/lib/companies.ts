@@ -47,6 +47,16 @@ export type CompanyRow = {
   hiring_clients: string[] | null;
   operations: string | null;
   field_sources: Record<string, FieldProvenance>;
+  /*
+   * Added by migration 0007, written by `setPlanForEmail`, and missing from
+   * this type until entitlements were actually enforced. `select("*")` had
+   * been returning it the whole time — nothing read it, so nothing noticed.
+   *
+   * `not null default 'free'` in the database, so never absent. `planOf`
+   * still falls back rather than trusting it: the column is edited by hand,
+   * and a typo should cost somebody a capability rather than their dashboard.
+   */
+  plan: string;
 };
 
 /** The fields a profile holds, in the order they are asked for. */

@@ -15,7 +15,15 @@ import type { Answers } from "@/lib/programs/types";
  */
 
 export type ProgramFormState = {
-  status: "asking" | "generated" | "error";
+  /**
+   * `locked` is its own state rather than an error.
+   *
+   * Reaching it means the questionnaire was completed by somebody whose plan
+   * does not include having a document prepared. Nothing went wrong, and
+   * rendering it as an error would tell a customer they had made a mistake
+   * when what they had actually done was describe exactly what they want.
+   */
+  status: "asking" | "generated" | "error" | "locked";
   answers: Answers;
   /** Set once a document exists, so the page can link to it. */
   documentId?: string;
@@ -31,3 +39,20 @@ export const initialProgramState: ProgramFormState = {
 export type RevisionState = { status: "editing" | "sent"; error?: string };
 
 export const initialRevisionState: RevisionState = { status: "editing" };
+
+/**
+ * Asking for a program the current plan does not include.
+ *
+ * Separate from `ProgramFormState` because it is a different act: the
+ * questionnaire produces a document, this produces a conversation. Reaching
+ * `sent` means a service request exists and the operator console will show it
+ * alongside the answers that were given.
+ */
+export type PreparationRequestState = {
+  status: "idle" | "sent" | "error";
+  error?: string;
+};
+
+export const initialPreparationRequest: PreparationRequestState = {
+  status: "idle",
+};

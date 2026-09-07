@@ -4,11 +4,17 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { CheckCircle2, FileDown } from "lucide-react";
 
-import { answerProgramStep } from "@/app/dashboard/programs/actions";
 import {
+  answerProgramStep,
+  requestProgramPreparation,
+} from "@/app/dashboard/programs/actions";
+import {
+  initialPreparationRequest,
   initialProgramState,
+  type PreparationRequestState,
   type ProgramFormState,
 } from "@/lib/programs/form-state";
+import { PRICING_NOTE, formatMoney, offerById } from "@/lib/pricing";
 import { SubmitButton } from "@/components/submit-button";
 import { visibleQuestions } from "@/lib/programs/validate";
 import { programById } from "@/lib/programs/registry";
@@ -163,6 +169,26 @@ export function ProgramForm({
     );
   }
 
+  /*
+   * They finished the questionnaire and their plan does not include having a
+   * document prepared.
+   *
+   * Deliberately not styled as a failure. Nothing went wrong — they have just
+   * described exactly what they want, and the answers travel with the request
+   * so nobody has to ask again. The price is a range from lib/pricing with
+   * its note attached, because a single figure here would read as a quote.
+   */
+  if (state.status === "locked") {
+    return (
+      <LockedPanel
+        programId={template.id}
+        shortName={template.shortName}
+        answers={answers}
+        companyName={context.companyName}
+      />
+    );
+  }
+
   const shown = visibleQuestions(template, answers, context);
 
   return (
@@ -199,6 +225,124 @@ export function ProgramForm({
       <p className="mt-4 text-sm text-slate-wash">
         Prepared in the name of {context.companyName}. Everything in it comes
         from your answers above and your company profile.
+      </p>
+    </form>
+  );
+}
+
+/**
+ * What somebody sees when the program they just described is not on their plan.
+ *
+ * Three things, in this order: that their answers are not lost, what it
+ * costs, and one button. The price is a range read from lib/pricing and it
+ * travels with `PRICING_NOTE` — a range without that note reads as evasion,
+ * and a single number would read as a quote we have not made.
+ *
+ * There is no "upgrade" button and no checkout, because neither exists. What
+ * happens is that a person replies, which is what the copy says.
+ */
+function LockedPanel({
+  programId,
+  shortName,
+  answers,
+  companyName,
+}: {
+  /*
+   * An id and a name rather than the template, even though this component
+   * runs on the same side of the boundary as its caller and could take the
+   * whole thing. The guard in boundaries.test.mts is deliberately coarse —
+   * grep cannot tell which side a component sits on — and the rule is worth
+   * more intact than this file is worth saving two props.
+   */
+  programId: string;
+  shortName: string;
+  answers: Answers;
+  companyName: string;
+}) {
+  const [state, formAction, isPending] = useActionState<
+    PreparationRequestState,
+    FormData
+  >(requestProgramPreparation, initialPreparationRequest);
+
+  const offer = offerById("single_program");
+
+  if (state.status === "sent") {
+    return (
+      <div className="border border-verdigris bg-paper p-6 md:p-8">
+        <CheckCircle2 aria-hidden className="h-6 w-6 text-verdigris" />
+        <h2 className="type-h3 mt-4 text-millscale">That&rsquo;s with us</h2>
+        <p className="type-body mt-3">
+          Your answers went with it, so we know exactly what to prepare for{" "}
+          {companyName}. We&rsquo;ll come back with the price before any work
+          starts.
+        </p>
+        <Link
+          href="/dashboard/requests"
+          className="btn-primary mt-6 inline-block"
+        >
+          See your requests
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <form action={formAction} className="border border-zinc-dust bg-paper p-6 md:p-8">
+      <input type="hidden" name="program_id" value={programId} />
+      {/*
+        The answers ride along on this form rather than being re-entered. They
+        are the whole value of asking at this moment instead of at the top of
+        the page.
+      */}
+      {Object.entries(answers).map(([id, value]) => (
+        <input key={id} type="hidden" name={`answer_${id}`} value={value} />
+      ))}
+
+      <h2 className="type-h3 text-millscale">
+        We can prepare this for {companyName}
+      </h2>
+
+      <p className="type-body mt-3">
+        Your free plan covers the gap check &mdash; what your file looks short
+        on, and why. Having a program written and prepared in your company name
+        is the part we do for you.
+      </p>
+
+      <p className="type-body mt-4">
+        You&rsquo;ve already answered everything the {shortName}{" "}
+        program asks. Those answers go with this request, so nobody will ask
+        you again.
+      </p>
+
+      {offer ? (
+        <div className="mt-6 border-t border-zinc-dust pt-5">
+          <p className="type-label text-millscale">
+            {formatMoney(offer.price)}{" "}
+            <span className="font-normal text-slate-wash">
+              &middot; {offer.name}
+            </span>
+          </p>
+          <p className="mt-2 text-sm text-slate-wash">{PRICING_NOTE}</p>
+        </div>
+      ) : null}
+
+      {state.error ? (
+        <p role="alert" className="mt-5 text-sm text-rust-flag">
+          {state.error}
+        </p>
+      ) : null}
+
+      <SubmitButton pendingLabel="Sending…" className="btn-primary mt-6">
+        Ask us to prepare it
+      </SubmitButton>
+
+      <p className="mt-4 text-sm text-slate-wash">
+        Nothing is charged now and nothing is charged automatically. A person
+        replies with the number before any work starts.
+      </p>
+
+      <p className="sr-only" aria-live="polite">
+        {isPending ? "Sending your request" : ""}
       </p>
     </form>
   );

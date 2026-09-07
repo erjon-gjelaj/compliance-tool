@@ -15,6 +15,7 @@ import { listAllRequests, recordEvent } from "@/lib/requests/store";
 import {
   notifyCertLoopReply,
   notifyPaymentRecorded,
+  notifyPlanGranted,
   notifyQuoteSent,
 } from "@/lib/notify";
 import {
@@ -24,8 +25,8 @@ import {
   liveQuote,
   type EventKind,
 } from "@/lib/requests/state";
-import { setPlanForEmail } from "@/lib/companies";
-import { PLANS, isPlan } from "@/lib/entitlements";
+import { getCompanyForEmail, setPlanForEmail } from "@/lib/companies";
+import { PLANS, isPlan, planOf, unlocksPreparation } from "@/lib/entitlements";
 
 /**
  * The operator console.
@@ -181,6 +182,14 @@ async function grantPlan(formData: FormData) {
    */
   let outcome: "granted" | "no_company" | "plan_failed";
 
+  /*
+   * Read before writing, so the email can be decided on what actually
+   * changed. A plan set to the value it already held, or lowered, is
+   * bookkeeping — and "good news, your account changed" for a downgrade is
+   * worse than saying nothing.
+   */
+  const adds = unlocksPreparation(planOf(await getCompanyForEmail(email)), plan);
+
   try {
     // No company row means nothing was granted. Saying so beats a success
     // message for a change that did not happen.
@@ -188,6 +197,24 @@ async function grantPlan(formData: FormData) {
   } catch (cause) {
     console.error("Could not set a plan:", cause);
     outcome = "plan_failed";
+  }
+
+  /*
+   * The last silent step in the money path, now that a plan gates something.
+   * A quote is emailed and a payment is emailed; granting the plan is the
+   * moment the customer can finally act on what they bought, and it used to
+   * say nothing at all.
+   *
+   * A failure here does not change the outcome. The grant is already made,
+   * and reporting an email problem as a grant problem would send the operator
+   * to re-grant something that worked.
+   */
+  if (outcome === "granted" && adds) {
+    try {
+      await notifyPlanGranted({ email, programName: null });
+    } catch (cause) {
+      console.error("Could not tell the customer their plan was granted:", cause);
+    }
   }
 
   redirect(`/internal/requests?${outcome}=1`);

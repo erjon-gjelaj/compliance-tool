@@ -1197,3 +1197,63 @@ export async function notifyPaymentRecorded({
     transport.close();
   }
 }
+
+/**
+ * Tells somebody the thing they paid for is now available to them.
+ *
+ * The last silent step in the money path. A quote is emailed, a payment is
+ * emailed, and then the plan was granted with nothing said — so the one
+ * moment the customer can actually act on what they bought was the one moment
+ * they were not told about. They would have had to guess and go back to look.
+ *
+ * Sent only when the grant adds something. A plan set to the same value, or
+ * lowered, is bookkeeping — and "good news, your account changed" for a
+ * downgrade is worse than silence.
+ */
+export async function notifyPlanGranted({
+  email,
+  programName,
+}: {
+  email: string;
+  /** The program they asked for, when we know it, so the mail is specific. */
+  programName: string | null;
+}): Promise<void> {
+  const config = readSmtpConfig();
+  if (!config) return;
+
+  let transport;
+  try {
+    transport = buildTransport(config);
+  } catch (cause) {
+    console.error("Could not create the mail transport:", cause);
+    return;
+  }
+
+  try {
+    await transport.sendMail({
+      from: config.from,
+      to: email,
+      replyTo: config.to,
+      subject: `${SITE_NAME}: your programs are ready to prepare`,
+      text: [
+        programName
+          ? `Your account is set up, and the ${programName} is ready for you to prepare.`
+          : "Your account is set up, and the safety programs are ready for you to prepare.",
+        "",
+        "Answer the questions about how you actually work and we build the",
+        "document in your company's name. Word and PDF, both kept in your",
+        "library, and every later version alongside them.",
+        "",
+        "If a hiring client sends one back, paste what they said and we'll",
+        "prepare a revised version at no extra cost.",
+        "",
+        "---",
+        `${SITE_URL}/dashboard/programs`,
+      ].join("\n"),
+    });
+  } catch (cause) {
+    console.error("Plan notification failed to send:", cause);
+  } finally {
+    transport.close();
+  }
+}

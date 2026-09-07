@@ -9,6 +9,7 @@ import {
   can,
   isPlan,
   planOf,
+  unlocksPreparation,
   type Capability,
 } from "./entitlements.ts";
 import { FREE_INCLUDES, ONE_TIME_SERVICES } from "./pricing.ts";
@@ -167,4 +168,38 @@ test("isPlan rejects anything that is not one of ours", () => {
   assert.ok(!isPlan(undefined));
   assert.ok(!isPlan(null));
   assert.ok(!isPlan({ plan: "admin" }));
+});
+
+/* ------------------------------------------------------------------ *
+ * When a plan change is worth an email
+ * ------------------------------------------------------------------ */
+
+test("granting a paid plan to a free account is worth telling them about", () => {
+  assert.ok(unlocksPreparation("free", "contractor"));
+  assert.ok(unlocksPreparation("free", "consultant"));
+  assert.ok(unlocksPreparation("free", "admin"));
+});
+
+test("a downgrade never sends good news", () => {
+  // "Your programs are ready to prepare" arriving as somebody loses access is
+  // worse than silence, and it is the mistake a naive "plan changed" hook
+  // would make.
+  assert.equal(unlocksPreparation("contractor", "free"), false);
+  assert.equal(unlocksPreparation("consultant", "free"), false);
+});
+
+test("re-granting the same plan is not news", () => {
+  // An operator clicking the dropdown twice, or setting a plan somebody
+  // already holds, must not mail them again.
+  for (const plan of PLANS) {
+    assert.equal(unlocksPreparation(plan, plan), false, `${plan} to ${plan} sent an email`);
+  }
+});
+
+test("a sideways move that changes nothing they can do is not news", () => {
+  // contractor to consultant adds workspaces and white label, not document
+  // preparation — they could already prepare documents, so the email would be
+  // telling them something they have known for months.
+  assert.equal(unlocksPreparation("contractor", "consultant"), false);
+  assert.equal(unlocksPreparation("consultant", "contractor"), false);
 });

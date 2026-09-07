@@ -123,3 +123,20 @@ export const LOCKED_COPY: Record<Capability, string> = {
     "Unbranded deliverables aren't available yet. Tell us what you need.",
   internal_admin: "",
 };
+
+/**
+ * Whether a plan change hands somebody the paid product for the first time.
+ *
+ * Extracted from the operator console so it can be tested. It decides whether
+ * an email goes out when a plan is granted, and both wrong answers are bad in
+ * different ways: staying silent leaves somebody who has just paid with no
+ * idea they can now do the thing they paid for, and speaking up on a
+ * downgrade sends "good news, your account changed" to somebody who has just
+ * lost access.
+ *
+ * A grant to the same plan, or to a different plan that happens to hold the
+ * same capability, is not news either — it adds nothing to tell them about.
+ */
+export function unlocksPreparation(before: Plan, after: Plan): boolean {
+  return can(after, "document_preparation") && !can(before, "document_preparation");
+}

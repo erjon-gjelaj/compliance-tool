@@ -46,7 +46,7 @@
  * tidy-up step.
  */
 
-export const REQUIREMENTS_VERSION = "2026-09-07.1";
+export const REQUIREMENTS_VERSION = "2026-09-07.2";
 
 export type RequirementSource = "osha" | "platform" | "hiring_client";
 
@@ -85,7 +85,7 @@ export type Requirement = {
 export const REQUIREMENTS: readonly Requirement[] = [
   {
     id: "written-safety-program",
-    label: "Written safety manual or programme",
+    label: "Written safety manual or program",
     source: "platform",
     verified: false,
     trades: "all",
@@ -96,7 +96,7 @@ export const REQUIREMENTS: readonly Requirement[] = [
   },
   {
     id: "hazard-communication",
-    label: "Hazard communication programme",
+    label: "Hazard communication program",
     source: "platform",
     verified: false,
     trades: "all",
@@ -107,7 +107,7 @@ export const REQUIREMENTS: readonly Requirement[] = [
   },
   {
     id: "lockout-tagout",
-    label: "Lockout/tagout programme",
+    label: "Lockout/tagout program",
     source: "platform",
     verified: false,
     trades: "all",
@@ -135,7 +135,7 @@ export const REQUIREMENTS: readonly Requirement[] = [
   },
   {
     id: "confined-space",
-    label: "Confined space entry programme",
+    label: "Confined space entry program",
     source: "platform",
     verified: false,
     trades: "all",
@@ -146,7 +146,7 @@ export const REQUIREMENTS: readonly Requirement[] = [
   },
   {
     id: "fall-protection",
-    label: "Fall protection programme",
+    label: "Fall protection program",
     source: "platform",
     verified: false,
     trades: "all",
@@ -157,7 +157,7 @@ export const REQUIREMENTS: readonly Requirement[] = [
   },
   {
     id: "respiratory-protection",
-    label: "Respiratory protection programme",
+    label: "Respiratory protection program",
     source: "platform",
     verified: false,
     trades: "all",
@@ -168,7 +168,7 @@ export const REQUIREMENTS: readonly Requirement[] = [
   },
   {
     id: "ppe",
-    label: "Personal protective equipment programme",
+    label: "Personal protective equipment program",
     source: "platform",
     verified: false,
     trades: "all",
@@ -333,7 +333,7 @@ export const REQUIREMENTS: readonly Requirement[] = [
       "nfpa 70e",
     ],
     action:
-      "Reviewers usually look for how energised work is authorised, not just a policy against it.",
+      "Reviewers usually look for how energized work is authorized, not just a policy against it.",
     sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
   },
   {

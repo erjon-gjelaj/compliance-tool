@@ -387,7 +387,7 @@ export function ReviewPanel({
           {covered.length > 0 ? (
             <Section
               title="What looks covered"
-              blurb="Found in your documents. That the subject is covered doesn't mean the document is good enough — a programme can mention something and still come back for revision."
+              blurb="Found in your documents. That the subject is covered doesn't mean the document is good enough — a program can mention something and still come back for revision."
             >
               {covered.map((item) => (
                 <Finding key={item.requirement} item={item} />

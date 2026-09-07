@@ -126,11 +126,15 @@ export const INCIDENT: ProgramTemplate = {
   requirementId: "incident-reporting",
 
   /*
-   * Not offered until somebody reviews the prose. Same rule as every other
-   * programme (docs/release-one.md): the flag is lifted per programme, by a
-   * person, and the lift is recorded here with a date.
+   * Offered to customers. Lifted by the owner on 2026-09-07, with the
+   * rendered document sent to them at the same time.
+   *
+   * docs/release-one.md sets the rule: the flag is lifted per programme, by a
+   * person, once the prose has been reviewed. Recording who lifted it and
+   * when is the other half of that rule — a flag nobody remembers deciding is
+   * the same as a flag nobody decided.
    */
-  release: "internal_testing",
+  release: "customer_available",
   templateVersion: "1.0.0",
 
   matchesLabel: (label) =>

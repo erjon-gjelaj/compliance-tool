@@ -95,7 +95,7 @@ export default async function ProgramsPage() {
         >
           tell us which
         </Link>{" "}
-        and we&rsquo;ll prioritise it.
+        and we&rsquo;ll prioritize it.
       </p>
     </main>
   );

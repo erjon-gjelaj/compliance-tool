@@ -66,11 +66,19 @@ function prose(sections: Section[]): string {
  * The release gate
  * ------------------------------------------------------------------ */
 
-test("EAP is not offered until somebody signs off the prose", () => {
-  // Same rule as every programme: lifted by a person, and the lift recorded
-  // with a date in the template. HazCom and PPE carry that record; this does
-  // not yet, so it must not be reachable by a customer.
-  assert.equal(isOfferable(EAP.release), false);
+test("EAP is offered to customers", () => {
+  // Lifted by the owner on 2026-09-07, with the rendered document sent to
+  // them at the same time.
+  //
+  // The test is kept rather than deleted, pointing the other way. Its job now
+  // is to catch a silent demotion: a programme quietly dropping out of the
+  // customer library is the kind of regression nobody notices, because the
+  // symptom is an absence rather than an error.
+  assert.equal(
+    isOfferable(EAP.release),
+    true,
+    "the Emergency Action Plan stopped being offered — if that was deliberate, say so here",
+  );
 });
 
 /* ------------------------------------------------------------------ *

@@ -224,3 +224,70 @@ test("every trade-specific entry records where it came from", () => {
     );
   }
 });
+
+/* ------------------------------------------------------------------ *
+ * The spelling the customer reads
+ * ------------------------------------------------------------------ */
+
+test("labels and actions are written in American English", () => {
+  /*
+   * These strings are the review a US industrial contractor reads. They were
+   * inconsistent with themselves: the original twelve entries said "Hazard
+   * communication programme" while the fourteen added later said "Electrical
+   * safety program", so a single list mixed both spellings — and the intake
+   * checkbox for the very same requirement already said "program".
+   *
+   * `phrases` is deliberately exempt. Those search the contractor's own
+   * document, where either spelling may genuinely appear, and dropping the
+   * British one would only cause a miss.
+   */
+  const british = [
+    /\bprogramme\b/i,
+    /\brecognise[ds]?\b/i,
+    /\bauthoris/i,
+    /\borganis/i,
+    /\bminimis/i,
+    /\bspecialis/i,
+    /\bprioritis/i,
+    /\bbehaviour/i,
+    /\butilis/i,
+  ];
+
+  for (const requirement of REQUIREMENTS) {
+    for (const field of ["label", "action", "checklist"] as const) {
+      for (const pattern of british) {
+        assert.doesNotMatch(
+          requirement[field],
+          pattern,
+          `"${requirement.id}" ${field} uses British spelling: "${requirement[field]}"`,
+        );
+      }
+    }
+  }
+});
+
+test("the label a customer reads matches the checkbox they ticked", () => {
+  // The intake offers `checklist`; the review prints `label`. Where the two
+  // describe the same document in different words, somebody who ticked a box
+  // sees a different name come back and cannot tell they are the same thing.
+  const normalize = (value: string) =>
+    value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+  for (const requirement of REQUIREMENTS) {
+    const label = normalize(requirement.label);
+    const checklist = normalize(requirement.checklist);
+
+    // Not equality: "Aerial lifts and elevated work platforms" is fairly
+    // shortened to "Aerial lift / elevated work platform" on a form. What is
+    // caught is a difference in the words themselves rather than in length.
+    const shared = checklist
+      .split(" ")
+      .filter((word) => word.length > 3 && label.includes(word.slice(0, 4)));
+
+    assert.ok(
+      shared.length > 0,
+      `"${requirement.id}": the checkbox says "${requirement.checklist}" and the ` +
+        `review says "${requirement.label}" — nobody can tell those are the same document`,
+    );
+  }
+});

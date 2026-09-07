@@ -289,7 +289,7 @@ function summaryFor(
     }
 
     if (rejection.subjects.length === 0) {
-      return "We read the notes you pasted and they don't name a document type we recognise, so this is a general read of your file rather than an answer about that rejection. ";
+      return "We read the notes you pasted and they don't name a document type we recognize, so this is a general read of your file rather than an answer about that rejection. ";
     }
 
     const named = rejection.subjects
@@ -323,7 +323,7 @@ function summaryFor(
       ? ` ${missing} ${missing === 1 ? "was" : "were"} not mentioned anywhere we looked.`
       : "";
 
-  return `${rejectionOpening}${opening}${found}${gap} This is a text search, not a judgement about whether a document is good enough — a programme can mention a subject and still come back for revision.`;
+  return `${rejectionOpening}${opening}${found}${gap} This is a text search, not a judgement about whether a document is good enough — a program can mention a subject and still come back for revision.`;
 }
 
 function questionsFor(

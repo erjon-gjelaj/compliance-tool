@@ -7,7 +7,7 @@ import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/ty
 /**
  * The programme library.
  *
- * Four entries today, two of them not yet offered. The shape is what
+ * Four entries today, all four offered. The shape is what
  * matters: adding the next programme is a template file and a line here,
  * with no change to the questionnaire, the validator, the renderers, the
  * storage, or the library UI.

@@ -82,8 +82,17 @@ function ladder(sections: Section[]): string[] {
  * The release gate
  * ------------------------------------------------------------------ */
 
-test("incident reporting is not offered until somebody signs off the prose", () => {
-  assert.equal(isOfferable(INCIDENT.release), false);
+test("incident reporting is offered to customers", () => {
+  // Lifted by the owner on 2026-09-07, with the rendered document sent to
+  // them at the same time.
+  //
+  // Kept and pointed the other way, as PPE's is: the regression to catch now
+  // is a silent demotion, whose symptom is an absence rather than an error.
+  assert.equal(
+    isOfferable(INCIDENT.release),
+    true,
+    "incident reporting stopped being offered — if that was deliberate, say so here",
+  );
 });
 
 /* ------------------------------------------------------------------ *

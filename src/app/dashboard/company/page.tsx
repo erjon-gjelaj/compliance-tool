@@ -48,7 +48,7 @@ export default async function CompanyPage() {
 
       <p className="type-body mt-8 border-t border-zinc-dust pt-6">
         This is your description of your own company. It is not a hazard
-        assessment and nothing here is treated as evidence of a programme,
+        assessment and nothing here is treated as evidence of a program,
         training, or a certificate &mdash; those have to be documents we can
         read.
       </p>

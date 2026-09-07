@@ -419,7 +419,7 @@ function renderAnalysis(
       "- Send the file the document was originally written in, usually Word.",
       "- Re-export a PDF from that original rather than scanning a printout.",
       "- If the scan is all that exists, most scanners and Adobe Acrobat can",
-      "  re-save it with the text recognised — look for OCR, Recognise Text,",
+      "  re-save it with the text recognized — look for OCR, Recognize Text,",
       "  or Make Searchable.",
       "",
       "Reply with one of those and we'll run it again properly.",

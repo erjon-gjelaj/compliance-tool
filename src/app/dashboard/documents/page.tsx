@@ -9,6 +9,7 @@ import { currentClient } from "@/lib/auth/session";
 import { listDocumentsForEmail, type LibraryDocument } from "@/lib/dashboard";
 import { listDocumentsForEmail as listGenerated } from "@/lib/programs/store";
 import { offerablePrograms, programById } from "@/lib/programs/registry";
+import { describeDue, renewalFor } from "@/lib/renewals";
 import { DocumentDownload } from "@/components/document-download";
 
 export const metadata = pageMetadata({
@@ -149,6 +150,14 @@ export default async function DocumentsPage() {
                */
               const title = template?.title ?? humaniseProgramId(entry.program_id);
 
+              /*
+               * Null whenever there is nothing certain to say — no live
+               * version, or a date that does not parse. See lib/renewals:
+               * the row simply reads "ready to download" as it always did
+               * rather than inventing a date to fill the space.
+               */
+              const renewal = renewalFor(entry);
+
               return (
                 <li key={entry.id}>
                   <Link
@@ -160,12 +169,31 @@ export default async function DocumentsPage() {
                         {title}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-wash">
-                        Version {entry.current?.version ?? 1} &middot; ready to
-                        download
+                        Version {entry.current?.version ?? 1} &middot;{" "}
+                        {renewal ? describeDue(renewal) : "ready to download"}
                       </p>
                     </div>
-                    <span className="shrink-0 border border-verdigris bg-verdigris/8 px-2.5 py-1 text-xs font-medium text-verdigris">
-                      Ready
+                    {/*
+                      The chip carries the review state rather than always
+                      saying "Ready". A library where every row says the same
+                      word is a list, not a status — and the one thing a
+                      contractor needs to see at a glance is which of these
+                      their own document says is due another look.
+                    */}
+                    <span
+                      className={`shrink-0 border px-2.5 py-1 text-xs font-medium ${
+                        renewal?.status === "overdue"
+                          ? "border-rust-flag bg-rust-flag/8 text-rust-flag"
+                          : renewal?.status === "due_soon"
+                            ? "border-slate-wash bg-galvanise text-millscale"
+                            : "border-verdigris bg-verdigris/8 text-verdigris"
+                      }`}
+                    >
+                      {renewal?.status === "overdue"
+                        ? "Review due"
+                        : renewal?.status === "due_soon"
+                          ? "Review soon"
+                          : "Ready"}
                     </span>
                   </Link>
                 </li>

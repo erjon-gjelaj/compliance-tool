@@ -331,9 +331,9 @@
     },
     {
       "id": "053",
-      "title": "Stage 9: maintenance and expiries (later)",
-      "status": "todo",
-      "notes": "Revision dates, expiries, annual reminders, version history - only about dates we were given, never about changes we are guessing at.",
+      "title": "Stage 9: maintenance and renewals",
+      "status": "done",
+      "notes": "Built the half that can be honest, and refused the half that cannot. There is exactly one renewal date in this product that is not a guess: every program we issue says in its own closing section that it is reviewed at least annually, and that is the company's own commitment with an effective date printed beside it - not our claim about their obligations. So review due = effective_date + 12 months, derived from generated_document_versions.effective_date, needing no migration and no new storage. Everything else a maintenance service covers (insurance certificates, training tickets, client-specific demands) stays out entirely until somebody tells us the date; an invented renewal date is worse than none because a contractor plans around it. A superseded version produces nothing - a revision restarts the year, and showing a review overdue on a document somebody already replaced is how a renewal list teaches people to ignore it. Surfaced two ways: the customer's document rows carry the review state in the chip instead of every row saying \"Ready\", and /internal lists who is due across every company, soonest first, which is what makes the maintenance plan on the pricing page deliverable - it is sold as the part a person does, and a person cannot do it without a list. Deliberately NOT a scheduled email: there is no cron in this deployment and no secret to protect one, and half a scheduler that silently stops firing is worse than a page somebody opens, because this list is wrong in a way that is visible. 16 tests, mostly checking that nothing is produced: no live version, unparseable date, superseded version. Also pinned the month arithmetic (31 January plus a year, leap day clamping to 28 February) and the off-by-one that would tell somebody they are late on the morning they are not.",
       "needs_human_review": false
     },
     {

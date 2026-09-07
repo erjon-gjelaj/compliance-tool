@@ -1,6 +1,8 @@
 import "server-only";
 
 import { getSupabaseAdminClient } from "@/lib/supabase";
+import { renewalFor } from "@/lib/renewals";
+import type { VersionRow } from "@/lib/programs/store";
 
 /**
  * What an operator needs to know that nothing else tells them.
@@ -164,4 +166,84 @@ export async function listHarvest(limit = 100): Promise<HarvestEntry[]> {
         (entry.rejection_notes && entry.rejection_notes.trim().length > 0) ||
         (entry.documents_held && entry.documents_held.length > 0),
     );
+}
+
+/* ------------------------------------------------------------------ */
+
+export type DueReview = {
+  email: string;
+  companyName: string | null;
+  programId: string;
+  documentId: string;
+  version: number;
+  effectiveDate: string;
+  reviewDue: string;
+  daysUntilDue: number;
+  status: "due_soon" | "overdue";
+};
+
+/**
+ * Programs whose own annual review has come round, across every company.
+ *
+ * This is the maintenance service made deliverable. The pricing page sells
+ * "document updates, renewal reminders, reviews when a new client asks", and
+ * that is described there as the part a person does — but a person cannot do
+ * it without a list of who is due, and nothing in this product produced one.
+ *
+ * Deliberately not a scheduled email. There is no cron in this deployment and
+ * no secret to protect one, and half a scheduler that silently stops firing
+ * is worse than a page somebody opens: this list is wrong in a way that is
+ * visible, which a missed send never is.
+ *
+ * Only documents whose live version carries a date it can be computed from
+ * appear. See lib/renewals — nothing here is guessed.
+ */
+export async function listDueReviews(limit = 100): Promise<DueReview[]> {
+  const supabase = getSupabaseAdminClient();
+
+  const { data, error } = await supabase
+    .from("generated_documents")
+    .select("id, email, program_id, generated_document_versions(*), companies(name)")
+    .limit(limit);
+
+  if (error) {
+    console.warn(`Could not list due reviews: ${error.message}`);
+    return [];
+  }
+
+  const due: DueReview[] = [];
+
+  for (const row of data ?? []) {
+    const versions = [...((row.generated_document_versions ?? []) as VersionRow[])].sort(
+      (a, b) => b.version - a.version,
+    );
+    const current = versions.find((entry) => !entry.superseded_at) ?? versions[0] ?? null;
+
+    const renewal = renewalFor({
+      id: row.id as string,
+      program_id: row.program_id as string,
+      current,
+    });
+
+    if (!renewal || renewal.status === "current") continue;
+
+    // As in listFailedRuns: Supabase types an embedded row as an object or an
+    // array depending on the relationship it infers.
+    const joined = row.companies as { name: string } | { name: string }[] | null;
+    const company = Array.isArray(joined) ? joined[0] : joined;
+
+    due.push({
+      email: row.email as string,
+      companyName: company?.name ?? null,
+      programId: renewal.programId,
+      documentId: renewal.documentId,
+      version: renewal.version,
+      effectiveDate: renewal.effectiveDate,
+      reviewDue: renewal.reviewDue,
+      daysUntilDue: renewal.daysUntilDue,
+      status: renewal.status,
+    });
+  }
+
+  return due.sort((a, b) => a.daysUntilDue - b.daysUntilDue);
 }

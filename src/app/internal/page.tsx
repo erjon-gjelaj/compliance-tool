@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AlertTriangle, Lock, Sprout } from "lucide-react";
+import { AlertTriangle, CalendarClock, Lock, Sprout } from "lucide-react";
 
 import {
   closeInternalSession,
@@ -10,7 +10,13 @@ import {
 } from "@/lib/internal-auth";
 import { SITE_NAME } from "@/lib/constants";
 import { SubmitButton } from "@/components/submit-button";
-import { listFailedRuns, listHarvest, tallyRuns } from "@/lib/operations";
+import {
+  listDueReviews,
+  listFailedRuns,
+  listHarvest,
+  tallyRuns,
+} from "@/lib/operations";
+import { programById } from "@/lib/programs/registry";
 import { REQUIREMENTS_VERSION } from "@/lib/requirements";
 
 /**
@@ -90,10 +96,11 @@ export default async function InternalHomePage({
   if (!internalAccessConfigured()) return <Gate denied={false} />;
   if (!(await hasInternalSession())) return <Gate denied={Boolean(denied)} />;
 
-  const [failed, tally, harvest] = await Promise.all([
+  const [failed, tally, harvest, due] = await Promise.all([
     listFailedRuns(),
     tallyRuns(),
     listHarvest(),
+    listDueReviews(),
   ]);
 
   return (
@@ -177,6 +184,68 @@ export default async function InternalHomePage({
                   {run.documents_read} read, {run.documents_unreadable} unreadable
                   &middot; reference {run.reference_version} &middot; submission{" "}
                   {run.submission_id}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* ---------------------------------------------------------------- */}
+
+      <section aria-labelledby="due-heading" className="mt-12">
+        <h2
+          id="due-heading"
+          className="flex items-center gap-2 text-sm font-semibold text-millscale"
+        >
+          <CalendarClock
+            aria-hidden
+            className={`h-4 w-4 ${due.length > 0 ? "text-rust-flag" : "text-slate-wash"}`}
+          />
+          Programs due another look
+        </h2>
+
+        <p className="mt-2 max-w-2xl text-xs text-slate-wash">
+          Every program we issue says, in its own closing section, that it is
+          reviewed at least annually. That is the company&rsquo;s own
+          commitment with an effective date printed beside it, so this is the
+          one renewal date in the product that is not a guess &mdash; and it is
+          the list the maintenance service is sold on. Nothing here is emailed
+          automatically; somebody gets in touch.
+        </p>
+
+        {due.length === 0 ? (
+          <p className="mt-4 border border-zinc-dust bg-paper p-4 text-sm text-slate-wash">
+            Nothing is due. Every live program was issued within the year.
+          </p>
+        ) : (
+          <ul className="mt-4 grid gap-2">
+            {due.map((entry) => (
+              <li
+                key={entry.documentId}
+                className={`border bg-paper p-4 ${
+                  entry.status === "overdue" ? "border-rust-flag" : "border-zinc-dust"
+                }`}
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <p className="text-sm font-medium text-millscale">
+                    {entry.companyName ?? entry.email}
+                    {" · "}
+                    {programById(entry.programId)?.shortName ?? entry.programId}
+                  </p>
+                  <p
+                    className={`text-xs ${
+                      entry.status === "overdue" ? "text-rust-flag" : "text-slate-wash"
+                    }`}
+                  >
+                    {entry.status === "overdue"
+                      ? `${Math.abs(entry.daysUntilDue)} days overdue`
+                      : `due in ${entry.daysUntilDue} days`}
+                  </p>
+                </div>
+                <p className="mt-1 text-xs text-slate-wash">
+                  version {entry.version} &middot; effective {when(entry.effectiveDate)}{" "}
+                  &middot; review due {when(entry.reviewDue)} &middot; {entry.email}
                 </p>
               </li>
             ))}

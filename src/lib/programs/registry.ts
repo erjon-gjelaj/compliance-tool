@@ -1,5 +1,6 @@
 import { HAZCOM } from "@/lib/programs/hazcom";
 import { PPE } from "@/lib/programs/ppe";
+import { EAP } from "@/lib/programs/eap";
 import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/types";
 
 /**
@@ -15,7 +16,7 @@ import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/ty
  * carry functions, and functions cannot be serialised. Pass an id and look it
  * up on the far side.
  */
-export const PROGRAMS: ProgramTemplate[] = [HAZCOM, PPE];
+export const PROGRAMS: ProgramTemplate[] = [HAZCOM, PPE, EAP];
 
 export function programById(id: string): ProgramTemplate | undefined {
   return PROGRAMS.find((program) => program.id === id);

@@ -136,6 +136,29 @@ function writeBlock(
 
       ensureRoom(doc, meta, cursor, 60);
 
+      /*
+       * Ruled, not just spaced.
+       *
+       * Rows used to be laid out by advancing the cursor with nothing drawn,
+       * which is fine for a table whose cells all carry text — the words
+       * imply the grid. It falls apart for a table meant to be WRITTEN on:
+       * the Emergency Action Plan's site record ships with deliberately blank
+       * rows, and without rules those rows are invisible whitespace on the
+       * page. Word already draws its own borders, so only the PDF was
+       * producing a form with no lines to fill in.
+       */
+      const ruleTo = MARGIN + CONTENT_WIDTH;
+      const rule = (y: number, strong: boolean) => {
+        doc
+          .save()
+          .lineWidth(strong ? 0.9 : 0.4)
+          .strokeColor(strong ? "#151d1a" : "#b9c1bb")
+          .moveTo(MARGIN, y)
+          .lineTo(ruleTo, y)
+          .stroke()
+          .restore();
+      };
+
       doc.font(BOLD).fontSize(9.5);
       let x = MARGIN;
       const headTop = doc.y;
@@ -143,18 +166,25 @@ function writeBlock(
         doc.text(cell, x, headTop, { width: width - 8 });
         x += width;
       }
-      doc.y = headTop + 18;
+      // Header cells wrap, so the rule goes under the tallest of them rather
+      // than at a fixed offset — otherwise a two-line heading crosses it.
+      const headBottom = Math.max(doc.y, headTop + 18);
+      rule(headBottom + 2, true);
+      doc.y = headBottom + 8;
 
       doc.font(BODY).fontSize(9.5);
       for (const row of block.rows) {
-        ensureRoom(doc, meta, cursor, 24);
+        ensureRoom(doc, meta, cursor, 30);
         const top = doc.y;
         let cellX = MARGIN;
         for (const cell of row) {
           doc.text(cell, cellX, top, { width: width - 8 });
           cellX += width;
         }
-        doc.y = top + 18;
+        // A blank row still has to be tall enough to write a site name in.
+        const bottom = Math.max(doc.y, top + 20);
+        rule(bottom + 2, false);
+        doc.y = bottom + 8;
       }
 
       doc.moveDown(0.6);

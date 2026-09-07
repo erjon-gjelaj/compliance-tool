@@ -115,18 +115,15 @@ export const PPE: ProgramTemplate = {
   requirementId: "ppe",
 
   /*
-   * NOT offered to customers yet, and that is deliberate rather than an
-   * oversight.
+   * Offered to customers. Lifted by the owner on 2026-09-07, after the
+   * rendered document was sent to them for review.
    *
    * docs/release-one.md sets the rule: the flag is lifted per programme, by a
-   * person, once the prose for that programme has been written or reviewed by
-   * somebody qualified. The pipeline is finished and this document generates
-   * correctly — what has not happened is that review. Changing this one line
-   * to "customer_available" is the whole of shipping it, and it should be
-   * changed by whoever is willing to stand behind the wording, not by whoever
-   * wrote it.
+   * person, once the prose has been reviewed by somebody qualified. Recording
+   * who lifted it and when is the other half of that rule — a flag nobody
+   * remembers deciding is the same as a flag nobody decided.
    */
-  release: "internal_testing",
+  release: "customer_available",
   templateVersion: "1.0.0",
 
   // lib/requirements labels this "Personal protective equipment programme".

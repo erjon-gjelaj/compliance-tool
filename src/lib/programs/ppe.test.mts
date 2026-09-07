@@ -62,15 +62,18 @@ function prose(sections: Section[]): string {
  * The release gate
  * ------------------------------------------------------------------ */
 
-test("PPE is NOT offered to customers until a person lifts the flag", () => {
-  // docs/release-one.md: the flag is lifted per programme, by a person, once
-  // the prose has been reviewed by somebody qualified. This test fails the
-  // moment that happens, which is the point — lifting it should be a
-  // deliberate act that someone has to come here and confirm.
+test("PPE is offered to customers, and that was a decision somebody made", () => {
+  // Lifted by the owner on 2026-09-07, after the rendered document was sent
+  // to them for review.
+  //
+  // The test is kept rather than deleted, pointing the other way. Its job now
+  // is to catch a silent demotion: a programme quietly dropping out of the
+  // customer library is the kind of regression nobody notices, because the
+  // symptom is an absence rather than an error.
   assert.equal(
     isOfferable(PPE.release),
-    false,
-    "PPE reached customers without its prose being signed off",
+    true,
+    "PPE stopped being offered — if that was deliberate, say so here",
   );
 });
 
@@ -277,10 +280,10 @@ test("a missing required answer stops the document", () => {
 });
 
 test("the specialty follow-up is only asked of people who said yes", () => {
-  const hidden = visibleQuestions(PPE, BASE).map((q) => q.id);
+  const hidden = visibleQuestions(PPE, BASE, context()).map((q) => q.id);
   assert.ok(!hidden.includes("specialty_list"));
 
-  const shown = visibleQuestions(PPE, { ...BASE, specialty: "yes" }).map((q) => q.id);
+  const shown = visibleQuestions(PPE, { ...BASE, specialty: "yes" }, context()).map((q) => q.id);
   assert.ok(shown.includes("specialty_list"));
 });
 
@@ -288,7 +291,7 @@ test("the questionnaire stays short", () => {
   // Seven at full branching. The audience fills this in on a phone, and the
   // reason the chemical inventory is not asked for in HazCom is the same
   // reason an equipment list is not asked for here.
-  const most = visibleQuestions(PPE, { ...BASE, specialty: "yes" });
+  const most = visibleQuestions(PPE, { ...BASE, specialty: "yes" }, context());
   assert.ok(most.length <= 7, `questionnaire grew to ${most.length}`);
 });
 

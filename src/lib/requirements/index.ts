@@ -46,7 +46,7 @@
  * tidy-up step.
  */
 
-export const REQUIREMENTS_VERSION = "2026-07-26.1";
+export const REQUIREMENTS_VERSION = "2026-09-07.1";
 
 export type RequirementSource = "osha" | "platform" | "hiring_client";
 
@@ -60,6 +60,20 @@ export type Requirement = {
   checklist?: string;
   phrases: readonly string[];
   action: string;
+  /**
+   * Where this candidate came from, for the person who has to verify it.
+   *
+   * Not rendered to a customer and deliberately not treated as evidence: a
+   * consultant's blog listing what ISNetworld "usually" asks for is a lead,
+   * not a source. It exists so that verifying an entry means opening the
+   * thing it was drawn from rather than starting the search again, and so
+   * that an entry nobody can trace can be deleted rather than inherited.
+   *
+   * An entry with sources is still `verified: false`. Verification means a
+   * person checked it against a real ISN or Avetta requirement list, or a
+   * real rejection letter — never against this field.
+   */
+  sources?: readonly string[];
 };
 
 /*
@@ -200,6 +214,293 @@ export const REQUIREMENTS: readonly Requirement[] = [
     checklist: "OSHA 300 / 300A logs",
     phrases: ["osha 300", "300a", "log of work-related injuries", "summary of work-related injuries"],
     action: "Usually the last three years, signed.",
+  },
+
+  /* ------------------------------------------------------------------ *
+   * Core programmes added 2026-09-07.
+   *
+   * These three came up on every public RAVS checklist read and are absent
+   * from the twelve above. They stay `trades: "all"` because nothing in the
+   * research tied them to a scope of work - every list treated them as part
+   * of the core set alongside HazCom and PPE.
+   * ------------------------------------------------------------------ */
+  {
+    id: "fire-prevention",
+    label: "Fire prevention plan",
+    source: "platform",
+    verified: false,
+    trades: "all",
+    platforms: "all",
+    checklist: "Fire prevention plan",
+    phrases: [
+      "fire prevention",
+      "fire watch",
+      "flammable storage",
+      "ignition source",
+    ],
+    action:
+      "Usually asked for alongside the emergency action plan, not instead of it.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)", "https://cascadeqms.com/isnetworld/7-must-have-ravs-for-quick-isnetworld-compliance/ (secondary - consultant checklist)"],
+  },
+  {
+    id: "incident-reporting",
+    label: "Incident reporting and investigation",
+    source: "platform",
+    verified: false,
+    trades: "all",
+    platforms: "all",
+    checklist: "Incident reporting and investigation",
+    phrases: [
+      "incident investigation",
+      "incident reporting",
+      "near miss",
+      "root cause",
+      "accident investigation",
+    ],
+    action:
+      "Check it says who is told, in what order, and what gets written down.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+  {
+    id: "safety-training-program",
+    label: "Written safety training program",
+    source: "platform",
+    verified: false,
+    trades: "all",
+    platforms: "all",
+    checklist: "Written safety training program",
+    phrases: [
+      "training program",
+      "training programme",
+      "orientation",
+      "competent person training",
+      "toolbox talk",
+    ],
+    action:
+      "This is the written program, which is a separate item from the training records themselves.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+
+  /* ------------------------------------------------------------------ *
+   * Trade-specific candidates, added 2026-09-07.
+   *
+   * These are the first entries in this file that are NOT `trades: "all"`,
+   * which makes them the first that `requirementsFor` actually filters. That
+   * machinery was written long ago and has had nothing to do until now -
+   * every previous entry applied to everybody, so a scaffolder and a welder
+   * received an identical list.
+   *
+   * All still `verified: false`. Public consultant checklists and the text of
+   * the OSHA standards are enough to say "this is commonly asked of this
+   * trade". They are NOT enough to say a particular contractor must hold it,
+   * and the output rules already render an unverified entry as the former.
+   *
+   * A contractor who picked "Other" matches none of these and receives the
+   * core set only. That is the right default: handing somebody a scaffolding
+   * requirement because their free-text trade contained a word we liked is
+   * exactly the over-matching this file exists to prevent.
+   * ------------------------------------------------------------------ */
+  {
+    id: "electrical-safety",
+    label: "Electrical safety program",
+    source: "platform",
+    verified: false,
+    trades: ["Electrical"],
+    platforms: "all",
+    checklist: "Electrical safety program",
+    phrases: [
+      "electrical safety",
+      "energized work permit",
+      "approach boundary",
+      "qualified person",
+      "nfpa 70e",
+    ],
+    action:
+      "Reviewers usually look for how energised work is authorised, not just a policy against it.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+  {
+    id: "arc-flash",
+    label: "Arc flash safety",
+    source: "platform",
+    verified: false,
+    trades: ["Electrical"],
+    platforms: "all",
+    checklist: "Arc flash safety",
+    phrases: [
+      "arc flash",
+      "arc rated",
+      "incident energy",
+      "flash protection boundary",
+    ],
+    action:
+      "Often folded into the electrical safety program rather than kept separate - check which your client expects.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+  {
+    id: "aerial-lifts",
+    label: "Aerial lifts and elevated work platforms",
+    source: "platform",
+    verified: false,
+    trades: ["Electrical", "Insulation", "Welding / fabrication"],
+    platforms: "all",
+    checklist: "Aerial lift / elevated work platform",
+    phrases: [
+      "aerial lift",
+      "scissor lift",
+      "boom lift",
+      "mewp",
+      "elevated work platform",
+    ],
+    action:
+      "Asked for where crews reach height by machine rather than by scaffold.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+  {
+    id: "scaffolding-safety",
+    label: "Scaffolding safety program",
+    source: "platform",
+    verified: false,
+    trades: ["Scaffolding"],
+    platforms: "all",
+    checklist: "Scaffolding safety program",
+    phrases: [
+      "scaffold",
+      "scaffolding",
+      "erection and dismantling",
+      "competent person",
+      "guardrail",
+    ],
+    action:
+      "The competent person - who they are and how they were appointed - is usually what a reviewer looks for first.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+  {
+    id: "hot-work",
+    label: "Hot work permit program",
+    source: "platform",
+    verified: false,
+    trades: ["Welding / fabrication"],
+    platforms: "all",
+    checklist: "Hot work permit program",
+    phrases: [
+      "hot work",
+      "hot work permit",
+      "fire watch",
+      "spark containment",
+    ],
+    action:
+      "Check it covers the fire watch and how long it stays after work stops.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+  {
+    id: "welding-cutting",
+    label: "Welding, cutting and brazing program",
+    source: "platform",
+    verified: false,
+    trades: ["Welding / fabrication"],
+    platforms: "all",
+    checklist: "Welding, cutting and brazing",
+    phrases: [
+      "welding and cutting",
+      "brazing",
+      "cylinder storage",
+      "welding screen",
+      "local exhaust ventilation",
+    ],
+    action:
+      "Ventilation and cylinder handling are the parts most often missing.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+  {
+    id: "silica",
+    label: "Respirable crystalline silica exposure control plan",
+    source: "platform",
+    verified: false,
+    trades: ["Insulation", "Industrial cleaning", "Scaffolding"],
+    platforms: "all",
+    checklist: "Silica exposure control plan",
+    phrases: [
+      "silica",
+      "crystalline silica",
+      "exposure control plan",
+      "table 1",
+    ],
+    action:
+      "Usually asked for as a written exposure control plan, not a paragraph in the manual.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+  {
+    id: "asbestos",
+    label: "Asbestos awareness and control",
+    source: "platform",
+    verified: false,
+    trades: ["Insulation"],
+    platforms: "all",
+    checklist: "Asbestos awareness / control",
+    phrases: [
+      "asbestos",
+      "presumed asbestos containing",
+      "negative exposure assessment",
+    ],
+    action:
+      "Relevant to insulation work on older plant - confirm with your client whether they expect it.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+  {
+    id: "lead",
+    label: "Lead exposure control",
+    source: "platform",
+    verified: false,
+    trades: ["Insulation", "Industrial cleaning"],
+    platforms: "all",
+    checklist: "Lead exposure control",
+    phrases: [
+      "lead exposure",
+      "lead paint",
+      "blood lead",
+      "action level",
+    ],
+    action:
+      "Comes up on older plant and coatings work. Confirm whether it applies to you.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+  {
+    id: "hydroblasting",
+    label: "High-pressure water blasting",
+    source: "platform",
+    verified: false,
+    trades: ["Industrial cleaning"],
+    platforms: "all",
+    checklist: "High-pressure water blasting / hydroblasting",
+    phrases: [
+      "hydroblast",
+      "hydro blasting",
+      "water blasting",
+      "high pressure water",
+      "waterjet",
+    ],
+    action:
+      "Check it covers the exclusion zone and the dump valve, not just PPE.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
+  },
+  {
+    id: "hearing-conservation",
+    label: "Hearing conservation program",
+    source: "platform",
+    verified: false,
+    trades: ["Industrial cleaning", "Scaffolding", "Welding / fabrication"],
+    platforms: "all",
+    checklist: "Hearing conservation program",
+    phrases: [
+      "hearing conservation",
+      "audiometric",
+      "noise exposure",
+      "noise monitoring",
+    ],
+    action:
+      "Triggered by measured noise exposure - the monitoring is usually what is asked for.",
+    sources: ["https://crewcompliance.org/blog/isnetworld-required-programs.html (secondary - consultant checklist, 2026)"],
   },
 ];
 

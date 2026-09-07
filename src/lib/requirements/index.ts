@@ -113,8 +113,25 @@ export const REQUIREMENTS: readonly Requirement[] = [
     trades: "all",
     platforms: "all",
     checklist: "Lockout/tagout program",
-    phrases: ["lockout", "tagout", "loto", "energy control procedure"],
-    action: "Check it covers the equipment your crew actually isolates.",
+    phrases: [
+      "lockout",
+      "tagout",
+      "loto",
+      "energy control procedure",
+      "periodic inspection",
+    ],
+    /*
+     * The periodic-inspection wording comes from a real rejection a
+     * contractor pasted into the intake, not from a checklist we found:
+     * "Lockout/tagout program does not include periodic inspection
+     * requirements". That is one reviewer on one submission, so it sharpens
+     * the advice rather than making this verified — but it is the first
+     * piece of first-hand evidence in this file, and it is exactly the kind
+     * the operations page exists to surface.
+     */
+    action:
+      "Check it covers the equipment your crew actually isolates, and that it says how often the procedures are inspected — a reviewer has sent a program back for missing the periodic inspection.",
+    sources: ["Rejection pasted by a contractor, 2026-07-27 (Scaffolding, both platforms)"],
   },
   {
     id: "confined-space",

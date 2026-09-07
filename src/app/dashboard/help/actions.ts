@@ -76,6 +76,9 @@ export async function requestHelp(
     console.error("Could not notify about a service request:", cause);
   }
 
+  // The form now lives on /dashboard/requests; /dashboard/help only
+  // redirects there. Revalidating both keeps any bookmarked path honest.
+  revalidatePath("/dashboard/requests");
   revalidatePath("/dashboard/help");
 
   return { status: "sent" };

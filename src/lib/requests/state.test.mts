@@ -1,7 +1,14 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 
-import { deriveStatus, type RequestEvent } from "./state.ts";
+import {
+  agreedQuote,
+  deriveStatus,
+  formatQuote,
+  isPaid,
+  liveQuote,
+  type RequestEvent,
+} from "./state.ts";
 
 /**
  * The reported bug, and the rules that replace it.
@@ -24,6 +31,8 @@ function event(over: Partial<RequestEvent> = {}): RequestEvent {
     kind: "submitted",
     body: null,
     awaits_reply: false,
+    amount_low: null,
+    amount_high: null,
     ...over,
   };
 }
@@ -145,4 +154,139 @@ test("last activity is the newest event, whatever the order given", () => {
     deriveStatus([second, first]).lastActivityAt,
     second.created_at,
   );
+});
+
+/* ------------------------------------------------------------------ *
+ * The money path.
+ *
+ * These are written as negative tests on purpose. Every one of them is a
+ * case where the screen would look perfectly reasonable and be wrong about
+ * money, which is the only kind of wrong that costs a customer's trust
+ * outright.
+ * ------------------------------------------------------------------ */
+
+test("a quote puts the request on the customer, not on us", () => {
+  const status = deriveStatus([
+    event({ kind: "submitted" }),
+    event({ kind: "quoted", actor: "certloop", amount_low: 149, amount_high: 299 }),
+  ]);
+
+  assert.equal(status.state, "quote_sent");
+  assert.equal(status.nextParty, "customer");
+});
+
+test("accepting moves it back to us — accepting is not paying", () => {
+  const status = deriveStatus([
+    event({ kind: "quoted", actor: "certloop", amount_low: 149, amount_high: 299 }),
+    event({ kind: "quote_accepted" }),
+  ]);
+
+  assert.equal(status.state, "accepted");
+  assert.equal(status.nextParty, "certloop");
+});
+
+test("an accepted quote is not treated as paid", () => {
+  // The failure this guards: showing "paid" because somebody said yes.
+  // Acceptance is a promise; payment is an event somebody records by hand.
+  const events = [
+    event({ kind: "quoted", actor: "certloop", amount_low: 149, amount_high: 299 }),
+    event({ kind: "quote_accepted" }),
+  ];
+
+  assert.equal(isPaid(events), false);
+});
+
+test("declining closes it and asks nothing further of anyone", () => {
+  const status = deriveStatus([
+    event({ kind: "quoted", actor: "certloop", amount_low: 500, amount_high: 900 }),
+    event({ kind: "quote_declined" }),
+  ]);
+
+  assert.equal(status.state, "closed");
+  assert.equal(status.nextParty, null);
+});
+
+test("an answered quote is no longer live, so no Accept button can appear", () => {
+  // The bug this prevents: offering someone the chance to accept a price
+  // they already declined.
+  const events = [
+    event({ kind: "quoted", actor: "certloop", amount_low: 149, amount_high: 299 }),
+    event({ kind: "quote_declined" }),
+  ];
+
+  assert.equal(liveQuote(events), null);
+});
+
+test("a revised quote replaces the old one as the live quote", () => {
+  const events = [
+    event({ kind: "quoted", actor: "certloop", amount_low: 149, amount_high: 299 }),
+    event({ kind: "certloop_message", actor: "certloop", body: "Scope grew." }),
+    event({ kind: "quoted", actor: "certloop", amount_low: 400, amount_high: 600 }),
+  ];
+
+  const live = liveQuote(events);
+
+  assert.equal(live?.amount_low, 400, "the newer price is the live one");
+  assert.equal(deriveStatus(events).state, "quote_sent");
+});
+
+test("the agreed price is the one that was accepted, not a later revision", () => {
+  // The expensive mistake: quoting 149-299, being accepted, then sending a
+  // revised 400-600 that nobody answered, and invoicing the revision.
+  const events = [
+    event({ kind: "quoted", actor: "certloop", amount_low: 149, amount_high: 299 }),
+    event({ kind: "quote_accepted" }),
+    event({ kind: "quoted", actor: "certloop", amount_low: 400, amount_high: 600 }),
+  ];
+
+  assert.equal(agreedQuote(events)?.amount_low, 149);
+  assert.equal(agreedQuote(events)?.amount_high, 299);
+});
+
+test("recording payment reads as work in hand, never as done", () => {
+  const events = [
+    event({ kind: "quoted", actor: "certloop", amount_low: 149, amount_high: 299 }),
+    event({ kind: "quote_accepted" }),
+    event({ kind: "payment_recorded", actor: "certloop" }),
+  ];
+
+  const status = deriveStatus(events);
+
+  assert.equal(status.state, "in_review");
+  assert.equal(status.nextParty, "certloop", "paid work is ours to deliver");
+  assert.equal(isPaid(events), true);
+});
+
+test("a completed request stays completed after payment is recorded late", () => {
+  // Money is often recorded after delivery. That must not reopen the job.
+  const events = [
+    event({ kind: "quoted", actor: "certloop", amount_low: 149, amount_high: 299 }),
+    event({ kind: "quote_accepted" }),
+    event({ kind: "completed", actor: "certloop" }),
+  ];
+
+  assert.equal(deriveStatus(events).state, "completed");
+});
+
+test("a single-figure quote does not render as a range of one price", () => {
+  assert.equal(formatQuote({ amount_low: 250, amount_high: 250 }), "$250");
+  assert.equal(formatQuote({ amount_low: 149, amount_high: 299 }), "$149–$299");
+  assert.equal(formatQuote({ amount_low: null, amount_high: null }), null);
+});
+
+test("a non-quote event carrying an amount is never shown as a price", () => {
+  // The database forbids this, but a row written by hand in the SQL editor
+  // before the constraint existed would slip through. liveQuote must not
+  // treat a reply as an offer.
+  const events = [
+    event({
+      kind: "certloop_message",
+      actor: "certloop",
+      body: "roughly 200",
+      amount_low: 200,
+      amount_high: 200,
+    }),
+  ];
+
+  assert.equal(liveQuote(events), null);
 });

@@ -41,50 +41,6 @@ function formatDate(value: string): string {
   });
 }
 
-/**
- * The four summary figures.
- *
- * The brief asked for these to separate clearly from the page. They sit on
- * `paper` against the `galvanise` body with a full border, and the one
- * representing work waiting on the customer takes the warning treatment — so
- * the only tile that draws the eye is the only one that is their move.
- *
- * A figure with nothing behind it renders as a dash rather than a zero. "0
- * documents" reads as a measurement; "—" reads as nothing here yet, which is
- * what it is.
- */
-function Tile({
-  label,
-  value,
-  href,
-  alert = false,
-}: {
-  label: string;
-  value: number;
-  href: string;
-  alert?: boolean;
-}) {
-  const loud = alert && value > 0;
-
-  return (
-    <Link
-      href={href}
-      className={`border p-4 transition-colors ${
-        loud
-          ? "border-rust-flag bg-rust-flag/8 hover:bg-rust-flag/12"
-          : "border-zinc-dust bg-paper hover:border-verdigris"
-      }`}
-    >
-      <p
-        className={`text-2xl font-semibold ${loud ? "text-rust-flag" : "text-millscale"}`}
-      >
-        {value === 0 ? "—" : value}
-      </p>
-      <p className="mt-1 text-xs leading-tight text-slate-wash">{label}</p>
-    </Link>
-  );
-}
-
 function NextAction({ next }: { next: Workspace["next"] }) {
   return (
     <section
@@ -239,29 +195,37 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Tile
-          label="need something from you"
-          value={yourMove.length}
+      {/*
+       * The four-figure tile row that used to sit here is gone, which
+       * reverses a deliberate decision in task 056. It is reversed because
+       * of what it looked like against real rows rather than fixtures: two
+       * of the four tiles rendered as an em dash, so half the widest, most
+       * prominent element on the page was a person's first impression of
+       * their own file saying nothing at all.
+       *
+       * The other two duplicated the sections directly beneath them —
+       * "open requests: 1" sat immediately above the list of that one
+       * request. Counting things the reader can already see costs a screen
+       * of height on a phone, which is where this is read.
+       *
+       * What survives is the only figure that asks for anything: the number
+       * of requests waiting on the customer, and only when there are any.
+       * A count of zero is not news.
+       */}
+      {yourMove.length > 0 ? (
+        <Link
           href="/dashboard/requests"
-          alert
-        />
-        <Tile label="open requests" value={open.length} href="/dashboard/requests" />
-        <Tile
-          label="items your file looks short on"
-          value={workspace.blockers.length}
-          href={
-            workspace.activeSubmission
-              ? `/dashboard/${workspace.activeSubmission.id}`
-              : "/dashboard/documents"
-          }
-        />
-        <Tile
-          label="documents held"
-          value={documents.length}
-          href="/dashboard/documents"
-        />
-      </div>
+          className="mt-5 flex items-center justify-between gap-4 border border-rust-flag bg-paper p-4 transition-colors hover:bg-galvanise"
+        >
+          <p className="type-body text-millscale">
+            <span className="font-semibold">
+              {yourMove.length} {yourMove.length === 1 ? "request" : "requests"}
+            </span>{" "}
+            {yourMove.length === 1 ? "needs" : "need"} an answer from you.
+          </p>
+          <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-wash" />
+        </Link>
+      ) : null}
 
       {submissions.length === 0 && requests.length === 0 ? (
         <div className="mt-8 border border-zinc-dust bg-paper p-8">

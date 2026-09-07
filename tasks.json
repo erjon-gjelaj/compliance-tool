@@ -391,6 +391,20 @@
       "status": "todo",
       "notes": "Almost entirely procedural and low-risk to template - who is told, in what order, what gets recorded. Very little that could be fabricated.",
       "needs_human_review": false
+    },
+    {
+      "id": "062",
+      "title": "SaaS Browser directory badge",
+      "status": "done",
+      "notes": "Footer bottom row, opposite the copyright. Artwork self-hosted in /public rather than hotlinked from the issuer CDN - a 12KB SVG with the wordmark baked in as a raster, so proxying it would cost every visitor a third-party connection and hand the issuer our traffic for nothing; the outbound link, which is what the directory verifies, is unchanged. next/image with unoptimized, because Next refuses SVG without dangerouslyAllowSVG and the optimiser is worth nothing at this size - width and height still declared so it reserves its space. The SVG carries no live text, so the alt text is the only thing a screen reader gets. PR #1.",
+      "needs_human_review": false
+    },
+    {
+      "id": "063",
+      "title": "End-to-end: the money path, and three sections instead of six",
+      "status": "done",
+      "notes": "Two halves. (1) THE MONEY PATH, as events rather than columns. Migration 0010 adds amount_low/amount_high plus the kinds quoted, quote_accepted, quote_declined and payment_recorded, with a database constraint that an amount may only exist on a quote. A price is not a property of a request - it is something that happened to it, on a date, possibly more than once, and a revised quote is a second quote rather than an edit of the first. Two new derived states (quote_sent, accepted) and helpers liveQuote/agreedQuote/isPaid/formatQuote, so no screen derives money twice. The operator console can now send a price, record a payment and set a plan; the customer sees the price in their thread and accepts or declines in one click. Accepting is re-checked against the log server-side, so a price that was withdrawn, revised or already answered cannot be accepted from a stale page. setPlanForEmail is the write 0007 designed for and nothing ever performed - granting access was a SQL-editor task until now, and it reports when no company row matched rather than silently doing nothing. 11 new negative tests, including that acceptance is not payment and that the agreed price is the one that was accepted and not a later revision. (2) NAVIGATION, six sections to three. Documents and Programs were one idea - the documents page already listed generated programmes above uploads - and Requests and Ask for help were another, with the help page rendering the same rows a second time and not even linking them. Company moved to the header: filled in once, so a permanent slot implied attention it does not need. The four-figure tile row on the overview was removed, which reverses task 056 deliberately: against real rows two of the four tiles rendered as an em dash, and the other two counted things listed directly beneath them. Also fixed two defects only visible with real data - a generated document whose template no longer exists rendered its raw id (a customer library showed \"personal_protective_equipment\" as a document name), and identical file names across requests were indistinguishable. Runbook: DEPLOY.md stopped at 0004 while the repo carried 0009, so following it produced an app that compiled and failed on first sign-in; it now lists 0001-0010. .env.local.example was missing every SMTP variable while the code read them, which silently breaks magic-link sign-in; every env var the code reads is now documented. NEEDS MIGRATION 0010 RUN before any quote is sent.",
+      "needs_human_review": true
     }
   ],
   "current_task_id": "059",

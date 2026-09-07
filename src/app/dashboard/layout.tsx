@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { Building2, LogOut } from "lucide-react";
 
 import { SITE_NAME } from "@/lib/constants";
 import { currentClient } from "@/lib/auth/session";
@@ -46,6 +46,19 @@ export default async function DashboardLayout({
           </Link>
 
           <div className="flex items-center gap-4 text-sm text-slate-wash">
+            {/*
+              Company lives here rather than in the nav. It is filled in once
+              and then almost never revisited, and a permanent section for a
+              page you visit twice implies it wants attention it does not.
+              Beside the address is where "things about my account" belong.
+            */}
+            <Link
+              href="/dashboard/company"
+              className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-millscale hover:underline"
+            >
+              <Building2 aria-hidden className="h-4 w-4" />
+              Company
+            </Link>
             <span className="hidden sm:inline">{session.email}</span>
             <form action={signOut}>
               <SubmitButton

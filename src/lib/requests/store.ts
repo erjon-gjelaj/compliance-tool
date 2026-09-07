@@ -152,14 +152,27 @@ export async function recordEvent({
   kind,
   body,
   awaitsReply = false,
+  amount,
 }: {
   requestId: string;
   actor: "customer" | "certloop" | "system";
   kind: EventKind;
   body?: string | null;
   awaitsReply?: boolean;
+  /** Whole US dollars. Ignored on anything but a `quoted` event. */
+  amount?: { low: number; high: number } | null;
 }): Promise<void> {
   const supabase = getSupabaseAdminClient();
+
+  /*
+   * Amounts are stripped from anything that is not a quote, for the same
+   * reason awaitsReply is forced false off a reply: a price attached to an
+   * ordinary message is a number no screen reads and no state reacts to, and
+   * it would sit in the table looking authoritative. The database enforces
+   * this too - the belt here is so a caller mistake fails as a missing price
+   * rather than as a constraint violation the customer sees.
+   */
+  const quoted = kind === "quoted" ? (amount ?? null) : null;
 
   const { error } = await supabase.from("request_events").insert({
     request_id: requestId,
@@ -167,6 +180,8 @@ export async function recordEvent({
     kind,
     body: body?.slice(0, 4000) || null,
     awaits_reply: kind === "certloop_message" ? awaitsReply : false,
+    amount_low: quoted?.low ?? null,
+    amount_high: quoted?.high ?? null,
   });
 
   if (error) {

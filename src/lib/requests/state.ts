@@ -19,6 +19,8 @@ export const REQUEST_STATES = [
   "waiting_on_certloop",
   "in_review",
   "waiting_on_customer",
+  "quote_sent",
+  "accepted",
   "draft_ready",
   "completed",
   "closed",
@@ -35,6 +37,10 @@ export const EVENT_KINDS = [
   "completed",
   "reopened",
   "closed",
+  "quoted",
+  "quote_accepted",
+  "quote_declined",
+  "payment_recorded",
 ] as const;
 
 export type EventKind = (typeof EVENT_KINDS)[number];
@@ -47,6 +53,13 @@ export type RequestEvent = {
   kind: EventKind;
   body: string | null;
   awaits_reply: boolean;
+  /*
+   * Whole US dollars, and only ever present on a `quoted` event - the
+   * database enforces that, not just this type. The pair is a range because
+   * every price in this product is a range: see lib/pricing.ts.
+   */
+  amount_low: number | null;
+  amount_high: number | null;
 };
 
 /**
@@ -121,6 +134,29 @@ export function deriveStatus(events: RequestEvent[]): RequestStatus {
           lastActivityAt,
         };
 
+      case "quoted":
+        // A price is with them until they answer it. Deliberately ranked the
+        // same way a draft is: it is the customer's move and it is the most
+        // useful thing the row can say.
+        return { state: "quote_sent", nextParty: "customer", lastActivityAt };
+
+      case "quote_accepted":
+        // They said yes, so the next move is ours - raise the invoice and
+        // start. Payment is recorded separately; acceptance alone is not it.
+        return { state: "accepted", nextParty: "certloop", lastActivityAt };
+
+      case "quote_declined":
+        // No is an answer. Closed rather than a state of its own: nothing
+        // further is expected from either side, which is what closed means.
+        // A later `reopened` still revives it, which is how a changed mind
+        // gets recorded without editing history.
+        return { state: "closed", nextParty: null, lastActivityAt };
+
+      case "payment_recorded":
+        // Money arrived. That is not "done" - it is the point at which the
+        // work becomes ours to do, so it reads exactly like in_review.
+        return { state: "in_review", nextParty: "certloop", lastActivityAt };
+
       case "certloop_message":
         return event.awaits_reply
           ? {
@@ -163,6 +199,8 @@ export const STATE_LABEL: Record<RequestState, string> = {
   waiting_on_certloop: "With CertLoop",
   in_review: "Being worked on",
   waiting_on_customer: "Needs something from you",
+  quote_sent: "Price sent — your call",
+  accepted: "Accepted — with CertLoop",
   draft_ready: "Ready for you to look at",
   completed: "Done",
   closed: "Closed",
@@ -179,8 +217,13 @@ export const STATE_LABEL: Record<RequestState, string> = {
 export const STATE_TONE: Record<RequestState, "action" | "waiting" | "ready" | "done"> =
   {
     waiting_on_customer: "action",
+    // A price waiting on a decision is the strongest call to action in the
+    // product, so it takes the same treatment as anything else we need from
+    // them rather than a colour of its own.
+    quote_sent: "action",
     waiting_on_certloop: "waiting",
     in_review: "waiting",
+    accepted: "waiting",
     draft_ready: "ready",
     completed: "done",
     closed: "done",
@@ -189,4 +232,82 @@ export const STATE_TONE: Record<RequestState, "action" | "waiting" | "ready" | "
 /** Whether this is something the customer has to act on. */
 export function needsCustomer(status: RequestStatus): boolean {
   return status.nextParty === "customer";
+}
+
+/**
+ * The quote a customer is currently being asked to answer, if any.
+ *
+ * Derived rather than stored for the same reason the state is: a request can
+ * be quoted more than once. A revised price is a second `quoted` event, and
+ * the live quote is simply the most recent one that nothing has answered yet.
+ * Editing the first quote in place would lose the fact that it changed, which
+ * is exactly the thing a customer is most likely to query.
+ *
+ * Returns null once the quote has been accepted or declined, so a screen
+ * cannot offer an Accept button for a decision that has already been made.
+ */
+export function liveQuote(events: RequestEvent[]): RequestEvent | null {
+  const ordered = [...events].sort((a, b) =>
+    a.created_at === b.created_at ? 0 : a.created_at < b.created_at ? -1 : 1,
+  );
+
+  for (let index = ordered.length - 1; index >= 0; index -= 1) {
+    const event = ordered[index];
+
+    // Walking backwards, an answer is reached before the quote it answers.
+    if (event.kind === "quote_accepted" || event.kind === "quote_declined") {
+      return null;
+    }
+
+    if (event.kind === "quoted") return event;
+  }
+
+  return null;
+}
+
+/**
+ * The price that was agreed, if one was.
+ *
+ * The quote that the most recent acceptance answered — not simply the last
+ * quote, which may be a later revision that nobody has replied to yet.
+ */
+export function agreedQuote(events: RequestEvent[]): RequestEvent | null {
+  const ordered = [...events].sort((a, b) =>
+    a.created_at === b.created_at ? 0 : a.created_at < b.created_at ? -1 : 1,
+  );
+
+  const acceptedAt = ordered.findLastIndex(
+    (event) => event.kind === "quote_accepted",
+  );
+  if (acceptedAt === -1) return null;
+
+  for (let index = acceptedAt - 1; index >= 0; index -= 1) {
+    if (ordered[index].kind === "quoted") return ordered[index];
+  }
+
+  return null;
+}
+
+/** Whether payment has been recorded against this request. */
+export function isPaid(events: RequestEvent[]): boolean {
+  return events.some((event) => event.kind === "payment_recorded");
+}
+
+/**
+ * A quote as a line of text. One formatter, so the thread, the console and
+ * the notification email cannot disagree about what was offered.
+ *
+ * A range collapses to a single figure when both ends match, because
+ * "$149–$149" reads like a bug to the person being asked to pay it.
+ */
+export function formatQuote(event: {
+  amount_low: number | null;
+  amount_high: number | null;
+}): string | null {
+  const { amount_low: low, amount_high: high } = event;
+  if (low === null || high === null) return null;
+
+  return low === high
+    ? `$${low.toLocaleString("en-US")}`
+    : `$${low.toLocaleString("en-US")}–$${high.toLocaleString("en-US")}`;
 }

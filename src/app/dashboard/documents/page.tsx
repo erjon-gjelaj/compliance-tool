@@ -12,13 +12,26 @@ import { offerablePrograms, programById } from "@/lib/programs/registry";
 import { DocumentDownload } from "@/components/document-download";
 
 export const metadata = pageMetadata({
-  title: "Your documents",
-  description: `Everything you've sent ${SITE_NAME}, in one place.`,
+  title: "Your paperwork",
+  description: `The programs ${SITE_NAME} prepared for you and every file you've sent, in one place.`,
   path: "/dashboard/documents",
   robots: { index: false, follow: false },
 });
 
 export const dynamic = "force-dynamic";
+
+/**
+ * A programme id as a title, for the rows whose template has gone away.
+ *
+ * Deliberately dumb: underscores to spaces, first letter capitalised. It is a
+ * fallback, and a fallback that tries to be clever about acronyms is a
+ * fallback that renders "Ppe" and looks more broken than the raw id it
+ * replaced.
+ */
+function humaniseProgramId(id: string): string {
+  const words = id.replace(/[_-]+/g, " ").trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : "Safety program";
+}
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("en-US", {
@@ -49,6 +62,19 @@ function Row({ document }: { document: LibraryDocument }) {
             {document.file_name}
           </p>
           <p className="text-xs text-slate-wash">
+            {/*
+             * The trade is here because the same file name legitimately
+             * appears several times — one upload per request, and people
+             * re-send the same manual. Naming the request each came in on
+             * separates them without hiding any, which deduplicating would.
+             *
+             * Guarded because it is genuinely often absent: a submission
+             * abandoned on step one has no trade yet, and rendering it blind
+             * produced a leading separator with nothing before it.
+             */}
+            {document.submission_trade ? (
+              <>{document.submission_trade} &middot; </>
+            ) : null}
             {formatBytes(document.size_bytes)} &middot; sent{" "}
             {formatDate(document.created_at)}
             {document.readable ? null : (
@@ -80,7 +106,7 @@ export default async function DocumentsPage() {
 
   return (
     <main className="max-w-3xl">
-      <h1 className="type-h2 text-millscale">Documents</h1>
+      <h1 className="type-h2 text-millscale">Paperwork</h1>
 
       {/*
         Programmes first. They are the thing a contractor came to get, and
@@ -89,13 +115,40 @@ export default async function DocumentsPage() {
       */}
       {generated.length > 0 || available.length > 0 ? (
         <section aria-labelledby="programs-heading" className="mt-8">
-          <h2 id="programs-heading" className="type-label text-millscale">
-            Safety programs
-          </h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h2 id="programs-heading" className="type-label text-millscale">
+              Safety programs
+            </h2>
+            {/*
+             * Programs left the navigation when it collapsed to three
+             * sections, so this is now the only way in. Without it, a
+             * customer who already holds every programme we offer would have
+             * no route to the page at all.
+             */}
+            <Link
+              href="/dashboard/programs"
+              className="text-sm font-medium text-verdigris underline-offset-4 hover:underline"
+            >
+              All programs
+            </Link>
+          </div>
 
           <ul className="mt-3 grid gap-2">
             {generated.map((entry) => {
               const template = programById(entry.program_id);
+
+              /*
+               * A generated document can outlive its template: a programme
+               * that was paused, renamed, or withdrawn leaves rows behind
+               * that `programById` no longer resolves. The old fallback
+               * printed the raw id, so a real customer's library showed
+               * "personal_protective_equipment" as the name of a document
+               * they had paid attention to. Their file is still perfectly
+               * downloadable, so the row must stay — it just needs a name a
+               * person would recognise.
+               */
+              const title = template?.title ?? humaniseProgramId(entry.program_id);
+
               return (
                 <li key={entry.id}>
                   <Link
@@ -104,7 +157,7 @@ export default async function DocumentsPage() {
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-millscale">
-                        {template?.title ?? entry.program_id}
+                        {title}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-wash">
                         Version {entry.current?.version ?? 1} &middot; ready to
@@ -184,13 +237,15 @@ export default async function DocumentsPage() {
       )}
 
       {/*
-        Stated once, at the bottom, rather than on every row. The library holds
-        what the customer sent; drafts and generated programmes are task 058 and
-        do not exist yet, so nothing here pretends there is a second kind.
+        Stated once, at the bottom, rather than on every row. Now that
+        generated programmes sit above, this has to say which half it is
+        talking about — it is about the uploads, and claiming we delete
+        everything would be a promise about documents we also hold.
       */}
       <p className="type-body mt-8 border-t border-zinc-dust pt-6">
-        These are the files you uploaded. We keep them to prepare your reviews
-        and nothing else, and they go when you ask us to delete your record.
+        The files above are the ones you uploaded. We keep them to prepare your
+        reviews and nothing else, and they go when you ask us to delete your
+        record.
       </p>
     </main>
   );

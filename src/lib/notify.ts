@@ -1030,3 +1030,170 @@ export async function notifyCustomerReply({
     transport.close();
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * The money path.
+ *
+ * Three emails: a price going out, a decision coming back, and a receipt
+ * for money recorded. All three follow the pattern above - SMTP absent is a
+ * silent no-op rather than an error, because a missing mailer must never
+ * take down the thing that already succeeded.
+ * ------------------------------------------------------------------ */
+
+/**
+ * Tells the customer we have put a price on their request.
+ *
+ * The price is repeated in the email rather than only linked to, because
+ * this is the message somebody forwards to whoever signs off the spend, and
+ * a link behind a sign-in is useless to that person.
+ */
+export async function notifyQuoteSent({
+  email,
+  requestId,
+  quote,
+  note,
+}: {
+  email: string;
+  requestId: string;
+  quote: string;
+  note: string | null;
+}): Promise<void> {
+  const config = readSmtpConfig();
+  if (!config) return;
+
+  let transport;
+  try {
+    transport = buildTransport(config);
+  } catch (cause) {
+    console.error("Could not create the mail transport:", cause);
+    return;
+  }
+
+  try {
+    await transport.sendMail({
+      from: config.from,
+      to: email,
+      replyTo: config.to,
+      subject: `${SITE_NAME}: a price for your request`,
+      text: [
+        `We've put a price on what you asked for: ${quote}.`,
+        "",
+        ...(note ? [note, ""] : []),
+        "Nothing is charged automatically and there is no card on file.",
+        "If you accept, we invoice you and start the work.",
+        "",
+        "---",
+        `Accept or decline here: ${SITE_URL}/dashboard/requests/${requestId}`,
+        "Or just reply to this email if you have a question first.",
+      ].join("\n"),
+    });
+  } catch (cause) {
+    console.error("Quote notification failed to send:", cause);
+  } finally {
+    transport.close();
+  }
+}
+
+/** Tells our inbox that a customer answered a price. */
+export async function notifyQuoteDecision({
+  email,
+  requestId,
+  accepted,
+  quote,
+}: {
+  email: string;
+  requestId: string;
+  accepted: boolean;
+  quote: string | null;
+}): Promise<void> {
+  const config = readSmtpConfig();
+  if (!config) return;
+
+  let transport;
+  try {
+    transport = buildTransport(config);
+  } catch (cause) {
+    console.error("Could not create the mail transport:", cause);
+    return;
+  }
+
+  try {
+    await transport.sendMail({
+      from: config.from,
+      to: config.to,
+      replyTo: email,
+      subject: accepted
+        ? `${SITE_NAME}: ${email} ACCEPTED ${quote ?? "a quote"}`
+        : `${SITE_NAME}: ${email} declined a quote`,
+      text: [
+        accepted
+          ? `${email} accepted ${quote ?? "the quote"}.`
+          : `${email} declined ${quote ?? "the quote"}.`,
+        "",
+        accepted
+          ? "Next: raise the invoice, then record the payment on the request " +
+            "so the status stops saying it is waiting on you."
+          : "Nothing further is expected. The request is closed unless you reopen it.",
+        "",
+        "---",
+        `${SITE_URL}/internal/requests`,
+        `Request ${requestId}.`,
+      ].join("\n"),
+    });
+  } catch (cause) {
+    console.error("Quote-decision notification failed to send:", cause);
+  } finally {
+    transport.close();
+  }
+}
+
+/**
+ * Confirms to the customer that we have recorded their payment.
+ *
+ * Deliberately not called a receipt. No money moved through this system, so
+ * this is an acknowledgement that a person marked it received - the invoice
+ * remains the financial document.
+ */
+export async function notifyPaymentRecorded({
+  email,
+  requestId,
+  quote,
+}: {
+  email: string;
+  requestId: string;
+  quote: string | null;
+}): Promise<void> {
+  const config = readSmtpConfig();
+  if (!config) return;
+
+  let transport;
+  try {
+    transport = buildTransport(config);
+  } catch (cause) {
+    console.error("Could not create the mail transport:", cause);
+    return;
+  }
+
+  try {
+    await transport.sendMail({
+      from: config.from,
+      to: email,
+      replyTo: config.to,
+      subject: `${SITE_NAME}: payment received, work started`,
+      text: [
+        quote
+          ? `We've recorded your payment of ${quote}. Thank you.`
+          : "We've recorded your payment. Thank you.",
+        "",
+        "Your request is now with us and we'll come back to you there.",
+        "",
+        "---",
+        `${SITE_URL}/dashboard/requests/${requestId}`,
+      ].join("\n"),
+    });
+  } catch (cause) {
+    console.error("Payment notification failed to send:", cause);
+  } finally {
+    transport.close();
+  }
+}

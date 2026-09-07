@@ -2,14 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Building2,
-  FileSignature,
-  FileStack,
-  LayoutDashboard,
-  LifeBuoy,
-  MessageSquare,
-} from "lucide-react";
+import { FileStack, LayoutDashboard, LifeBuoy } from "lucide-react";
 
 /**
  * The workspace navigation.
@@ -20,31 +13,62 @@ import {
  * On a phone it becomes a horizontal scrolling row above the content rather
  * than a hamburger. The audience is filling this in on a job site, and a menu
  * that has to be opened to find out what is in it costs a tap on every
- * navigation — a visible row costs none. There are few enough sections to fit.
+ * navigation — a visible row costs none.
  *
- * Deliberately short labels and no descriptions. This is application chrome,
- * not a place to explain the product.
+ * ## Why three sections and not six
+ *
+ * This was Overview / Requests / Documents / Programs / Company / Ask for
+ * help. Six is too many for what is actually here, and two pairs of them
+ * were the same thing to the person reading:
+ *
+ *  - **Documents and Programs.** The documents page already listed generated
+ *    programmes at the top and uploaded files below it. A subcontractor does
+ *    not hold "documents" and "programs" as separate ideas — they hold
+ *    paperwork, some of which they sent us and some of which we made. So
+ *    they are one section, and /dashboard/programs becomes what it always
+ *    was: the thing you click to start a new one, not a place you live.
+ *  - **Requests and Ask for help.** Asking for something and watching what
+ *    you asked for are one activity. The help page already listed the open
+ *    requests underneath its form, so the split was costing a nav slot to
+ *    show the same rows twice.
+ *
+ * Company left the nav rather than being merged. It is filled in once and
+ * then almost never revisited, so it belongs with the account controls in
+ * the header — a permanent slot for a page you visit twice implies it needs
+ * attention it does not need.
  */
 
 const SECTIONS = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/requests", label: "Requests", icon: MessageSquare },
-  { href: "/dashboard/documents", label: "Documents", icon: FileStack },
-  { href: "/dashboard/programs", label: "Programs", icon: FileSignature },
-  { href: "/dashboard/company", label: "Company", icon: Building2 },
-  { href: "/dashboard/help", label: "Ask for help", icon: LifeBuoy },
+  { href: "/dashboard/documents", label: "Paperwork", icon: FileStack },
+  { href: "/dashboard/requests", label: "Get help", icon: LifeBuoy },
 ] as const;
+
+/**
+ * Sections that own subtrees they do not link to directly.
+ *
+ * /dashboard/programs is reached from Paperwork, so it must light Paperwork
+ * rather than nothing at all — an active state that goes blank mid-journey
+ * reads as having left the app.
+ */
+const ALSO_INSIDE: Record<string, readonly string[]> = {
+  "/dashboard/documents": ["/dashboard/programs"],
+  "/dashboard/requests": ["/dashboard/help"],
+};
 
 export function DashboardNav() {
   const pathname = usePathname();
 
   /*
    * Overview must match exactly. Every other section owns its subtree, so a
-   * request detail page keeps "Requests" lit — otherwise navigating into a
+   * request detail page keeps "Get help" lit — otherwise navigating into a
    * thread would appear to leave the section it is in.
    */
-  const isActive = (href: string) =>
-    href === "/dashboard" ? pathname === href : pathname.startsWith(href);
+  const isActive = (href: string) => {
+    if (href === "/dashboard") return pathname === href;
+    if (pathname.startsWith(href)) return true;
+    return (ALSO_INSIDE[href] ?? []).some((extra) => pathname.startsWith(extra));
+  };
 
   return (
     <nav aria-label="Workspace" className="lg:w-52 lg:shrink-0">

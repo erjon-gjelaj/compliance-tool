@@ -182,6 +182,37 @@ previous one has taken effect:
    once — the Supabase call is same-origin from a server action, so it should
    be unaffected, but it costs one submission to know rather than assume.
 
+## Migrations, in order
+
+The numbered files in `supabase/migrations/` are the whole schema. Each is
+written to be safe to run more than once, so the recovery from "I am not sure
+which of these have been applied" is to run them all in order.
+
+Run them in the Supabase SQL editor (Dashboard > SQL Editor > New query).
+
+| File | Adds | Needed by |
+| --- | --- | --- |
+| `0001_leads.sql` | `leads` | The original single-screen form |
+| `0002_submissions.sql` | `submissions` | The multi-step intake |
+| `0003_documents.sql` | `submission_documents`, the private storage bucket | Uploads |
+| `0004_analyses.sql` | Extracted-text columns, `analyses` | The gap review |
+| `0005_entry_points.sql` | Entry-point columns | The four front doors |
+| `0006_companies.sql` | `companies`, `field_sources` | The reusable company profile |
+| `0007_plans_and_requests.sql` | `companies.plan`, `service_requests` | Plans and paid work |
+| `0008_request_events.sql` | `request_events` | Derived request state |
+| `0009_generated_documents.sql` | Generated documents and versions, their bucket | Safety programs |
+| `0010_quotes_and_payment.sql` | Quote amounts and the quote/payment event kinds | Quoting, accepting and recording payment |
+
+This table exists because the runbook used to stop at `0004` while the repo
+carried `0009`. Following it produced an application that compiled, deployed,
+and then failed the first time anyone signed in — which is the most expensive
+possible place to find out.
+
+**After `0010`, check the bucket is still private.** `0003` and `0009` each
+create one from SQL rather than by hand, so there is nothing to click in the
+Storage dashboard, but there is also nothing that would tell you if it were
+public.
+
 ## Still open, unrelated to deploying
 
 - ~~A real mailbox~~ — done. `info@certloop.net` is registered and live, and

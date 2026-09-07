@@ -325,16 +325,26 @@ export default async function InternalRequestsPage({
                   const agreed = agreedQuote(request.events);
                   const paid = isPaid(request.events);
 
-                  if (paid) {
-                    return `Paid${agreed ? ` — ${formatQuote(agreed)}` : ""}.`;
-                  }
-                  if (agreed) {
-                    return `Accepted ${formatQuote(agreed)} — invoice and record the payment.`;
-                  }
+                  /*
+                   * The open quote is reported first when there is one, even
+                   * on a request that is already paid. Re-quoting after
+                   * payment is how extra work gets agreed, and a line that
+                   * said only "Paid" would hide the fact that a second price
+                   * is sitting unanswered — the operator would think there
+                   * was nothing to chase.
+                   */
+                  const settled = paid
+                    ? `Paid${agreed ? ` — ${formatQuote(agreed)}` : ""}.`
+                    : agreed
+                      ? `Accepted ${formatQuote(agreed)} — invoice and record the payment.`
+                      : null;
+
                   if (open) {
-                    return `Quoted ${formatQuote(open)} — waiting on their answer.`;
+                    const outstanding = `Quoted ${formatQuote(open)} — waiting on their answer.`;
+                    return settled ? `${settled} ${outstanding}` : outstanding;
                   }
-                  return "No price quoted yet.";
+
+                  return settled ?? "No price quoted yet.";
                 })()}
               </p>
 

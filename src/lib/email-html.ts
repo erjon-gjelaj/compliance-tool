@@ -247,7 +247,7 @@ function unreadableBlock(unreadable: string[]): string {
       <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};padding-top:8px;">These are almost always scans or photographs of paper. There is no text inside them to search &ndash; only a picture of text. Any of these fixes it:</div>
       <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};padding-top:6px;">&bull; Send the file the document was originally written in, usually Word.</div>
       <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};">&bull; Re-export a PDF from that original rather than scanning a printout.</div>
-      <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};">&bull; If the scan is all that exists, most scanners and Adobe Acrobat can re-save it with the text recognised &ndash; look for <strong style="color:${MILLSCALE};">OCR</strong>, <strong style="color:${MILLSCALE};">Recognise Text</strong>, or <strong style="color:${MILLSCALE};">Make Searchable</strong>.</div>
+      <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${SLATE_WASH};">&bull; If the scan is all that exists, most scanners and Adobe Acrobat can re-save it with the text recognized &ndash; look for <strong style="color:${MILLSCALE};">OCR</strong>, <strong style="color:${MILLSCALE};">Recognize Text</strong>, or <strong style="color:${MILLSCALE};">Make Searchable</strong>.</div>
       <div style="font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${MILLSCALE};padding-top:8px;">Reply with one of those and we&rsquo;ll run it again properly.</div>
     </td></tr>
   </table>

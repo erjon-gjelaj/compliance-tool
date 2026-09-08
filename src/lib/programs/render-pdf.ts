@@ -49,8 +49,33 @@ function newPage(doc: PDFKit.PDFDocument, meta: DocumentMeta, cursor: Cursor) {
   drawChrome(doc, meta, cursor);
 }
 
+/**
+ * pdfkit's current font and size, which it exposes on the instance but not in
+ * its type definitions.
+ *
+ * Reached for rather than tracked separately because a parallel copy of the
+ * text state is exactly the thing that drifts: it would be correct until the
+ * next person adds a `fontSize` call somewhere and forgets to update it.
+ */
+type TextState = { _font?: { name?: string }; _fontSize?: number };
+
 function drawChrome(doc: PDFKit.PDFDocument, meta: DocumentMeta, cursor: Cursor) {
   const saved = doc.y;
+
+  /*
+   * The chrome writes in 8pt grey, and a page break happens in the middle of
+   * somebody else's block — `ensureRoom` calls this between a caller setting
+   * its font and that caller writing its text.
+   *
+   * So the text state has to be handed back exactly as it was found. It was
+   * not, and the effect was invisible in every structural test: the first
+   * block on each new page rendered in 8pt footer type, correct in content,
+   * a third smaller than the paragraph above it. On a document a contractor
+   * forwards to a hiring client, that reads as a broken file.
+   */
+  const state = doc as unknown as TextState;
+  const savedFont = state._font?.name;
+  const savedSize = state._fontSize;
 
   /*
    * The footer sits below the bottom margin, and pdfkit adds a page
@@ -83,6 +108,10 @@ function drawChrome(doc: PDFKit.PDFDocument, meta: DocumentMeta, cursor: Cursor)
 
   doc.page.margins.bottom = bottomMargin;
   doc.fillColor("#000000");
+
+  if (savedFont !== undefined) doc.font(savedFont);
+  if (savedSize !== undefined) doc.fontSize(savedSize);
+
   doc.y = saved;
 }
 

@@ -121,7 +121,7 @@ export function rejectionQuestions(
     // it tells them the wording did not name a subject we recognise, which is
     // a fact about our reference list rather than about their file.
     questions.push(
-      "Which document did they turn down? What you sent us does not name a subject we recognise, so tell us the document and we can look at that one specifically.",
+      "Which document did they turn down? What you sent us does not name a subject we recognize, so tell us the document and we can look at that one specifically.",
     );
   }
 

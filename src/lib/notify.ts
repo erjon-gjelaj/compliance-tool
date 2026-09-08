@@ -540,13 +540,13 @@ export function explainerMessage(
     "",
     "A quick follow-up on the gap check you just sent.",
     "",
-    "Our automated review didn't produce a result it was safe to send you",
-    "this time, so a person is going to look at it instead. That is slower,",
-    "and it is the right way round: we would rather say nothing than send you",
-    "a list that might be wrong about your own paperwork.",
+    "The review didn't finish on what you sent, so we're not going to give",
+    "you a list - we would rather say nothing than be wrong about your own",
+    "paperwork.",
     "",
-    "You'll get one email back with what your ISNetworld or Avetta file still",
-    "looks short on. No mailing list, and no call to book.",
+    "Almost every time, this is a file we couldn't read: a scan or a photo",
+    "with no text layer in it. Send the original, or a PDF you can select",
+    "text in, and run the check again. It takes a minute and costs nothing.",
   ];
 
   if (unreadable.length > 0) {
@@ -1106,6 +1106,65 @@ export async function notifyCustomerReply({
     });
   } catch (cause) {
     console.error("Customer-reply notification failed to send:", cause);
+  } finally {
+    transport.close();
+  }
+}
+/**
+ * Tells somebody the thing they paid for is now available to them.
+ *
+ * The last silent step in the money path. A quote is emailed, a payment is
+ * emailed, and then the plan was granted with nothing said — so the one
+ * moment the customer can actually act on what they bought was the one moment
+ * they were not told about. They would have had to guess and go back to look.
+ *
+ * Sent only when the grant adds something. A plan set to the same value, or
+ * lowered, is bookkeeping — and "good news, your account changed" for a
+ * downgrade is worse than silence.
+ */
+export async function notifyPlanGranted({
+  email,
+  programName,
+}: {
+  email: string;
+  /** The program they asked for, when we know it, so the mail is specific. */
+  programName: string | null;
+}): Promise<void> {
+  const config = readSmtpConfig();
+  if (!config) return;
+
+  let transport;
+  try {
+    transport = buildTransport(config);
+  } catch (cause) {
+    console.error("Could not create the mail transport:", cause);
+    return;
+  }
+
+  try {
+    await transport.sendMail({
+      from: config.from,
+      to: email,
+      replyTo: config.to,
+      subject: `${SITE_NAME}: your programs are ready to prepare`,
+      text: [
+        programName
+          ? `Your account is set up, and the ${programName} is ready for you to prepare.`
+          : "Your account is set up, and the safety programs are ready for you to prepare.",
+        "",
+        "Answer the questions about how you actually work and we build the",
+        "document in your company's name. Word and PDF, both kept in your",
+        "library, and every later version alongside them.",
+        "",
+        "If a hiring client sends one back, paste what they said and we'll",
+        "prepare a revised version at no extra cost.",
+        "",
+        "---",
+        `${SITE_URL}/dashboard/programs`,
+      ].join("\n"),
+    });
+  } catch (cause) {
+    console.error("Plan notification failed to send:", cause);
   } finally {
     transport.close();
   }

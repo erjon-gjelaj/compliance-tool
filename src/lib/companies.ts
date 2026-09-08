@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getSupabaseAdminClient } from "@/lib/supabase";
+import type { Plan } from "@/lib/entitlements";
 
 /**
  * The company profile: entered once, reused by every later request.
@@ -310,4 +311,44 @@ export async function confirmField(
     .eq("id", existing.id);
 
   if (error) throw new Error(`Could not confirm that: ${error.message}`);
+}
+
+/**
+ * Sets a company's plan.
+ *
+ * This is the write that 0007 designed for and nothing ever performed — the
+ * plan column existed and could only be changed in the Supabase SQL editor,
+ * which meant "grant somebody the thing they just paid for" was a database
+ * task. Every entitlement check goes through `can()`, so this one update is
+ * the whole of granting access.
+ *
+ * Called by `lib/billing/purchases` after a payment clears, and by the
+ * operator console for the plans that are never bought (`consultant`,
+ * `admin`).
+ *
+ * Matched on email rather than id because that is the identity this product
+ * uses everywhere, and because the caller may hold an address and no company
+ * id at all.
+ *
+ * Returns whether a row actually changed, so the caller can tell "granted"
+ * apart from "there is no company profile for that address yet". Silently
+ * doing nothing is how somebody ends up paying for access they do not have.
+ */
+export async function setPlanForEmail(
+  email: string,
+  plan: Plan,
+): Promise<boolean> {
+  const supabase = getSupabaseAdminClient();
+
+  const { data, error } = await supabase
+    .from("companies")
+    .update({ plan })
+    .ilike("email", emailPattern(email))
+    .select("id");
+
+  if (error) {
+    throw new Error(`Could not set the plan: ${error.message}`);
+  }
+
+  return (data ?? []).length > 0;
 }

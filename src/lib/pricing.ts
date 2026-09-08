@@ -75,14 +75,17 @@ export const MAINTENANCE_PLAN = {
   per: "month" as const,
 };
 
-/** What the free plan actually includes. Genuinely useful, and stays so. */
-export const FREE_INCLUDES = [
-  "Your company profile",
-  "Gap checks against what you upload",
-  "Rejection and document analysis",
-  "What your file looks short on, and why",
-  "Everything you've sent us, kept and searchable",
-] as const;
+/*
+ * FREE_INCLUDES used to live here. It now lives in lib/billing/catalog beside
+ * the price it is the counterpart to, because two lists of "what is free"
+ * drift, and the direction they drift is always the same: the site promises
+ * something the entitlement check refuses.
+ *
+ * What stays in this module is the human-assisted work above — scoped and
+ * quoted one job at a time, and genuinely not something a checkout can price.
+ * The written programs are self-serve; a rejection nobody can make sense of
+ * is not.
+ */
 
 /**
  * Shown wherever a price is.
@@ -93,7 +96,7 @@ export const FREE_INCLUDES = [
  * honest rather than evasive.
  */
 export const PRICING_NOTE =
-  "Early-access pricing, and a range rather than a quote. We confirm the actual number with you before any work starts, and nothing is charged automatically.";
+  "A range rather than a quote, because scoping bespoke work needs a look at what you actually have. We confirm the number with you before any work starts, and nothing on this page charges you.";
 
 export function formatMoney({ low, high }: Money): string {
   return `$${low}–$${high}`;

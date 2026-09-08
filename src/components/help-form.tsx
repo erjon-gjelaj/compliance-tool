@@ -8,6 +8,7 @@ import { requestHelp, type HelpState } from "@/app/dashboard/help/actions";
 import { SubmitButton } from "@/components/submit-button";
 import { MANUAL_SERVICE_KINDS, SERVICE_LABELS } from "@/lib/service-kinds";
 import { ONE_TIME_SERVICES, PRICING_NOTE, formatMoney } from "@/lib/pricing";
+import { PROGRAMS_PRODUCT, formatPrice } from "@/lib/billing/catalog";
 
 /**
  * Asking for work that a person does by hand.
@@ -126,6 +127,24 @@ export function HelpForm({ submissionId }: { submissionId?: string }) {
         to find out is how a request gets abandoned. Read from lib/pricing, so
         these cannot drift from the pricing page.
       */}
+      {/*
+        Said before the quoted work, because most people arriving here want
+        the programs and do not need to wait for a reply to get them.
+      */}
+      <div className="mt-6 border-t border-zinc-dust pt-5">
+        <p className="type-body">
+          If what you need is the written programs, you don&rsquo;t have to ask
+          &mdash; they&rsquo;re {formatPrice(PROGRAMS_PRODUCT)} for all of them
+          and you can build them yourself in a couple of minutes.
+        </p>
+        <Link
+          href="/dashboard/programs"
+          className="mt-2 inline-block text-sm font-medium text-verdigris underline-offset-4 hover:underline"
+        >
+          See the programs
+        </Link>
+      </div>
+
       <div className="mt-6 border-t border-zinc-dust pt-5">
         <p className="type-label text-millscale">Roughly what human work costs</p>
         <ul className="mt-3 grid gap-1.5">
@@ -143,8 +162,9 @@ export function HelpForm({ submissionId }: { submissionId?: string }) {
       </div>
 
       <p className="mt-4 text-sm text-slate-wash">
-        This asks a person to get in touch. There is no payment step, and
-        nothing here signs you up to anything.
+        This one goes to a person, because scoping bespoke work is not
+        something a checkout can do. Nothing here charges you or signs you up
+        to anything.
       </p>
       </form>
     </div>

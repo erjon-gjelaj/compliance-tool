@@ -58,7 +58,7 @@ export const EMERGENCY_ACTION_PLAN: ProgramTemplate = {
     {
       id: Q.site,
       prompt: "Which workplace or job site does this plan cover?",
-      help: "Use the site name and address, or another description your crew will recognise.",
+      help: "Use the site name and address, or another description your crew will recognize.",
       kind: "text",
       required: true,
     },

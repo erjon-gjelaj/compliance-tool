@@ -10,6 +10,7 @@ import { companyContextFor } from "@/lib/programs/store";
 import { ProgramForm } from "@/components/program-form";
 import { stripeConfigured } from "@/lib/billing/stripe";
 import { fulfilSessionId } from "@/lib/billing/fulfil";
+import { invoicingConfigured } from "@/lib/billing/invoice";
 
 export const metadata = pageMetadata({
   title: "Prepare a program",
@@ -102,6 +103,7 @@ export default async function ProgramPage({
           programId={template.id}
           context={context}
           checkoutEnabled={stripeConfigured()}
+          invoiceEnabled={invoicingConfigured()}
         />
       </div>
     </main>

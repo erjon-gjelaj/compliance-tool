@@ -97,7 +97,8 @@ function purchase(over: Partial<PurchaseRow> = {}): PurchaseRow {
     created_at: "2026-09-07T00:00:00Z",
     email: "sam@example.com",
     product_id: "programs",
-    stripe_session_id: "cs_test_1",
+    payment_reference: "cs_test_1",
+    source: "stripe",
     amount_cents: 19900,
     currency: "usd",
     status: "paid",
@@ -121,8 +122,8 @@ test("a refund on one of two purchases does not remove access", () => {
   // Somebody who bought twice and was refunded once has still paid. Revoking
   // here would take a product away from a customer who owns it.
   const plan = planFromPurchases([
-    purchase({ id: "p1", stripe_session_id: "cs_1", status: "refunded" }),
-    purchase({ id: "p2", stripe_session_id: "cs_2", status: "paid" }),
+    purchase({ id: "p1", payment_reference: "cs_1", status: "refunded" }),
+    purchase({ id: "p2", payment_reference: "cs_2", status: "paid" }),
   ]);
 
   assert.equal(plan, "contractor");
@@ -132,4 +133,34 @@ test("entitlement does not depend on how much was paid", () => {
   // A discount code, a partial capture, or a price change must not silently
   // withhold the product from somebody Stripe reports as paid.
   assert.equal(planFromPurchases([purchase({ amount_cents: 1 })]), "contractor");
+});
+
+/* ------------------------------------------------------------------ *
+ * Paying without a card processor
+ * ------------------------------------------------------------------ */
+
+test("a payment confirmed by hand entitles exactly what a card does", () => {
+  /*
+   * The whole point of the manual path. Every US card processor has to verify
+   * who receives the money, and an operator who cannot clear that check can
+   * still be paid by transfer — but only if the entitlement follows from the
+   * ledger regardless of how the money arrived.
+   *
+   * If this ever diverges, somebody who paid by transfer has been charged and
+   * given less than somebody who paid by card.
+   */
+  const byCard = planFromPurchases([purchase({ source: "stripe" })]);
+  const byTransfer = planFromPurchases([
+    purchase({ source: "manual", payment_reference: "manual:TRF-8891" }),
+  ]);
+
+  assert.equal(byTransfer, byCard);
+  assert.equal(byTransfer, "contractor");
+});
+
+test("a refunded transfer revokes exactly as a refunded card does", () => {
+  assert.equal(
+    planFromPurchases([purchase({ source: "manual", status: "refunded" })]),
+    "free",
+  );
 });

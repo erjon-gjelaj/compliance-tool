@@ -68,3 +68,19 @@ export const initialRevisionState: RevisionState = { status: "editing" };
 export type CheckoutState = { status: "idle" | "error"; error?: string };
 
 export const initialCheckout: CheckoutState = { status: "idle" };
+
+/**
+ * Asking to be invoiced.
+ *
+ * Separate from the checkout state because it is a different act: a checkout
+ * ends in a redirect and never renders a success, while this ends in a
+ * message on the page saying an invoice is coming.
+ */
+export type PreparationRequestState = {
+  status: "idle" | "sent" | "error";
+  error?: string;
+};
+
+export const initialPreparationRequest: PreparationRequestState = {
+  status: "idle",
+};

@@ -382,6 +382,7 @@ Run them in the Supabase SQL editor (Dashboard > SQL Editor > New query).
 | `0016_structured_evidence.sql` | Structured evidence |
 | `0017_quotes.sql` | Quotes |
 | `0018_purchases.sql` | Completed Stripe payments, unique per checkout session |
+| `0019_manual_payments.sql` | A payment source, so a bank transfer grants what a card does |
 
 This table exists because the runbook used to describe `0002` and stop, while
 the repository carried eighteen. Following it produced an application that
@@ -392,6 +393,45 @@ the most expensive possible place to find that out.
 and `0009` each create one from SQL rather than by hand, so there is nothing
 to click in the Storage dashboard — and equally nothing that would tell you if
 one were public.
+
+## Getting paid without a card processor
+
+Every US card processor has to verify the identity of whoever receives the
+money. That is the Bank Secrecy Act's customer identification requirement, it
+applies to Stripe and PayPal and every alternative equally, and it is not a
+setting anybody can switch off. If you cannot complete that check, you cannot
+take cards — from anyone.
+
+You can still be paid. Two businesses invoicing each other need no processor,
+and a contractor buying a $199 product already pays suppliers this way.
+
+1. **Run `0018` and `0019`.**
+2. **Set `PAYMENT_INSTRUCTIONS`** to whatever you actually use — bank details,
+   a transfer service, a payment link.
+
+The paywall then offers "send me an invoice" instead of a card form. When the
+money lands, open `/internal/requests`, find the request, and fill in
+**Payment received** with the reference your bank shows. That writes to the
+same ledger a card payment writes to, grants the programs, and emails the
+customer.
+
+The reference is what makes it safe to press twice: it is unique in the
+ledger, so the same transfer recorded again grants nothing. Nothing in the
+product verifies that money moved — you looked at your bank and said so, and
+the row records that you did.
+
+### If you want cards later
+
+An **EIN** rather than a personal SSN is the usual route: free from the IRS,
+about fifteen minutes online, and it is what a business account is opened
+against. Stripe may still ask for the representative's details separately, so
+treat this as the first thing to try rather than a guarantee. If the business
+is not US-based, Stripe verifies against local identity documents instead and
+none of this applies.
+
+Nothing has to change in the product either way. Both paths write to the same
+ledger, and a customer who paid by transfer keeps everything if you switch
+cards on later.
 
 ## Switching on card payment
 

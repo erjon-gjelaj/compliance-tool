@@ -19,7 +19,8 @@ export type PurchaseRow = {
   created_at: string;
   email: string;
   product_id: string;
-  stripe_session_id: string;
+  payment_reference: string;
+  source: "stripe" | "manual";
   amount_cents: number;
   currency: string;
   status: "paid" | "refunded";
@@ -37,17 +38,25 @@ export type PurchaseRow = {
 export async function recordPurchase({
   email,
   productId,
-  sessionId,
-  paymentIntent,
-  customerId,
+  reference,
+  source = "stripe",
+  paymentIntent = null,
+  customerId = null,
   amountCents,
   currency,
 }: {
   email: string;
   productId: string;
-  sessionId: string;
-  paymentIntent: string | null;
-  customerId: string | null;
+  /**
+   * Unique per payment. Stripe's checkout session id, or whatever an operator
+   * types for a bank transfer. Uniqueness is the whole safety property here:
+   * it makes a replayed webhook free, and it makes an operator recording the
+   * same transfer twice free too.
+   */
+  reference: string;
+  source?: "stripe" | "manual";
+  paymentIntent?: string | null;
+  customerId?: string | null;
   amountCents: number;
   currency: string;
 }): Promise<{ created: boolean }> {
@@ -58,7 +67,8 @@ export async function recordPurchase({
     email,
     company_id: company?.id ?? null,
     product_id: productId,
-    stripe_session_id: sessionId,
+    payment_reference: reference,
+    source,
     stripe_payment_intent: paymentIntent,
     stripe_customer_id: customerId,
     amount_cents: amountCents,
@@ -66,8 +76,10 @@ export async function recordPurchase({
   });
 
   if (error) {
-    // 23505 is unique_violation: this session was already fulfilled. That is
-    // Stripe doing exactly what it promises, not a problem.
+    // 23505 is unique_violation: this payment was already recorded. From
+    // Stripe that is a redelivered webhook doing exactly what it promises;
+    // from an operator it is the same transfer entered twice. Neither is a
+    // problem, and neither should grant a second entitlement.
     if (error.code === "23505") return { created: false };
     throw new Error(`Could not record the purchase: ${error.message}`);
   }
@@ -75,14 +87,14 @@ export async function recordPurchase({
   return { created: true };
 }
 
-/** Marks a purchase refunded. The row stays: the ledger must match Stripe. */
-export async function markRefunded(sessionId: string): Promise<void> {
+/** Marks a purchase refunded. The row stays: the ledger must match reality. */
+export async function markRefunded(reference: string): Promise<void> {
   const supabase = getSupabaseAdminClient();
 
   const { error } = await supabase
     .from("purchases")
     .update({ status: "refunded" })
-    .eq("stripe_session_id", sessionId);
+    .eq("payment_reference", reference);
 
   if (error) throw new Error(`Could not mark a refund: ${error.message}`);
 }
@@ -144,4 +156,67 @@ export async function syncPlanFromPurchases(email: string): Promise<Plan> {
 
   await setPlanForEmail(email, earned);
   return earned;
+}
+
+/**
+ * Records a payment that arrived outside any card processor.
+ *
+ * ## Why this exists
+ *
+ * Every US card processor has to verify who receives the money — the Bank
+ * Secrecy Act's customer identification rules, not a Stripe policy — and an
+ * operator who cannot complete that verification cannot take cards at all.
+ *
+ * They can still be paid. A bank transfer between two businesses needs no
+ * processor and no verification beyond having an account, and invoicing is
+ * how most B2B work is paid for anyway. So this is the same fulfilment as a
+ * card, with a human confirming receipt instead of a webhook.
+ *
+ * ## What makes it safe
+ *
+ * The reference. An operator types what their bank shows — a transfer id, a
+ * check number — and the unique constraint on it means the same payment
+ * entered twice grants nothing the second time. That matters more here than
+ * it does for Stripe, because a person confirming payments by hand is exactly
+ * the sort of thing that gets done twice on a busy morning.
+ *
+ * It does NOT verify that money arrived. Nothing in software can. The
+ * operator looked at their bank and said so, and the row records who claimed
+ * it and when.
+ */
+export async function recordManualPayment({
+  email,
+  productId,
+  reference,
+  amountCents,
+  currency = "usd",
+}: {
+  email: string;
+  productId: string;
+  reference: string;
+  amountCents: number;
+  currency?: string;
+}): Promise<{ created: boolean; plan: Plan }> {
+  const trimmed = reference.trim();
+
+  if (!trimmed) {
+    throw new Error(
+      "A manual payment needs a reference — whatever your bank shows for it.",
+    );
+  }
+
+  const { created } = await recordPurchase({
+    email,
+    productId,
+    // Namespaced so a manual reference can never collide with a Stripe
+    // session id, and so the ledger reads unambiguously later.
+    reference: `manual:${trimmed}`,
+    source: "manual",
+    amountCents,
+    currency,
+  });
+
+  const plan = await syncPlanFromPurchases(email);
+
+  return { created, plan };
 }

@@ -66,7 +66,8 @@ export async function fulfilSession(
   const { created } = await recordPurchase({
     email,
     productId: session.metadata?.product_id ?? PROGRAMS_PRODUCT.id,
-    sessionId: session.id,
+    reference: session.id,
+    source: "stripe",
     paymentIntent:
       typeof session.payment_intent === "string" ? session.payment_intent : null,
     customerId: typeof session.customer === "string" ? session.customer : null,

@@ -6,16 +6,29 @@ import { currentWorkspace } from "@/lib/workspaces";
 import { offerablePrograms } from "@/lib/programs/registry";
 import { listDocumentsForEmail } from "@/lib/programs/store";
 import { getCompanyForEmail } from "@/lib/companies";
+import { stripeConfigured } from "@/lib/billing/stripe";
+import { fulfilSessionId } from "@/lib/billing/fulfil";
 import { listCurrentRequirements } from "@/lib/domain-dashboard";
 import { PROGRAM_CATALOG, programConfigByKey } from "@/lib/config";
 import { customerProgramAction } from "@/lib/programs/customer-state";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProgramsPage({ searchParams }: { searchParams: Promise<{ q?: string; selected?: string }> }) {
+export default async function ProgramsPage({ searchParams }: { searchParams: Promise<{ q?: string; selected?: string; paid?: string; session?: string; checkout?: string }> }) {
   const workspace = await currentWorkspace();
   if (!workspace) redirect("/sign-in");
   const params = await searchParams;
+  /*
+   * Coming back from Stripe. The webhook is the authority but it is
+   * asynchronous, so without this somebody who pays and returns within the
+   * second sees the paywall they just paid to remove. The session id is
+   * looked up with Stripe rather than trusted from the URL, and both paths
+   * are idempotent, so whichever lands second does nothing.
+   */
+  if (params.session && stripeConfigured()) {
+    await fulfilSessionId(params.session);
+  }
+
   const [held, company] = await Promise.all([listDocumentsForEmail(workspace.email), getCompanyForEmail(workspace.email)]);
   const requirements = company ? await listCurrentRequirements(company.id) : [];
   const requiredKeys = new Set(requirements.filter((r) => r.category_key === "written_programs").map((r) => r.requirement_key.replace(/^program\./, "")));

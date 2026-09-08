@@ -353,3 +353,94 @@ arriving with it completed is discarded server-side and shown a normal
 success panel, so there is nothing to tune against. That is not rate
 limiting, and the note above still applies — the fix, if real traffic
 arrives, is a rate limit on the server action keyed by IP.
+
+## Migrations, in order
+
+The numbered files in `supabase/migrations/` are the whole schema. Each is
+written to be safe to run more than once, so the recovery from "I am not sure
+which of these have been applied" is to run them all in order.
+
+Run them in the Supabase SQL editor (Dashboard > SQL Editor > New query).
+
+| File | Adds |
+| --- | --- |
+| `0001_leads.sql` | `leads` |
+| `0002_submissions.sql` | `submissions` |
+| `0003_documents.sql` | `submission_documents`, the private storage bucket |
+| `0004_analyses.sql` | Extracted-text columns, `analyses` |
+| `0005_entry_points.sql` | Entry-point columns |
+| `0006_companies.sql` | `companies`, `field_sources` |
+| `0007_plans_and_requests.sql` | `companies.plan`, `service_requests` |
+| `0008_request_events.sql` | `request_events` |
+| `0009_generated_documents.sql` | Generated documents and versions, their bucket |
+| `0010_revised_documents.sql` | Revision history |
+| `0011_consultant_workspace.sql` | `managed_by_email` and the consultant fields |
+| `0012_document_maintenance.sql` | Maintenance and expiry columns |
+| `0013_certloop_domain_documents.sql` | The domain document model |
+| `0014_requirement_sets.sql` | Requirement sets |
+| `0015_program_assessments.sql` | Program assessments |
+| `0016_structured_evidence.sql` | Structured evidence |
+| `0017_quotes.sql` | Quotes |
+| `0018_purchases.sql` | Completed Stripe payments, unique per checkout session |
+
+This table exists because the runbook used to describe `0002` and stop, while
+the repository carried eighteen. Following it produced an application that
+compiled, deployed, and then failed the first time anyone signed in — which is
+the most expensive possible place to find that out.
+
+**Check the document buckets are still private** after running these. `0003`
+and `0009` each create one from SQL rather than by hand, so there is nothing
+to click in the Storage dashboard — and equally nothing that would tell you if
+one were public.
+
+## Switching on card payment
+
+The product runs without Stripe. With the keys blank the paywall is still
+there, and the unlock button sends people to ask instead of taking money —
+which is what the test suite runs against, so a broken Stripe setup can never
+be mistaken for a passing build.
+
+To take money:
+
+1. **Run `0018_purchases.sql`.** Nothing can be fulfilled without it, and a
+   customer whose payment cannot be recorded is charged and gets nothing.
+2. **Set `STRIPE_SECRET_KEY`.** Test key (`sk_test_...`) until a real card has
+   gone through. Server-side only — never `NEXT_PUBLIC_`.
+3. **Add the webhook** at `https://<domain>/api/stripe/webhook`, subscribed to
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded`
+   and `charge.refunded`. Put its signing secret in `STRIPE_WEBHOOK_SECRET`.
+
+Until step 3 the endpoint answers **404** rather than trusting anything it is
+sent — an unverified webhook is a form anybody can post to grant themselves
+the product.
+
+### The two paths, and why there are two
+
+Fulfilment runs from the webhook *and* from the page the buyer lands on. The
+webhook is the authority: signed, retried for three days, and the only
+evidence money actually moved. But it is asynchronous, and Stripe makes no
+promise about arriving before the browser does — so without the second path a
+customer who pays and is redirected back within the second sees the paywall
+they just paid to remove.
+
+The return path is safe because it does not believe the URL. `?paid=1` is
+something anybody can type; the session id is looked up with Stripe, and
+nothing is granted unless Stripe says that session is paid. Both paths write
+through a unique constraint on the session id, so whichever arrives second
+does nothing.
+
+### Testing it
+
+`stripe listen --forward-to localhost:3000/api/stripe/webhook` prints a
+`whsec_...` for local use. Card `4242 4242 4242 4242`, any future expiry, any
+CVC.
+
+Worth doing once, in this order, because each catches a different failure:
+
+- **Pay, and stay on the Stripe page for a minute before returning.** The
+  webhook wins. Coming back should already show the programs unlocked.
+- **Pay and return immediately.** The return path wins. Same result.
+- **Refund it in the Stripe dashboard.** Access goes away, and the row stays
+  with status `refunded` — the ledger has to match Stripe, so nothing is
+  deleted.
+- **Post rubbish to the webhook.** `400`, and nothing granted.

@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { currentWorkspace } from "@/lib/workspaces";
+import { mayPrepare } from "@/lib/programs/access";
+import { createCheckout } from "@/lib/billing/checkout";
+import { stripeConfigured } from "@/lib/billing/stripe";
 import { programById } from "@/lib/programs/registry";
 import { isOfferable } from "@/lib/programs/types";
 import {
@@ -17,6 +20,7 @@ import type { Answers } from "@/lib/programs/types";
 import type {
   ProgramFormState,
   RevisionState,
+  CheckoutState,
 } from "@/lib/programs/form-state";
 
 /**
@@ -93,6 +97,23 @@ export async function answerProgramStep(
   // next one. No generation is attempted.
   if (outstanding) {
     return { status: "asking", answers };
+  }
+
+  /*
+   * The paywall, and the only place it counts.
+   *
+   * Checked here rather than only on the page because this action is what
+   * writes a document. A page that declines to render the questionnaire is a
+   * suggestion; somebody posting this form directly is the case that decides
+   * whether a plan means anything.
+   *
+   * Deliberately after the questions rather than before them: somebody who
+   * has answered every question has told us exactly what they want prepared,
+   * and that is worth more than an empty request. Nothing is generated, so
+   * nothing is given away.
+   */
+  if (!(await mayPrepare(workspace.email, programId))) {
+    return { status: "locked", answers };
   }
 
   const outcome = await generateVersion({
@@ -192,4 +213,48 @@ export async function reviseDocument(
   revalidatePath("/dashboard/documents");
 
   return { status: "sent", summary: outcome.summary };
+}
+
+/**
+ * Sends somebody to Stripe.
+ *
+ * Redirects rather than returning a URL for the client to follow, so the
+ * checkout can only be reached through this action — the session is created
+ * against the signed-in address, and nothing the browser sends decides who
+ * the entitlement lands on.
+ *
+ * `redirect()` throws, so it sits outside the try. Inside it, the throw would
+ * be caught as a failure and the customer told the payment page could not be
+ * opened at the exact moment it had been.
+ */
+export async function startCheckout(
+  _previous: CheckoutState,
+  formData: FormData,
+): Promise<CheckoutState> {
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
+
+  if (!stripeConfigured()) {
+    return {
+      status: "error",
+      error: "Card payment isn't switched on yet. Ask us and we'll sort it out.",
+    };
+  }
+
+  /*
+   * Back to the program they were in the middle of, so paying does not cost
+   * them their place. `createCheckout` refuses anything that is not a
+   * relative path, because this value round-trips through Stripe and an
+   * absolute URL would make the checkout an open redirect.
+   */
+  const programId = String(formData.get("program_id") ?? "");
+  const returnTo = programById(programId)
+    ? `/dashboard/programs/${programId}`
+    : "/dashboard/programs";
+
+  const outcome = await createCheckout({ email: workspace.email, returnTo });
+
+  if (!outcome.ok) return { status: "error", error: outcome.reason };
+
+  redirect(outcome.url);
 }

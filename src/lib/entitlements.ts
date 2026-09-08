@@ -1,23 +1,38 @@
 /**
  * What each plan may do.
  *
- * One module keeps plan checks out of UI code. Paid human work ends in stored
- * quote acceptance; there is no payment-processor integration. Every check goes through
+ * One module, so that connecting Stripe later means writing to
+ * `companies.plan` and nothing else. Every check in the product goes through
  * `can()`; no page tests a plan string directly, because the day a fifth plan
  * appears, scattered string comparisons are how a feature ends up silently
  * available to the wrong people.
  *
- * Two things this is NOT.
+ * ## What the free plan is
  *
- * It is not a paywall over anything that exists today. Everything currently
- * shipped is free and stays free — the free column below is deliberately not
- * a stub. What the paid plans hold are capabilities that are not built yet,
- * so nothing is being taken away from anyone.
+ * The gap check, and everything around it: the intake, the review, the
+ * dashboard, the documents somebody uploads and everything we say about them.
+ * That is deliberately not a stub. It is the reason anybody arrives, it is
+ * genuinely useful on its own, and it stays free.
  *
- * And it is not a billing system. No payment path exists, `plan` is set by
- * hand, and the UI never shows a checkout or claims one is coming on a date.
- * Where money will eventually change hands, the product records what someone
- * asked for and says a person will reply — see lib/service-requests.
+ * What it does not include is having a written program prepared in the
+ * company's name, which is the thing this business sells.
+ * `lib/billing/catalog` holds the price and the free list; this module is the
+ * half that enforces the line between them.
+ *
+ * That enforcement is newer than this file. Until the entitlement check was
+ * wired into the generate action, `can()` was not called anywhere in the
+ * application: the plan granted at the end of the money path decided nothing,
+ * and the four generated programs were free to anyone with an email address.
+ *
+ * ## Where a plan comes from
+ *
+ * Payment. A completed Stripe checkout writes a row in `purchases` and
+ * `syncPlanFromPurchases` derives the plan from it — nobody grants anything
+ * by hand in the normal course of business.
+ *
+ * The operator console can still set a plan directly, and two of them are
+ * only ever set that way: `consultant` and `admin` outrank anything a $199
+ * checkout produces, so the sync deliberately refuses to demote them.
  */
 
 export const PLANS = ["free", "contractor", "consultant", "admin"] as const;
@@ -35,13 +50,13 @@ export const DEFAULT_PLAN: Plan = "free";
 export const CAPABILITIES = [
   /** Everything shipped today: intake, review, dashboard, documents. */
   "gap_review",
-  /** Have a written programme prepared. Task 040, not built. */
+  /** Have a written program prepared in the company's name. */
   "document_preparation",
-  /** Word and PDF exports of prepared documents. Not built. */
+  /** Word and PDF of a prepared document, and every later version. */
   "document_export",
-  /** Hold and switch between several contractors' workspaces. */
+  /** Hold and switch between several contractors' workspaces. Not built. */
   "multiple_companies",
-  /** Put the consultancy's brand on client deliverables. */
+  /** Remove CertLoop branding from deliverables. Not built. */
   "white_label",
   /** Read anyone's submissions. Ours. */
   "internal_admin",
@@ -102,12 +117,29 @@ export function can(plan: Plan, capability: Capability): boolean {
 export const LOCKED_COPY: Record<Capability, string> = {
   gap_review: "",
   document_preparation:
-    "We can prepare this for you — it's done by hand today, so tell us what you need and we'll reply with what's involved.",
+    "Written programs aren't part of the free plan. Unlock them once and every program is yours, with every revision.",
   document_export:
-    "Formatted Word and PDF versions aren't automatic yet. Ask and we'll put them together.",
+    "Word and PDF come with the programs. Unlock them once and both formats are in your library straight away.",
   multiple_companies:
-    "Managing several companies is available on consultant workspaces.",
+    "Managing several companies under one login isn't available yet. Tell us about your setup and we'll talk it through.",
   white_label:
-    "Consultant-branded deliverables are available on consultant workspaces.",
+    "Unbranded deliverables aren't available yet. Tell us what you need.",
   internal_admin: "",
 };
+
+/**
+ * Whether a plan change hands somebody the paid product for the first time.
+ *
+ * Extracted from the operator console so it can be tested. It decides whether
+ * an email goes out when a plan is granted, and both wrong answers are bad in
+ * different ways: staying silent leaves somebody who has just paid with no
+ * idea they can now do the thing they paid for, and speaking up on a
+ * downgrade sends "good news, your account changed" to somebody who has just
+ * lost access.
+ *
+ * A grant to the same plan, or to a different plan that happens to hold the
+ * same capability, is not news either — it adds nothing to tell them about.
+ */
+export function unlocksPreparation(before: Plan, after: Plan): boolean {
+  return can(after, "document_preparation") && !can(before, "document_preparation");
+}

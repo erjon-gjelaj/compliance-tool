@@ -289,7 +289,7 @@ function summaryFor(
     }
 
     if (rejection.subjects.length === 0) {
-      return "We read the notes you pasted and they don't name a document type we recognise, so this is a general read of your file rather than an answer about that rejection. ";
+      return "We read the notes you pasted and they don't name a document type we recognize, so this is a general read of your file rather than an answer about that rejection. ";
     }
 
     const named = rejection.subjects

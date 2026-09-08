@@ -15,7 +15,15 @@ import type { Answers } from "@/lib/programs/types";
  */
 
 export type ProgramFormState = {
-  status: "asking" | "generated" | "error";
+  /**
+   * `locked` is its own state rather than an error.
+   *
+   * Reaching it means the questionnaire was completed by somebody whose plan
+   * does not include having a document prepared. Nothing went wrong, and
+   * rendering it as an error would tell a customer they had made a mistake
+   * when what they had actually done was describe exactly what they want.
+   */
+  status: "asking" | "generated" | "error" | "locked";
   answers: Answers;
   /** Set once a document exists, so the page can link to it. */
   documentId?: string;
@@ -49,3 +57,14 @@ export type RevisionState = {
 };
 
 export const initialRevisionState: RevisionState = { status: "editing" };
+
+/**
+ * Starting a payment.
+ *
+ * There is no success case: a successful checkout redirects to Stripe and
+ * this state is never rendered. Only a failure comes back here, which is why
+ * the shape carries nothing else.
+ */
+export type CheckoutState = { status: "idle" | "error"; error?: string };
+
+export const initialCheckout: CheckoutState = { status: "idle" };

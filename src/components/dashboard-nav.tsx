@@ -2,39 +2,44 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Building2,
-  CalendarClock,
-  FileStack,
-  FilePlus2,
-  FolderKanban,
-  CircleHelp,
-  LayoutDashboard,
-  Users,
-} from "lucide-react";
+import { CircleHelp, FileStack, LayoutDashboard, Users } from "lucide-react";
 
 /**
  * The workspace navigation.
  *
+ * Three sections, down from seven.
+ *
+ * The seven were each a reasonable idea and together they were a filing
+ * cabinet. "Approval projects", "Generate documents", "Documents" and
+ * "Maintenance" were four doors onto the same pieces of paper — a hazard
+ * communication program was a row in the first, a card in the second, a file
+ * in the third and a date in the fourth. Somebody looking for it had to know
+ * which of our four models they were in.
+ *
+ * The audience is an owner or an office manager at a ten-person contractor,
+ * usually on a phone, usually because a plant has given them a deadline. They
+ * do not have a model of our domain and should not need one. So: where am I
+ * (Home), what paperwork is outstanding (Paperwork), and how do I reach a
+ * person (Help).
+ *
+ * Company moved into the header. It is filled in once and then rarely
+ * touched, and a permanent slot in the navigation implied it needed attention
+ * it does not.
+ *
+ * The old routes still exist and still work — nothing anybody bookmarked is
+ * broken. They are simply no longer four competing front doors.
+ *
  * A client component only because it needs the current path to mark what is
- * active. Everything it links to is a server-rendered page.
+ * active. Everything it links to is server-rendered.
  *
- * On a phone it becomes a horizontal scrolling row above the content rather
- * than a hamburger. The audience is filling this in on a job site, and a menu
- * that has to be opened to find out what is in it costs a tap on every
- * navigation; a visible row costs none. There are few enough sections to fit.
- *
- * Deliberately short labels and no descriptions. This is application chrome,
- * not a place to explain the product.
+ * On a phone it is a horizontal row rather than a hamburger. A menu that has
+ * to be opened to find out what is in it costs a tap on every navigation; at
+ * three items a visible row costs none.
  */
 
 const SECTIONS = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/dashboard/projects", label: "Approval projects", icon: FolderKanban },
-  { href: "/dashboard/programs", label: "Generate documents", icon: FilePlus2 },
-  { href: "/dashboard/documents", label: "Documents", icon: FileStack },
-  { href: "/dashboard/maintenance", label: "Maintenance", icon: CalendarClock },
-  { href: "/dashboard/company", label: "Company", icon: Building2 },
+  { href: "/dashboard/documents", label: "Paperwork", icon: FileStack },
   { href: "/dashboard/help", label: "Help", icon: CircleHelp },
 ] as const;
 

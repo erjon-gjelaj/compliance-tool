@@ -1,186 +1,316 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FileStack, FileText, FileWarning } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  CircleAlert,
+  CircleHelp,
+  FileText,
+  MessageSquare,
+  Upload,
+} from "lucide-react";
 
-import { SITE_NAME } from "@/lib/constants";
 import { pageMetadata } from "@/lib/metadata";
 import { formatBytes } from "@/lib/uploads";
 import { currentWorkspace } from "@/lib/workspaces";
-import { listDocumentsForEmail, type LibraryDocument } from "@/lib/dashboard";
+import { getCompanyForEmail } from "@/lib/companies";
+import { listDocumentsForEmail, listSubmissionsForEmail } from "@/lib/dashboard";
 import { listDocumentsForEmail as listGenerated } from "@/lib/programs/store";
-import { programById } from "@/lib/programs/registry";
-import { DocumentDownload } from "@/components/document-download";
+import { listCurrentRequirements } from "@/lib/domain-dashboard";
+import { listMaintenanceDates } from "@/lib/maintenance";
+import {
+  GROUPS,
+  buildPaperwork,
+  progress,
+  type PaperworkItem,
+  type PaperworkState,
+} from "@/lib/paperwork";
 import { ProjectUpload } from "@/components/project-upload";
-import { listSubmissionsForEmail } from "@/lib/dashboard";
 
 export const metadata = pageMetadata({
-  title: "Your documents",
-  description: `Everything you've sent ${SITE_NAME}, in one place.`,
+  title: "Paperwork",
+  description: "Everything your file needs, and where each piece stands.",
   path: "/dashboard/documents",
   robots: { index: false, follow: false },
 });
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Everything the file needs, in one list.
+ *
+ * This replaces four screens — approval projects, generate documents,
+ * documents and maintenance — which between them showed the same piece of
+ * paper four times in four vocabularies. The model behind it is lib/paperwork;
+ * this is only the rendering.
+ *
+ * The order of the groups is the order somebody should work in: what is
+ * broken, then what we can do for them, then what only they can send, then
+ * what is finished, then what is genuinely uncertain. Nothing here is sorted
+ * by our categories, because a contractor does not have them.
+ */
+
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("en-US", {
-    day: "numeric",
     month: "short",
+    day: "numeric",
     year: "numeric",
   });
 }
 
 /**
- * One row per file.
+ * The state, as a small piece of visual language rather than a word alone.
  *
- * A file we could not read is marked in the warning colour and says so in
- * words. That rule runs through the whole product: a document that was never
- * assessed must never sit in a list looking exactly like one that was.
+ * Colour is doubled with an icon and a label throughout, because a status
+ * carried by hue alone is invisible to a colour-blind reader and to anybody
+ * who prints the page.
  */
-function Row({ document }: { document: LibraryDocument }) {
-  return (
-    <li className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border border-zinc-dust bg-paper p-4">
-      <div className="flex min-w-0 gap-3">
-        {document.readable ? (
-          <FileText aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-slate-wash" />
-        ) : (
-          <FileWarning aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-rust-flag" />
-        )}
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-millscale">
-            {document.file_name}
-          </p>
-          <p className="text-xs text-slate-wash">
-            {document.doc_type.replaceAll("_", " ")} &middot; {formatBytes(document.size_bytes)} &middot; uploaded{" "}
-            {formatDate(document.created_at)}
-            {document.submission_client ? ` · ${document.submission_client}` : ""}
-            {document.version_n > 1 ? ` · version ${document.version_n}` : ""}
-            {document.readable ? null : (
-              <span className="text-rust-flag"> &middot; we could not read this</span>
-            )}
-          </p>
-        </div>
-      </div>
+const LOOK: Record<
+  PaperworkState,
+  { icon: typeof Check; label: string; tone: string }
+> = {
+  ready: {
+    icon: Check,
+    label: "Sorted",
+    tone: "border-verdigris bg-verdigris/8 text-verdigris",
+  },
+  we_can_write_it: {
+    icon: FileText,
+    label: "We can write it",
+    tone: "border-verdigris bg-paper text-verdigris",
+  },
+  not_automated: {
+    icon: MessageSquare,
+    label: "Ask us",
+    tone: "border-slate-wash bg-galvanise text-millscale",
+  },
+  you_provide_it: {
+    icon: Upload,
+    label: "Send it to us",
+    tone: "border-slate-wash bg-galvanise text-millscale",
+  },
+  needs_attention: {
+    icon: CircleAlert,
+    label: "Needs you",
+    tone: "border-rust-flag bg-rust-flag/8 text-rust-flag",
+  },
+  ask_your_client: {
+    icon: CircleHelp,
+    label: "Unconfirmed",
+    tone: "border-zinc-dust bg-galvanise text-slate-wash",
+  },
+};
 
-      <DocumentDownload documentId={document.id} fileName={document.file_name} />
+function Row({ item }: { item: PaperworkItem }) {
+  const look = LOOK[item.state];
+  const Icon = look.icon;
+
+  return (
+    <li className="border border-zinc-dust bg-paper">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4 sm:flex-nowrap">
+        <span
+          className={`inline-flex shrink-0 items-center gap-1.5 border px-2.5 py-1 text-xs font-medium ${look.tone}`}
+        >
+          <Icon aria-hidden className="h-3.5 w-3.5" />
+          {look.label}
+        </span>
+
+        <div className="min-w-0 flex-1 basis-full sm:basis-auto">
+          <p className="font-medium text-millscale">{item.title}</p>
+          <p className="mt-0.5 text-sm text-slate-wash">{item.detail}</p>
+        </div>
+
+        {item.action ? (
+          <Link
+            href={item.action.href}
+            className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-verdigris underline-offset-4 hover:underline"
+          >
+            {item.action.label}
+            <ArrowRight aria-hidden className="h-3.5 w-3.5" />
+          </Link>
+        ) : null}
+      </div>
     </li>
   );
 }
 
-export default async function DocumentsPage() {
+export default async function PaperworkPage() {
   const workspace = await currentWorkspace();
   if (!workspace) redirect("/sign-in");
 
-  const [documents, generated, projects] = await Promise.all([
+  const [uploaded, generated, company, reminders, projects] = await Promise.all([
     listDocumentsForEmail(workspace.email),
     listGenerated(workspace.email),
+    getCompanyForEmail(workspace.email),
+    listMaintenanceDates(workspace.email),
     listSubmissionsForEmail(workspace.email),
   ]);
 
-  const unreadable = documents.filter((entry) => !entry.readable);
-  const currentUploads = documents.filter((entry) => !documents.some((candidate) => candidate.version_group_id === entry.version_group_id && candidate.version_n > entry.version_n));
-  const previousUploads = documents.filter((entry) => !currentUploads.includes(entry));
+  const requirements = company ? await listCurrentRequirements(company.id) : [];
+
+  const items = buildPaperwork({ requirements, generated, uploaded, reminders });
+  const done = progress(items);
+
+  const grouped = GROUPS.map((group) => ({
+    ...group,
+    rows: items.filter((item) => item.state === group.id),
+  })).filter((group) => group.rows.length > 0);
 
   return (
     <main className="max-w-3xl">
-      <h1 className="type-h2 text-millscale">Documents</h1>
+      <h1 className="type-h2 text-millscale">Your paperwork</h1>
 
-      {projects.length > 0 ? <section id="upload" className="mt-6 border border-zinc-dust bg-paper p-5"><h2 className="type-h3 text-millscale">Add evidence to a project</h2><p className="type-body mt-2 mb-5">Upload an existing program, insurance certificate, OSHA summary, training roster, certificate or clear phone photo. CertLoop will read supported files and keep page evidence.</p><ProjectUpload projects={projects.map((project) => ({ id: project.id, label: `${project.hiring_client || "Client not entered"} · ${project.platform}` }))} /></section> : null}
+      {done.total > 0 ? (
+        <>
+          <p className="type-lede mt-3">
+            {done.ready} of {done.total} sorted.
+          </p>
+          {/*
+            A bar rather than a percentage. The number matters less than
+            whether the end is in sight, and a contractor checking this on a
+            phone between jobs reads a shape faster than a figure.
+          */}
+          <div
+            className="mt-4 h-1.5 w-full max-w-sm bg-zinc-dust"
+            role="img"
+            aria-label={`${done.ready} of ${done.total} pieces of paperwork sorted`}
+          >
+            <div
+              className="h-full bg-verdigris"
+              style={{ width: `${Math.round((done.ready / done.total) * 100)}%` }}
+            />
+          </div>
+        </>
+      ) : (
+        <p className="type-lede mt-3">
+          Nothing here yet. Run a free gap check and we will list what your file
+          is short on.
+        </p>
+      )}
+
+      {items.length === 0 ? (
+        <div className="mt-8 border border-zinc-dust bg-paper p-6">
+          <h2 className="type-h3 text-millscale">Start with a gap check</h2>
+          <p className="type-body mt-2">
+            Tell us your trade and who is asking, attach whatever you already
+            hold, and you get back a plain list of what is missing. Free, and it
+            takes about a minute.
+          </p>
+          <Link href="/gap-check" className="btn-primary mt-5 inline-block">
+            Check my file free
+          </Link>
+        </div>
+      ) : null}
+
+      {grouped.map((group) => (
+        <section key={group.id} aria-labelledby={`${group.id}-heading`} className="mt-10">
+          <h2 id={`${group.id}-heading`} className="type-h3 text-millscale">
+            {group.heading}
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm text-slate-wash">{group.blurb}</p>
+
+          <ul className="mt-4 grid gap-2">
+            {group.rows.map((item) => (
+              <Row key={item.key} item={item} />
+            ))}
+          </ul>
+        </section>
+      ))}
 
       {/*
-        Programmes first. They are the thing a contractor came to get, and
-        putting the library of their own uploads above them would bury the
-        action under the archive.
+        The way to something nobody asked them for. A requirement set only
+        knows what we could work out about their client — somebody who has
+        been told to produce a program that is not in their list still needs
+        a door to it, and without this the only route was a page that is no
+        longer in the navigation.
       */}
-      {unreadable.length > 0 ? <section className="mt-6 border-l-2 border-rust-flag bg-paper p-5"><h2 className="type-h3 text-millscale">Files needing attention</h2><p className="type-body mt-2">{unreadable.length} uploaded {unreadable.length === 1 ? "file could" : "files could"} not be read. Replace these with a clearer scan or supported file.</p><Link href="#upload" className="btn-primary mt-4 inline-flex">Upload a replacement</Link></section> : null}
+      {items.length > 0 ? (
+        <p className="type-body mt-10">
+          Need a program that is not listed here?{" "}
+          <Link
+            href="/dashboard/programs"
+            className="font-medium text-verdigris underline underline-offset-4"
+          >
+            See everything we can write
+          </Link>
+          .
+        </p>
+      ) : null}
 
-      {generated.length > 0 ? (
-        <section aria-labelledby="programs-heading" className="mt-8">
-          <h2 id="programs-heading" className="type-label text-millscale">
-            Safety programs
+      {/* ---------------------------------------------------------------- */}
+
+      <section id="upload" className="mt-12 border-t border-zinc-dust pt-8">
+        <h2 className="type-h3 text-millscale">Send us a file</h2>
+        <p className="type-body mt-2 max-w-2xl">
+          An existing program, an insurance certificate, an OSHA summary, a
+          training roster, or a clear photo of one. We read what we can and keep
+          the rest on file.
+        </p>
+
+        {projects.length > 0 ? (
+          <div className="mt-5">
+            <ProjectUpload
+              projects={projects.map((project) => ({
+                id: project.id,
+                label: `${project.hiring_client || "Client not entered"} · ${project.platform}`,
+              }))}
+            />
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-slate-wash">
+            Uploads attach to a gap check.{" "}
+            <Link
+              href="/gap-check"
+              className="text-verdigris underline underline-offset-4"
+            >
+              Start one
+            </Link>{" "}
+            and you can send files with it.
+          </p>
+        )}
+      </section>
+
+      {/*
+        Renewal dates left the navigation with Maintenance, so this is now the
+        only way in. Without it the feature would still work and nobody could
+        reach it, which is the worst of both — and the dates it collects are
+        what put anything into "needs attention" at all.
+      */}
+      <p className="type-body mt-8">
+        Need to track when something expires or is due a review?{" "}
+        <Link
+          href="/dashboard/maintenance"
+          className="font-medium text-verdigris underline underline-offset-4"
+        >
+          Add a date
+        </Link>{" "}
+        and it will show up here when it comes round.
+      </p>
+
+      {uploaded.length > 0 ? (
+        <section aria-labelledby="sent-heading" className="mt-10">
+          <h2 id="sent-heading" className="type-label text-millscale">
+            What you have sent us
           </h2>
-
           <ul className="mt-3 grid gap-2">
-            {generated.map((entry) => {
-              const template = programById(entry.program_id);
-              return (
-                <li key={entry.id}>
-                  <Link
-                    href={`/dashboard/documents/${entry.id}`}
-                    className="flex items-center justify-between gap-4 border border-zinc-dust bg-paper p-4 transition-colors hover:border-verdigris"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-millscale">
-                        {template?.title ?? entry.program_id}
-                      </p>
-                      <p className="mt-0.5 text-xs text-slate-wash">
-                        Version {entry.current.version} &middot; ready to
-                        download
-                      </p>
-                    </div>
-                    <span className="shrink-0 border border-verdigris bg-verdigris/8 px-2.5 py-1 text-xs font-medium text-verdigris">
-                      Ready
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-
+            {uploaded.map((file) => (
+              <li
+                key={file.id}
+                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border border-zinc-dust bg-paper px-4 py-3"
+              >
+                <span className="min-w-0 text-sm text-millscale">
+                  {file.file_name}
+                </span>
+                <span className="text-xs text-slate-wash">
+                  {formatBytes(file.size_bytes)} &middot;{" "}
+                  {formatDate(file.created_at)}
+                  {file.readable ? "" : " · could not be read"}
+                </span>
+              </li>
+            ))}
           </ul>
         </section>
       ) : null}
-
-      <div className="mt-10 flex items-baseline justify-between gap-4"><h2 className="type-label text-millscale">Uploaded evidence</h2><Link href="#upload" className="text-sm text-verdigris underline underline-offset-4">Upload evidence</Link></div>
-
-      {documents.length === 0 ? (
-        <div className="mt-3 border border-zinc-dust bg-paper p-8">
-          <FileStack aria-hidden className="mb-4 h-5 w-5 text-slate-wash" />
-          <h2 className="type-h3 text-millscale">Nothing here yet</h2>
-          <p className="type-body mt-3 max-w-xl">
-            Everything you send us lands here, whichever request it came in on.
-            Reading a real document is the difference between a list of
-            questions and an answer about your file &mdash; even an old or
-            half-finished program is worth attaching.
-          </p>
-          <Link href="/" className="btn-primary mt-6">
-            Start a request
-          </Link>
-        </div>
-      ) : (
-        <>
-          <p className="type-body mt-3">
-            {documents.length} file{documents.length === 1 ? "" : "s"}, across
-            every request you&rsquo;ve sent.
-            {unreadable.length > 0 ? (
-              <>
-                {" "}
-                <span className="text-rust-flag">
-                  {unreadable.length} could not be read and{" "}
-                  {unreadable.length === 1 ? "was" : "were"} not assessed.
-                </span>
-              </>
-            ) : null}
-          </p>
-
-          <ul className="mt-6 grid gap-2">
-            {currentUploads.map((document) => (
-              <Row key={document.id} document={document} />
-            ))}
-          </ul>
-        </>
-      )}
-
-      {previousUploads.length > 0 ? <details className="mt-8 border border-zinc-dust bg-paper p-4"><summary className="cursor-pointer font-medium text-millscale">Previous uploaded versions ({previousUploads.length})</summary><ul className="mt-4 grid gap-2">{previousUploads.map((document) => <Row key={document.id} document={document} />)}</ul></details> : null}
-
-      {/*
-        Stated once, at the bottom, rather than on every row. The library holds
-        what the customer sent; drafts and generated programmes are task 058 and
-        do not exist yet, so nothing here pretends there is a second kind.
-      */}
-      <p className="type-body mt-8 border-t border-zinc-dust pt-6">
-        These are the files you uploaded. We keep them to prepare your reviews
-        and nothing else, and they go when you ask us to delete your record.
-      </p>
     </main>
   );
 }

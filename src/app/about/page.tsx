@@ -77,7 +77,10 @@ export default function AboutPage() {
           for that platform. Gap checks use deterministic extraction and matching
           rather than a language model. Generated programs are a separate workflow
           built only from the company details and questionnaire answers you provide.
-          Every gap-check item points at the file and phrase behind it.
+          Every gap-check item points at the file and phrase behind it. Asking
+          for a revision is the one place a model is involved, and it is fenced
+          in: one section, no new sections, and no regulation reference it did
+          not find already there.
         </p>
         <p className="type-body">
           The limits of that are stated in the review itself rather than left

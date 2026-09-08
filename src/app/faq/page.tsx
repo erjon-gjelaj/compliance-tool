@@ -48,6 +48,7 @@ const FAQS: { question: string; answer: string[] }[] = [
     question: "Is this software analysis, AI, or human review?",
     answer: [
       "Gap checks use deterministic text extraction and matching, not a language model. Every finding points back to evidence you can inspect. Rejection analysis may use software classification, and supported written programs are assembled from your company profile and questionnaire answers.",
+      "When you ask for a revision, a model reads your request to work out which wording to change. It can only edit one section of an existing program, it cannot add sections, and any regulation reference it tries to introduce is refused outright — the citations in your documents are retrieved from eCFR, never written.",
       "Human-assisted preparation is separate paid work. It is quoted and agreed before a person starts; a free analysis does not silently enter a human review queue.",
     ],
   },

@@ -56,3 +56,14 @@ export type PreparationRequestState = {
 export const initialPreparationRequest: PreparationRequestState = {
   status: "idle",
 };
+
+/**
+ * Starting a payment.
+ *
+ * There is no success case: a successful checkout redirects to Stripe and
+ * this state is never rendered. Only a failure comes back here, which is why
+ * the shape carries nothing else.
+ */
+export type CheckoutState = { status: "idle" | "error"; error?: string };
+
+export const initialCheckout: CheckoutState = { status: "idle" };

@@ -483,12 +483,12 @@ export function explainerHtml(row: SubmissionRow, unreadable: string[]): string 
   const inner = `${preliminaryNotice()}
 ${paragraph(`${row.contact_name},`)}
 ${paragraph("A quick follow-up on the gap check you just sent.", 14)}
-${paragraph("Our automated review didn't produce a result it was safe to send you this time, so a person is going to look at it instead. That is slower, and it is the right way round: we would rather say nothing than send you a list that might be wrong about your own paperwork.", 14)}
-${paragraph("You'll get one email back with what your ISNetworld or Avetta file still looks short on. No mailing list, and no call to book.", 14)}
+${paragraph("The review didn't finish on what you sent, so we're not going to give you a list — we would rather say nothing than be wrong about your own paperwork.", 14)}
+${paragraph("Almost every time, this is a file we couldn't read: a scan or a photo with no text layer in it. Send the original, or a PDF you can select text in, and run the check again — it takes a minute and it costs nothing.", 14)}
 ${unreadableBlock(unreadable)}
-${paragraph("Working to a fixed date? Reply and say when, and we'll tell you honestly whether we can be useful in time.", 14)}
+${paragraph("If the files are fine and it still doesn't work, reply to this email and tell us — that is a fault at our end and we want to know about it.", 14)}
 ${heading("Want us to take it further?")}
 ${ctaBlock()}`;
 
-  return shell(inner, "A person is reviewing your gap check.", "Gap check received");
+  return shell(inner, "We could not finish your gap check.", "Gap check received");
 }

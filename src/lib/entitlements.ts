@@ -15,21 +15,24 @@
  * genuinely useful on its own, and it stays free.
  *
  * What it does not include is having a written program prepared in the
- * company's name, which is the work this business sells. `lib/pricing` maps
- * every one-time offer to `document_preparation` and `FREE_INCLUDES` lists
- * the free half; this module is the half that enforces it.
+ * company's name, which is the thing this business sells.
+ * `lib/billing/catalog` holds the price and the free list; this module is the
+ * half that enforces the line between them.
  *
  * That enforcement is newer than this file. Until the entitlement check was
  * wired into the generate action, `can()` was not called anywhere in the
  * application: the plan granted at the end of the money path decided nothing,
  * and the four generated programs were free to anyone with an email address.
  *
- * ## It is still not a billing system
+ * ## Where a plan comes from
  *
- * No payment path exists, `plan` is set by hand from the operator console,
- * and the UI never shows a checkout or claims one is coming on a date. Where
- * money changes hands, the product records what somebody asked for and says a
- * person will reply — see lib/service-requests.
+ * Payment. A completed Stripe checkout writes a row in `purchases` and
+ * `syncPlanFromPurchases` derives the plan from it — nobody grants anything
+ * by hand in the normal course of business.
+ *
+ * The operator console can still set a plan directly, and two of them are
+ * only ever set that way: `consultant` and `admin` outrank anything a $199
+ * checkout produces, so the sync deliberately refuses to demote them.
  */
 
 export const PLANS = ["free", "contractor", "consultant", "admin"] as const;
@@ -114,11 +117,11 @@ export function can(plan: Plan, capability: Capability): boolean {
 export const LOCKED_COPY: Record<Capability, string> = {
   gap_review: "",
   document_preparation:
-    "Having a program written and prepared in your company's name isn't part of the free plan. Tell us what you need and we'll reply with the price before anything starts.",
+    "Written programs aren't part of the free plan. Unlock them once and every program is yours, with every revision.",
   document_export:
-    "Word and PDF of a prepared program come with having one prepared. Ask us and we'll come back with what's involved.",
+    "Word and PDF come with the programs. Unlock them once and both formats are in your library straight away.",
   multiple_companies:
-    "Managing several companies isn't available yet. Tell us about your setup and we'll talk it through.",
+    "Managing several companies under one login isn't available yet. Tell us about your setup and we'll talk it through.",
   white_label:
     "Unbranded deliverables aren't available yet. Tell us what you need.",
   internal_admin: "",

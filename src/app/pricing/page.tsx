@@ -4,138 +4,154 @@ import { Check } from "lucide-react";
 
 import { pageMetadata } from "@/lib/metadata";
 import { PageIntro } from "@/components/page-intro";
-import { SITE_NAME } from "@/lib/constants";
 import {
   FREE_INCLUDES,
-  MAINTENANCE_PLAN,
-  ONE_TIME_SERVICES,
-  PRICING_NOTE,
-  formatMoney,
-} from "@/lib/pricing";
+  PROGRAMS_PRODUCT,
+  formatPrice,
+} from "@/lib/billing/catalog";
 
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
   description:
-    "What is free, what is paid, and roughly what it costs. Ranges rather " +
-    "than quotes, confirmed before any work starts.",
+    "Gap checks are free. Every written safety program, prepared in your " +
+    "company's name, is a single one-off payment.",
   path: "/pricing",
 });
 
 /**
  * The pricing page.
  *
- * Every number comes from lib/pricing so a change is one edit, and every one
- * is shown as a range under an early-access label — because they are
- * assumptions, and a single figure would read as a quote.
+ * Two columns, because there are two things: a free half and a paid half.
+ * Every figure comes from lib/billing/catalog, which is the same constant
+ * Stripe charges — a page that quotes a price the checkout does not honour is
+ * the one mistake a pricing page cannot make.
  *
- * There is no checkout here and no button that implies one. Payment is not
- * connected, so every action leads to asking, and says so.
+ * The page used to explain that there was no checkout, that a person would
+ * reply, and that invoices were sent by hand. All three were true and none of
+ * them is now.
  */
 export default function PricingPage() {
+  const price = formatPrice(PROGRAMS_PRODUCT);
+
   return (
     <main className="flex-1">
       <PageIntro tag="Pricing" tickId="tick-pricing" title="What this costs">
         <p>
-          The gap check is free and stays free. Paid work is the part a person
-          does: writing the programs you are missing, or sorting out a rejection
-          with you.
+          Find out what your file is missing for nothing. If you want the
+          programs written, it is one payment for all of them &mdash; no
+          subscription, no per-document charge, no waiting on a quote.
         </p>
       </PageIntro>
 
-      <section aria-labelledby="free-heading" className="border-b border-zinc-dust">
+      <section aria-labelledby="plans-heading" className="border-b border-zinc-dust">
+        <h2 id="plans-heading" className="sr-only">
+          What is free and what is paid
+        </h2>
+
         <div className="mx-auto max-w-5xl px-6 py-14 md:py-16">
-          <div className="grid gap-10 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:gap-16">
-            <div>
+          <div className="grid gap-px border border-zinc-dust bg-zinc-dust md:grid-cols-2">
+            {/* Free */}
+            <div className="bg-paper p-8">
               <p className="tag">Free</p>
-              <h2 id="free-heading" className="type-h2 mt-3">
-                No card, no account to create
-              </h2>
-              <p className="type-body mt-4">
-                Enough to find out where you actually stand. Most people never
-                need more than this.
+              <p className="type-h2 mt-3 text-millscale">$0</p>
+              <p className="type-body mt-3">
+                No card, no account to create. Enough to find out exactly where
+                you stand.
               </p>
-              <Link href="/" className="btn-primary mt-6 inline-block">
+
+              <ul className="mt-6 grid gap-2.5">
+                {FREE_INCLUDES.map((item) => (
+                  <li key={item} className="flex gap-3">
+                    <Check
+                      aria-hidden
+                      strokeWidth={1.5}
+                      className="mt-0.5 h-4 w-4 shrink-0 text-verdigris"
+                    />
+                    <span className="type-body">{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link href="/" className="btn-secondary mt-8 inline-block">
                 Start a gap check
               </Link>
             </div>
 
-            <ul className="grid gap-2.5 self-start">
-              {FREE_INCLUDES.map((item) => (
-                <li key={item} className="flex gap-3">
-                  <Check
-                    aria-hidden
-                    strokeWidth={1.5}
-                    className="mt-0.5 h-4 w-4 shrink-0 text-verdigris"
-                  />
-                  <span className="type-body">{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="paid-heading" className="border-b border-zinc-dust">
-        <div className="mx-auto max-w-5xl px-6 py-14 md:py-16">
-          <p className="tag">Paid, one job at a time</p>
-          <h2 id="paid-heading" className="type-h2 mt-3 max-w-2xl">
-            Pay for the thing you need, not a subscription
-          </h2>
-          <p className="type-body mt-4 max-w-2xl">
-            Most people arrive with one problem, get it sorted, and do not need
-            us again for months. That should not cost a monthly plan.
-          </p>
-
-          <ul className="mt-10 grid gap-px border border-zinc-dust bg-zinc-dust md:grid-cols-3">
-            {ONE_TIME_SERVICES.map((offer) => (
-              <li key={offer.id} className="bg-paper p-6">
-                <p className="type-label text-millscale">{offer.name}</p>
-                <p className="type-h3 mt-3 text-millscale">
-                  {formatMoney(offer.price)}
-                </p>
-                <p className="type-body mt-3">{offer.summary}</p>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-8 border border-zinc-dust bg-paper p-6">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-              <p className="type-label text-millscale">{MAINTENANCE_PLAN.name}</p>
-              <p className="type-h3 text-millscale">
-                {formatMoney(MAINTENANCE_PLAN.price)}
-                <span className="type-body"> a {MAINTENANCE_PLAN.per}</span>
+            {/* Paid */}
+            <div className="bg-paper p-8">
+              <p className="tag">{PROGRAMS_PRODUCT.name}</p>
+              <p className="type-h2 mt-3 text-millscale">
+                {price}{" "}
+                <span className="type-body font-normal text-slate-wash">once</span>
               </p>
-            </div>
-            <p className="type-body mt-3 max-w-2xl">
-              {MAINTENANCE_PLAN.summary} For companies that have to stay current
-              across several hiring clients rather than get current once.
-            </p>
-          </div>
+              <p className="type-body mt-3">{PROGRAMS_PRODUCT.summary}</p>
 
-          <p className="type-body mt-8 max-w-2xl border-l-2 border-verdigris pl-4">
-            {PRICING_NOTE}
-          </p>
+              <ul className="mt-6 grid gap-2.5">
+                {PROGRAMS_PRODUCT.includes.map((item) => (
+                  <li key={item} className="flex gap-3">
+                    <Check
+                      aria-hidden
+                      strokeWidth={1.5}
+                      className="mt-0.5 h-4 w-4 shrink-0 text-verdigris"
+                    />
+                    <span className="type-body">{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/*
+                The gap check first, deliberately. Buying requires an account,
+                an account comes from a gap check, and the gap check is also
+                how somebody finds out whether they need any of this — sending
+                a stranger straight to a card form would convert worse and
+                deserve to.
+              */}
+              <Link href="/" className="btn-primary mt-8 inline-block">
+                Start free, unlock when you need it
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
       <section aria-labelledby="how-heading">
         <div className="mx-auto max-w-5xl px-6 py-14 md:py-16">
           <h2 id="how-heading" className="type-h2 max-w-2xl">
-            How paying actually works right now
+            How it works
           </h2>
-          <p className="type-body mt-4 max-w-2xl">
-            There is no checkout on this site yet. You ask for what you need,
-            we reply with what it involves and what it will cost, and we agree
-            it before anything starts. If that turns out not to be worth it to
-            you, nothing has happened.
+
+          <ol className="mt-8 grid gap-6 md:grid-cols-3">
+            <li>
+              <p className="type-label text-millscale">Send what you have</p>
+              <p className="type-body mt-2">
+                Your trade, who is asking, and whatever paperwork you already
+                hold. You get a plain list of what your file looks short on,
+                free, in a couple of minutes.
+              </p>
+            </li>
+            <li>
+              <p className="type-label text-millscale">Unlock the programs</p>
+              <p className="type-body mt-2">
+                One payment by card, {price}. It covers every program we
+                prepare, not one of them, and there is nothing recurring.
+              </p>
+            </li>
+            <li>
+              <p className="type-label text-millscale">Answer and download</p>
+              <p className="type-body mt-2">
+                Seven short questions about how you actually work, then the
+                document is built in your company&rsquo;s name. Word and PDF,
+                straight away.
+              </p>
+            </li>
+          </ol>
+
+          <p className="type-body mt-10 max-w-2xl border-l-2 border-verdigris pl-4">
+            A gap check is an automated review of what you sent us, not a
+            certified audit, and what a particular hiring client accepts is
+            between you and them. Everything it tells you points at the file
+            and the wording it came from, so you can check it yourself.
           </p>
-          <p className="type-body mt-4 max-w-2xl">
-            Card payment is coming. Until it is, {SITE_NAME} invoices you
-            directly for work you have already agreed to.
-          </p>
-          <Link href="/dashboard/help" className="btn-primary mt-6 inline-block">
-            Ask what something would cost
-          </Link>
         </div>
       </section>
     </main>

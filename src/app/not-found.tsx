@@ -28,7 +28,7 @@ export default function NotFound() {
         <p>
           The address is either mistyped or points at something that has moved.
           Nothing you have already sent us is affected — if you submitted a gap
-          check, it is safe and a person will still get to it.
+          check, it is safe and your results are on their way.
         </p>
       </PageIntro>
 

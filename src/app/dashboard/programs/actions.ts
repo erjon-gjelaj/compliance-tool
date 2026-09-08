@@ -7,6 +7,8 @@ import { currentClient } from "@/lib/auth/session";
 import { mayPrepare } from "@/lib/programs/access";
 import { getCompanyForEmail } from "@/lib/companies";
 import { recordServiceRequest } from "@/lib/service-requests";
+import { createCheckout } from "@/lib/billing/checkout";
+import { stripeConfigured } from "@/lib/billing/stripe";
 import { programById } from "@/lib/programs/registry";
 import { isOfferable } from "@/lib/programs/types";
 import {
@@ -20,6 +22,7 @@ import type {
   ProgramFormState,
   RevisionState,
   PreparationRequestState,
+  CheckoutState,
 } from "@/lib/programs/form-state";
 
 /**
@@ -278,4 +281,48 @@ function describeRequest(
   }
 
   return lines.join("\n");
+}
+
+/**
+ * Sends somebody to Stripe.
+ *
+ * Redirects rather than returning a URL for the client to follow, so the
+ * checkout page cannot be reached except through this action — the session is
+ * created against the signed-in email, and nothing the browser sends decides
+ * who the entitlement lands on.
+ *
+ * `redirect()` throws, so it sits outside the try. Inside it, the throw would
+ * be caught as a failure and the customer told the payment page could not be
+ * opened at the exact moment it had been.
+ */
+export async function startCheckout(
+  _previous: CheckoutState,
+  formData: FormData,
+): Promise<CheckoutState> {
+  const session = await currentClient();
+  if (!session) redirect("/sign-in");
+
+  if (!stripeConfigured()) {
+    return {
+      status: "error",
+      error: "Card payment isn't switched on yet. Ask us and we'll sort it out.",
+    };
+  }
+
+  /*
+   * Back to the program they were in the middle of, so paying does not cost
+   * them their place. `createCheckout` refuses anything that is not a
+   * relative path, because this value round-trips through Stripe and an
+   * absolute URL would make the checkout an open redirect.
+   */
+  const programId = String(formData.get("program_id") ?? "");
+  const returnTo = programById(programId)
+    ? `/dashboard/programs/${programId}`
+    : "/dashboard/programs";
+
+  const outcome = await createCheckout({ email: session.email, returnTo });
+
+  if (!outcome.ok) return { status: "error", error: outcome.reason };
+
+  redirect(outcome.url);
 }

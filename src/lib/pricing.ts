@@ -1,118 +1,31 @@
 /**
- * Pricing, as configuration.
+ * What things cost, and what is promised with them.
  *
- * Every number here is a preliminary assumption, not a commercial decision.
- * They will move after customer interviews, real review times, revision
- * volume and support burden are known — which is exactly why they live in one
- * file as data rather than being written into logic, copy, or a template
- * somewhere.
+ * ## What changed, and why
  *
- * Two rules that follow from that:
+ * This module used to hold three one-time tiers and a monthly plan, every
+ * figure a range, every range labelled early-access and confirmed by a person
+ * on a call before any work began. That was an honest description of a
+ * consultancy. It was not a product, and it could not be bought.
  *
- *  - Nothing outside this module hardcodes an amount. Screens read from here.
- *  - Everything is presented as a RANGE and labelled early-access, because a
- *    single figure reads as a quote and these are not quotes. `PRICING_NOTE`
- *    travels with them wherever they are shown.
+ * The prices are now in `lib/billing/catalog`, as a single figure, because a
+ * checkout has to charge a number rather than describe one — and there is one
+ * product rather than four, because the capability being sold is one bit and
+ * every extra tier sold a distinction this software could not enforce.
  *
- * There is no payment provider connected. `Plan` and `Capability` in
- * lib/entitlements decide what someone may do; this file only decides what is
- * said about cost.
+ * What is left here is the promise that travels with a document after it has
+ * been bought, which is a commercial policy rather than a price.
  */
-
-export type Money = { low: number; high: number };
-
-export type ServiceOffer = {
-  id: string;
-  name: string;
-  /** What they get, in one line. */
-  summary: string;
-  price: Money;
-  /** Which capability this grants, if it maps to one. */
-  unlocks?: string;
-};
-
-/**
- * One-time work, which is how most of this audience will arrive.
- *
- * A contractor with one urgent rejection is not a subscriber, and forcing a
- * monthly plan on them to solve a problem they will not have again for six
- * months would lose the sale and deserve to.
- */
-export const ONE_TIME_SERVICES: ServiceOffer[] = [
-  {
-    id: "rejection_fix",
-    name: "Rejection fix",
-    summary:
-      "We work out what the reviewer is asking for and prepare what you need to resubmit.",
-    price: { low: 149, high: 299 },
-    unlocks: "document_preparation",
-  },
-  {
-    id: "single_program",
-    name: "One safety program",
-    summary:
-      "A single written program, prepared for your company and your trade.",
-    price: { low: 79, high: 149 },
-    unlocks: "document_preparation",
-  },
-  {
-    id: "starter_package",
-    name: "Starter package",
-    summary:
-      "The written programs a prequalification file is normally built from, together.",
-    price: { low: 299, high: 499 },
-    unlocks: "document_preparation",
-  },
-];
-
-/** Ongoing work, for someone who has to stay current rather than get current. */
-export const MAINTENANCE_PLAN = {
-  id: "maintenance",
-  name: "Maintenance",
-  summary:
-    "Document updates, renewal reminders, reviews when a new client asks, and revisions.",
-  price: { low: 79, high: 129 } as Money,
-  per: "month" as const,
-};
-
-/** What the free plan actually includes. Genuinely useful, and stays so. */
-export const FREE_INCLUDES = [
-  "Your company profile",
-  "Gap checks against what you upload",
-  "Rejection and document analysis",
-  "What your file looks short on, and why",
-  "Everything you've sent us, kept and searchable",
-] as const;
-
-/**
- * Shown wherever a price is.
- *
- * Not a disclaimer for its own sake — it is true, and a contractor who is
- * quoted a range and then charged something else has been misled. Saying the
- * number is confirmed before any work starts is the part that makes a range
- * honest rather than evasive.
- */
-export const PRICING_NOTE =
-  "Early-access pricing, and a range rather than a quote. We confirm the actual number with you before any work starts, and nothing is charged automatically.";
-
-export function formatMoney({ low, high }: Money): string {
-  return `$${low}–$${high}`;
-}
-
-/** The range for an offer id, for recording what somebody was told. */
-export function offerById(id: string): ServiceOffer | undefined {
-  return ONE_TIME_SERVICES.find((offer) => offer.id === id);
-}
 
 /**
  * What we promise when a generated document is sent back.
  *
- * Configurable rather than written into a page, because the boundary of a free
- * revision is a commercial decision that will move. Deliberately not
- * "unlimited": a revision of the same programme, for the same company, for the
- * submission it was prepared for is covered. A new trade, a new hiring client
- * with different demands, or materially changed operations is new work — and
- * saying so now is easier than withdrawing an unlimited promise later.
+ * Configurable rather than written into a page, because the boundary of a
+ * free revision is a commercial decision that will move. Deliberately not
+ * "unlimited" in the sense of any document for any purpose: a revision of the
+ * same program, for the same company, is covered — and since the product is
+ * now one payment for every program, there is nothing left for a revision to
+ * cost extra.
  */
 export const REVISION_PROMISE =
-  "If a hiring client sends this back, paste what they said and we will prepare a revised version at no extra cost \u2014 for this program, this company, and the submission it was prepared for.";
+  "If a hiring client sends this back, paste what they said and a revised version is generated straight away — at no extra cost, as many times as you need.";

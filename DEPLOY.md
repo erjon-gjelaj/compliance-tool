@@ -202,6 +202,7 @@ Run them in the Supabase SQL editor (Dashboard > SQL Editor > New query).
 | `0008_request_events.sql` | `request_events` | Derived request state |
 | `0009_generated_documents.sql` | Generated documents and versions, their bucket | Safety programs |
 | `0010_quotes_and_payment.sql` | Quote amounts and the quote/payment event kinds | Quoting, accepting and recording payment |
+| `0011_purchases.sql` | Completed Stripe payments, unique per checkout session | Card payment, and the plan derived from it |
 
 This table exists because the runbook used to stop at `0004` while the repo
 carried `0009`. Following it produced an application that compiled, deployed,
@@ -384,3 +385,55 @@ arriving with it completed is discarded server-side and shown a normal
 success panel, so there is nothing to tune against. That is not rate
 limiting, and the note above still applies — the fix, if real traffic
 arrives, is a rate limit on the server action keyed by IP.
+
+## Switching on card payment
+
+The product runs without Stripe. With the keys blank the paywall is still
+there, and the unlock button records a request instead of taking money — which
+is what the test suite runs against, so a broken Stripe setup can never be
+mistaken for a passing build.
+
+To take money:
+
+1. **Run `0011_purchases.sql`.** Nothing can be fulfilled without it, and a
+   customer whose payment cannot be recorded is charged and gets nothing.
+2. **Set `STRIPE_SECRET_KEY`.** Test key (`sk_test_...`) until a real card has
+   gone through. Server-side only — never `NEXT_PUBLIC_`.
+3. **Add the webhook** at `https://<domain>/api/stripe/webhook`, subscribed to
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded`
+   and `charge.refunded`. Put its signing secret in `STRIPE_WEBHOOK_SECRET`.
+
+Until step 3 the endpoint answers **404** rather than trusting anything it is
+sent — an unverified webhook is a form anybody can post to grant themselves
+the product.
+
+### The two paths, and why there are two
+
+Fulfilment runs from the webhook *and* from the page the buyer lands on. The
+webhook is the authority: signed, retried for three days, and the only
+evidence money actually moved. But it is asynchronous, and Stripe makes no
+promise about arriving before the browser does — so without the second path a
+customer who pays and is redirected back within the second sees the paywall
+they just paid to remove.
+
+The return path is safe because it does not believe the URL. `?paid=1` is
+something anybody can type; the session id is looked up with Stripe, and
+nothing is granted unless Stripe says that session is paid. Both paths write
+through a unique constraint on the session id, so whichever arrives second
+does nothing.
+
+### Testing it
+
+`stripe listen --forward-to localhost:3000/api/stripe/webhook` prints a
+`whsec_...` for local use. Card `4242 4242 4242 4242`, any future expiry, any
+CVC.
+
+Worth doing once, in this order, because each catches a different failure:
+
+- **Pay, and stay on the Stripe page for a minute before returning.** The
+  webhook wins. Coming back should already show the programs unlocked.
+- **Pay and return immediately.** The return path wins. Same result.
+- **Refund it in the Stripe dashboard.** Access goes away, and the row stays
+  with status `refunded` — the ledger has to match Stripe, so nothing is
+  deleted.
+- **Post rubbish to the webhook.** `400`, and nothing granted.

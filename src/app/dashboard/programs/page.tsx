@@ -6,7 +6,9 @@ import { pageMetadata } from "@/lib/metadata";
 import { currentClient } from "@/lib/auth/session";
 import { offerablePrograms } from "@/lib/programs/registry";
 import { preparationAccess } from "@/lib/programs/access";
-import { PRICING_NOTE, formatMoney, offerById } from "@/lib/pricing";
+import { PROGRAMS_PRODUCT, formatPrice } from "@/lib/billing/catalog";
+import { stripeConfigured } from "@/lib/billing/stripe";
+import { fulfilSessionId } from "@/lib/billing/fulfil";
 import { listDocumentsForEmail } from "@/lib/programs/store";
 import { getCompanyForEmail } from "@/lib/companies";
 
@@ -19,9 +21,34 @@ export const metadata = pageMetadata({
 
 export const dynamic = "force-dynamic";
 
-export default async function ProgramsPage() {
+export default async function ProgramsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ paid?: string; session?: string; checkout?: string }>;
+}) {
   const session = await currentClient();
   if (!session) redirect("/sign-in");
+
+  const { session: checkoutSession, checkout } = await searchParams;
+
+  /*
+   * Coming back from Stripe.
+   *
+   * The webhook is the authority, but it is asynchronous and Stripe makes no
+   * promise about arriving before the browser does. Without this, somebody
+   * who pays and is redirected back within the second sees the paywall they
+   * just paid to remove, has no way to know it will fix itself, and either
+   * emails or pays again.
+   *
+   * The query string is not the evidence — `?paid=1` is something anybody can
+   * type. The session id is looked up with Stripe, and nothing is granted
+   * unless Stripe says that session is paid. Both paths are idempotent, so
+   * whichever of the two arrives second does nothing.
+   */
+  const justPaid =
+    checkoutSession && stripeConfigured()
+      ? (await fulfilSessionId(checkoutSession)).status === "granted"
+      : false;
 
   const [held, company, access] = await Promise.all([
     listDocumentsForEmail(session.email),
@@ -30,7 +57,7 @@ export default async function ProgramsPage() {
   ]);
 
   const programs = offerablePrograms();
-  const offer = offerById("single_program");
+  const price = formatPrice(PROGRAMS_PRODUCT);
 
   return (
     <main className="max-w-3xl">
@@ -40,22 +67,38 @@ export default async function ProgramsPage() {
         Word and PDF, prepared in your company&rsquo;s name.
       </p>
 
+      {justPaid ? (
+        <div className="mt-6 border-l-2 border-verdigris bg-paper p-4">
+          <p className="type-body">
+            <strong className="text-millscale">Payment received.</strong> Every
+            program below is yours. Pick one and it&rsquo;s built in about two
+            minutes.
+          </p>
+        </div>
+      ) : null}
+
+      {checkout === "cancelled" ? (
+        <div className="mt-6 border-l-2 border-slate-wash bg-paper p-4">
+          <p className="type-body">
+            Payment cancelled &mdash; nothing was charged. Your answers are
+            still here whenever you want to come back to them.
+          </p>
+        </div>
+      ) : null}
+
       {/*
         Said here, before anybody spends two minutes on a questionnaire.
         Letting somebody answer every question and only then meeting a price
         would be a bait and switch, and this product does not do that anywhere
         else. What is free stays named as free in the same breath.
       */}
-      {!access.allowed && offer ? (
+      {!access.allowed && !justPaid ? (
         <div className="mt-6 border-l-2 border-verdigris bg-paper p-4">
           <p className="type-body">
-            Your gap checks are free and stay free. Having a program written
-            and prepared in your name is{" "}
-            <strong className="text-millscale">{formatMoney(offer.price)}</strong>{" "}
-            &mdash; describe what you need and we&rsquo;ll come back with the
-            number before any work starts.
+            Gap checks are free and stay free. Every written program below is{" "}
+            <strong className="text-millscale">{price} once</strong> &mdash; all
+            of them, every revision, and every program we add later.
           </p>
-          <p className="mt-2 text-sm text-slate-wash">{PRICING_NOTE}</p>
         </div>
       ) : null}
 
@@ -92,9 +135,9 @@ export default async function ProgramsPage() {
                   <p className="mt-1 text-sm text-slate-wash">
                     {existing
                       ? `Version ${existing.current?.version ?? 1} — ready to download`
-                      : access.allowed || !offer
+                      : access.allowed || justPaid
                         ? "About two minutes"
-                        : `About two minutes to describe · ${formatMoney(offer.price)} to have it prepared`}
+                        : `About two minutes · included in ${price}`}
                   </p>
                 </div>
                 {existing ? (

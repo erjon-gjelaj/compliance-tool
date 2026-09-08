@@ -8,6 +8,8 @@ import { programById } from "@/lib/programs/registry";
 import { isOfferable } from "@/lib/programs/types";
 import { companyContextFor } from "@/lib/programs/store";
 import { ProgramForm } from "@/components/program-form";
+import { stripeConfigured } from "@/lib/billing/stripe";
+import { fulfilSessionId } from "@/lib/billing/fulfil";
 
 export const metadata = pageMetadata({
   title: "Prepare a program",
@@ -24,13 +26,32 @@ export const maxDuration = 60;
 
 export default async function ProgramPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ paid?: string; session?: string }>;
 }) {
   const session = await currentClient();
   if (!session) redirect("/sign-in");
 
   const { id } = await params;
+  const { session: checkoutSession } = await searchParams;
+
+  /*
+   * Coming back from Stripe.
+   *
+   * The webhook is the authority, but it is asynchronous and makes no promise
+   * about arriving before the browser does. Without this, somebody who pays
+   * and is redirected back within the second sees the paywall they just paid
+   * to remove.
+   *
+   * The query string is not the evidence: the session id is looked up with
+   * Stripe and nothing is granted unless Stripe says it was paid. Both paths
+   * are idempotent, so whichever arrives second does nothing.
+   */
+  if (checkoutSession && stripeConfigured()) {
+    await fulfilSessionId(checkoutSession);
+  }
   const template = programById(id);
 
   // A programme that exists but is not released is a 404 rather than a
@@ -77,7 +98,11 @@ export default async function ProgramPage({
       </p>
 
       <div className="mt-8">
-        <ProgramForm programId={template.id} context={context} />
+        <ProgramForm
+          programId={template.id}
+          context={context}
+          checkoutEnabled={stripeConfigured()}
+        />
       </div>
     </main>
   );

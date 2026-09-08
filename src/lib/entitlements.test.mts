@@ -12,7 +12,7 @@ import {
   unlocksPreparation,
   type Capability,
 } from "./entitlements.ts";
-import { FREE_INCLUDES, ONE_TIME_SERVICES } from "./pricing.ts";
+import { FREE_INCLUDES, PRODUCTS, PROGRAMS_PRODUCT } from "./billing/catalog.ts";
 
 /**
  * Who may have a document prepared.
@@ -106,33 +106,39 @@ test("what the pricing page calls free matches what free actually grants", () =>
  * The offers and the capabilities agree
  * ------------------------------------------------------------------ */
 
-test("every paid offer unlocks a capability that exists", () => {
-  // An offer naming a capability that no longer exists sells nothing, and
-  // nothing in the type system connects them: `unlocks` is a plain string.
-  const known = new Set<string>(CAPABILITIES);
+test("paying grants the thing that was sold", () => {
+  // If the product sells written programs and no plan grants
+  // document_preparation, paying changes nothing — which was true of every
+  // plan in this product until the check was wired in.
+  const capability: Capability = "document_preparation";
 
-  for (const offer of ONE_TIME_SERVICES) {
-    if (!offer.unlocks) continue;
-    assert.ok(
-      known.has(offer.unlocks),
-      `"${offer.id}" sells "${offer.unlocks}", which is not a capability`,
-    );
-  }
+  assert.ok(
+    PLANS.some((plan) => plan !== "free" && can(plan, capability)),
+    "the product is sold but no plan grants it",
+  );
 });
 
-test("a paid plan actually grants what the offers sell", () => {
-  // The other half. If the offers sell document_preparation and no plan
-  // grants it, paying changes nothing — which was true of every plan in this
-  // product until the check was wired in.
-  const sold = new Set(
-    ONE_TIME_SERVICES.map((offer) => offer.unlocks).filter(Boolean) as Capability[],
-  );
+test("the catalog sells exactly one thing", () => {
+  // Every extra tier would sell a distinction this software cannot enforce:
+  // the capability is one bit, so a second product would have to be tracked
+  // per program, per payment, forever. If this fails, that work is now owed.
+  assert.equal(PRODUCTS.length, 1);
+  assert.equal(PRODUCTS[0].id, PROGRAMS_PRODUCT.id);
+});
 
-  for (const capability of sold) {
-    assert.ok(
-      PLANS.some((plan) => plan !== "free" && can(plan, capability)),
-      `"${capability}" is sold but no plan grants it`,
-    );
+test("the price is a whole number of cents and not zero", () => {
+  // Stripe charges amountCents directly. A float here bills somebody
+  // $198.99999999, and a zero grants the product for nothing.
+  assert.ok(Number.isInteger(PROGRAMS_PRODUCT.amountCents));
+  assert.ok(PROGRAMS_PRODUCT.amountCents > 0);
+});
+
+test("nothing in the paid list promises what the product does not do", () => {
+  // These bullets sit next to a card form. Each one is a commitment.
+  const promised = PROGRAMS_PRODUCT.includes.join(" ").toLowerCase();
+
+  for (const forbidden of ["consultant", "audit", "certified", "guarantee", "approved"]) {
+    assert.ok(!promised.includes(forbidden), `the checkout promises "${forbidden}"`);
   }
 });
 

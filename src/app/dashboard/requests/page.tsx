@@ -26,7 +26,7 @@ import { formatQuote, liveQuote, needsCustomer } from "@/lib/requests/state";
 
 export const metadata = pageMetadata({
   title: "Get help",
-  description: `Ask ${SITE_NAME} for work that is done by hand, and follow where each request stands.`,
+  description: `Ask ${SITE_NAME} about anything the programs don't cover, and follow where each request stands.`,
   path: "/dashboard/requests",
   robots: { index: false, follow: false },
 });

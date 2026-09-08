@@ -363,7 +363,7 @@ export default async function InternalRequestsPage({
                   const settled = paid
                     ? `Paid${agreed ? ` — ${formatQuote(agreed)}` : ""}.`
                     : agreed
-                      ? `Accepted ${formatQuote(agreed)} — invoice and record the payment.`
+                      ? `Accepted ${formatQuote(agreed)} — raise it and record the payment.`
                       : null;
 
                   if (open) {

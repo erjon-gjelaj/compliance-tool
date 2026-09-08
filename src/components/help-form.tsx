@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { Check } from "lucide-react";
 
 import { requestHelp, type HelpState } from "@/app/dashboard/help/actions";
 import { SubmitButton } from "@/components/submit-button";
 import { SERVICE_KINDS, SERVICE_LABELS } from "@/lib/service-kinds";
-import { ONE_TIME_SERVICES, PRICING_NOTE, formatMoney } from "@/lib/pricing";
+import { PROGRAMS_PRODUCT, formatPrice } from "@/lib/billing/catalog";
 
 /**
  * Asking for work that a person does by hand.
@@ -99,32 +100,32 @@ export function HelpForm({ submissionId }: { submissionId?: string }) {
       </SubmitButton>
 
       {/*
-        The ranges are shown here, next to the ask, rather than only on the
-        pricing page. Someone deciding whether to send this wants to know
-        roughly what they are getting into, and making them open another tab
-        to find out is how a request gets abandoned. Read from lib/pricing, so
-        these cannot drift from the pricing page.
+        The price sits next to the ask rather than only on the pricing page.
+        Somebody deciding whether to send this wants to know what they are
+        getting into, and making them open another tab to find out is how a
+        request gets abandoned. Read from the catalog, so it cannot drift from
+        what Stripe charges.
       */}
       <div className="mt-6 border-t border-zinc-dust pt-5">
-        <p className="type-label text-millscale">Roughly what paid work costs</p>
-        <ul className="mt-3 grid gap-1.5">
-          {ONE_TIME_SERVICES.map((offer) => (
-            <li
-              key={offer.id}
-              className="flex justify-between gap-4 text-sm text-slate-wash"
-            >
-              <span>{offer.name}</span>
-              <span className="text-millscale">{formatMoney(offer.price)}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-sm text-slate-wash">{PRICING_NOTE}</p>
+        <p className="type-body">
+          If what you need is the written programs, you don&rsquo;t have to ask
+          &mdash; they&rsquo;re {formatPrice(PROGRAMS_PRODUCT)} for all of them
+          and you can build them yourself in a couple of minutes.
+        </p>
+        <Link
+          href="/dashboard/programs"
+          className="mt-2 inline-block text-sm font-medium text-verdigris underline-offset-4 hover:underline"
+        >
+          See the programs
+        </Link>
       </div>
 
       <p className="mt-4 text-sm text-slate-wash">
-        This asks a person to get in touch. There is no payment step, and
-        nothing here signs you up to anything.
+        Use this for anything else &mdash; a rejection you can&rsquo;t make
+        sense of, a client asking for something unusual, or a program we
+        don&rsquo;t prepare yet.
       </p>
+
     </form>
   );
 }

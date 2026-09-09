@@ -86,7 +86,7 @@ export const DRUG_ALCOHOL: ProgramTemplate = {
     },
     {
       id: Q.dot,
-      prompt: "Does anyone hold a commercial driver's licence for the company?",
+      prompt: "Does anyone hold a commercial driver's license for the company?",
       help: "Those roles sit under a separate federal regime, so the policy says so.",
       kind: "boolean",
       required: true,

@@ -21,6 +21,13 @@ import { SUBCONTRACTOR_MANAGEMENT } from "@/lib/programs/subcontractor-managemen
 import { HEARING_CONSERVATION } from "@/lib/programs/hearing-conservation";
 import { BLOODBORNE_PATHOGENS } from "@/lib/programs/bloodborne-pathogens";
 import { LADDER_SAFETY } from "@/lib/programs/ladder-safety";
+import { FLEET_DRIVER } from "@/lib/programs/fleet-driver";
+import { HAND_POWER_TOOLS } from "@/lib/programs/hand-power-tools";
+import { FIRE_PREVENTION } from "@/lib/programs/fire-prevention";
+import { HOUSEKEEPING } from "@/lib/programs/housekeeping";
+import { RETURN_TO_WORK } from "@/lib/programs/return-to-work";
+import { MANAGEMENT_OF_CHANGE } from "@/lib/programs/management-of-change";
+import { SAFETY_OBSERVATIONS } from "@/lib/programs/safety-observations";
 import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/types";
 import { programConfigByKey } from "@/lib/config";
 
@@ -78,6 +85,13 @@ export const PROGRAMS: ProgramTemplate[] = [
   HEARING_CONSERVATION,
   BLOODBORNE_PATHOGENS,
   LADDER_SAFETY,
+  FLEET_DRIVER,
+  HAND_POWER_TOOLS,
+  FIRE_PREVENTION,
+  HOUSEKEEPING,
+  RETURN_TO_WORK,
+  MANAGEMENT_OF_CHANGE,
+  SAFETY_OBSERVATIONS,
 ].map(withCatalog);
 
 export function programById(id: string): ProgramTemplate | undefined {

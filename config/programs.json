@@ -383,9 +383,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "fleet_driver_v1",
+      "template_body_key": "fleet_driver",
+      "release_state": "customer_available"
     },
     {
       "program_key": "sse",
@@ -439,9 +439,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "hand_power_tools_v1",
+      "template_body_key": "hand_power_tools",
+      "release_state": "customer_available"
     },
     {
       "program_key": "ladder",
@@ -476,9 +476,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "fire_prevention_v1",
+      "template_body_key": "fire_prevention",
+      "release_state": "customer_available"
     },
     {
       "program_key": "heat_illness",
@@ -530,9 +530,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "return_to_work_v1",
+      "template_body_key": "return_to_work",
+      "release_state": "customer_available"
     },
     {
       "program_key": "stop_work",
@@ -564,9 +564,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "bbs_v1",
+      "template_body_key": "safety_observations",
+      "release_state": "customer_available"
     },
     {
       "program_key": "moc",
@@ -584,9 +584,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "moc_v1",
+      "template_body_key": "management_of_change",
+      "release_state": "customer_available"
     },
     {
       "program_key": "housekeeping",
@@ -602,9 +602,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "housekeeping_v1",
+      "template_body_key": "housekeeping",
+      "release_state": "customer_available"
     },
     {
       "program_key": "excavation",

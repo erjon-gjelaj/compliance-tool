@@ -825,6 +825,602 @@
           "required": true
         }
       ]
+    },
+    {
+      "questionnaire_schema_key": "heat_illness_v1",
+      "program_key": "heat_illness",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "work_setting",
+          "prompt": "Where does the heat come from?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "water_supply",
+          "prompt": "How does drinking water reach the crew?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "shade_provision",
+          "prompt": "Where do people cool off?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "acclimatization",
+          "prompt": "Do you build people up gradually in the heat?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "buddy_checks",
+          "prompt": "Do crews watch each other for symptoms?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are acclimatization and training records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "stop_work_v1",
+      "program_key": "stop_work",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "restart_decision",
+          "prompt": "Who decides the job can restart?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "disagreement_route",
+          "prompt": "What if they don't agree it's safe to restart?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "other_contractors",
+          "prompt": "Can your people stop work being done by someone else's crew?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "stops_recorded",
+          "prompt": "Do you write down every stop, including the ones that turned out to be nothing?",
+          "response_type": "boolean",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "sub_management_v1",
+      "program_key": "sub_management",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "how_often",
+          "prompt": "How often do you bring in a subcontractor?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "vetting_depth",
+          "prompt": "What do you look at before hiring one?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "waiver_authority",
+          "prompt": "Who can approve one that doesn't meet the bar?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "onsite_oversight",
+          "prompt": "Who watches their work once they're on site?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "incident_reporting",
+          "prompt": "Do they have to report incidents to you?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where is the subcontractor file kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "hearing_v1",
+      "program_key": "hearing",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "noise_sources",
+          "prompt": "Where does the noise come from?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "monitoring_route",
+          "prompt": "How do you know how loud it actually is?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "protection_offered",
+          "prompt": "What hearing protection do you provide?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "audiogram_route",
+          "prompt": "Do people get hearing tests?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are noise measurements and test results kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "bloodborne_v1",
+      "program_key": "bloodborne",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "designated_responders",
+          "prompt": "Does anyone have first aid as an assigned duty?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "vaccination_offered",
+          "prompt": "Do you offer hepatitis B vaccination to those people?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "cleanup_route",
+          "prompt": "Who cleans up after someone is injured?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "kit_locations",
+          "prompt": "Where are first aid kits and gloves kept?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are exposure records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "ladder_v1",
+      "program_key": "ladder",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "ladder_types",
+          "prompt": "What do your crews use?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "alternatives_first",
+          "prompt": "Do crews consider a lift or scaffold before reaching for a ladder?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "inspection_route",
+          "prompt": "How are ladders inspected?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "damaged_route",
+          "prompt": "What happens to a damaged ladder?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are inspection records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "fleet_driver_v1",
+      "program_key": "fleet_driver",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "vehicle_types",
+          "prompt": "What do your people drive for work?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "license_checks",
+          "prompt": "How do you know everyone's license is valid?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "phone_policy",
+          "prompt": "What's the rule on phones while driving?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "fatigue_rule",
+          "prompt": "Can someone say they're too tired to drive home?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "inspection_routine",
+          "prompt": "How are vehicles checked?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are driver records and vehicle checks kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "hand_power_tools_v1",
+      "program_key": "hand_power_tools",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "tool_source",
+          "prompt": "Where do the tools come from?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "inspection_routine",
+          "prompt": "How are tools checked?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "damaged_route",
+          "prompt": "What happens when someone finds a damaged tool?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "guard_rule",
+          "prompt": "What's the rule on removing a guard?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "cord_protection",
+          "prompt": "Do crews use ground fault protection on temporary power?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are tool records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "fire_prevention_v1",
+      "program_key": "fire_prevention",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "extinguisher_use",
+          "prompt": "Are your people expected to use an extinguisher?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "flammable_storage",
+          "prompt": "Where are flammable liquids kept?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "hot_work_done",
+          "prompt": "Do your crews do hot work — welding, cutting, grinding?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "battery_charging",
+          "prompt": "Do you charge tool or equipment batteries on site or in the yard?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "waste_routine",
+          "prompt": "How is combustible waste dealt with?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are extinguisher checks and fire records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "housekeeping_v1",
+      "program_key": "housekeeping",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "cleanup_timing",
+          "prompt": "When does the crew clear up?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "walkway_rule",
+          "prompt": "What's the rule on blocking a walkway?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "material_storage",
+          "prompt": "Where does material go when it arrives on site?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "area_inspections",
+          "prompt": "Does anyone walk the area and look?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are area inspection records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "return_to_work_v1",
+      "program_key": "return_to_work",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "light_duty_available",
+          "prompt": "Do you have work someone on restrictions could actually do?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "restriction_source",
+          "prompt": "Who sets the restrictions?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "fitness_checks",
+          "prompt": "Do you check fitness for duty in situations other than injury?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "contact_during",
+          "prompt": "Does someone stay in touch while an employee is off?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are these records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "moc_v1",
+      "program_key": "moc",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "who_approves",
+          "prompt": "Who approves a change to how a job is being done?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "temporary_changes",
+          "prompt": "Do temporary fixes ever stay in place longer than intended?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "crew_changes",
+          "prompt": "Do you treat a change of crew as a change?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "client_driven",
+          "prompt": "Do clients change the scope mid-job?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are change records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "bbs_v1",
+      "program_key": "bbs",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "who_observes",
+          "prompt": "Who does the observing?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "observation_frequency",
+          "prompt": "How often?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "anonymous_records",
+          "prompt": "Are names recorded?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "feedback_route",
+          "prompt": "Does the crew hear back about what was found?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are observation records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
     }
   ]
 }

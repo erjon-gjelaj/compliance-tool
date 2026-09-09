@@ -35,7 +35,7 @@ const Q = {
   responsible: "responsible_role",
   gate: "before_work",
   who: "who_decides",
-  refresher: "refresher",
+  refresher: "refresher_schedule",
   records: "records_location",
   clientSpecific: "client_specific",
   competency: "competency_check",

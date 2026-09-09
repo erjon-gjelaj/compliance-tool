@@ -32,7 +32,7 @@ import {
 const Q = {
   responsible: "responsible_role",
   ownerRole: "owner_involvement",
-  meetings: "meetings",
+  meetings: "meeting_cadence",
   budget: "budget_authority",
   measure: "how_measured",
 } as const;

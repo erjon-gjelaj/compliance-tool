@@ -228,9 +228,9 @@
         "universal",
         "loto"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "loto_v1",
+      "template_body_key": "lockout_tagout",
+      "release_state": "customer_available"
     },
     {
       "program_key": "fall_protection",
@@ -252,9 +252,9 @@
         "universal",
         "fall_protection"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "fall_protection_v1",
+      "template_body_key": "fall_protection",
+      "release_state": "customer_available"
     },
     {
       "program_key": "confined_space",
@@ -276,9 +276,9 @@
         "universal",
         "confined_space"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "confined_space_v1",
+      "template_body_key": "confined_space",
+      "release_state": "customer_available"
     },
     {
       "program_key": "respiratory",
@@ -363,9 +363,9 @@
         "universal",
         "hot_work"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "hot_work_v1",
+      "template_body_key": "hot_work",
+      "release_state": "customer_available"
     },
     {
       "program_key": "fleet_driver",

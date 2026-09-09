@@ -36,9 +36,9 @@ import {
 const Q = {
   responsible: "responsible_role",
   decides: "who_decides",
-  steps: "steps",
+  steps: "response_steps",
   immediate: "immediate_removal",
-  positive: "recognition",
+  positive: "positive_recognition",
   records: "records_location",
 } as const;
 

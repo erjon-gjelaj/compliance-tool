@@ -46,7 +46,7 @@ const Q = {
   clientRules: "client_rules",
   dot: "dot_covered",
   selfReport: "self_report",
-  prescription: "prescription",
+  prescription: "prescription_disclosure",
 } as const;
 
 const SCOPE_SENTENCE: Record<string, string> = {

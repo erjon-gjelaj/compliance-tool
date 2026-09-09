@@ -8,6 +8,10 @@ import { DISCIPLINARY } from "@/lib/programs/disciplinary";
 import { SAFETY_POLICY } from "@/lib/programs/safety-policy";
 import { RECORDKEEPING } from "@/lib/programs/recordkeeping";
 import { DRUG_ALCOHOL } from "@/lib/programs/drug-alcohol";
+import { LOCKOUT_TAGOUT } from "@/lib/programs/lockout-tagout";
+import { CONFINED_SPACE } from "@/lib/programs/confined-space";
+import { HOT_WORK } from "@/lib/programs/hot-work";
+import { FALL_PROTECTION } from "@/lib/programs/fall-protection";
 import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/types";
 import { programConfigByKey } from "@/lib/config";
 
@@ -52,6 +56,10 @@ export const PROGRAMS: ProgramTemplate[] = [
   SAFETY_POLICY,
   RECORDKEEPING,
   DRUG_ALCOHOL,
+  LOCKOUT_TAGOUT,
+  CONFINED_SPACE,
+  HOT_WORK,
+  FALL_PROTECTION,
 ].map(withCatalog);
 
 export function programById(id: string): ProgramTemplate | undefined {

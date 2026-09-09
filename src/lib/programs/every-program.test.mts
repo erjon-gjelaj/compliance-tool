@@ -246,6 +246,18 @@ test("every program is written in American English", () => {
     /\butilis/i,
     /\bdefence\b/i,
     /\blabelled\b/i,
+    /*
+     * The doubled-consonant family. American English does not double the
+     * final consonant before a suffix when the stress is not on that
+     * syllable, which is why "cancelled" and "travelling" read as foreign to
+     * the crew this document goes to.
+     */
+    /\bcancell/i,
+    /\btravell/i,
+    /\bmodell/i,
+    /\bsignall/i,
+    /\bfuelled\b/i,
+    /\bunlabelled\b/i,
     /\bcentre\b/i,
     /\bpenalis/i,
     /\bjudgement\b/i,
@@ -336,6 +348,35 @@ test("every question is answerable without knowing our vocabulary", () => {
           );
         }
       }
+    }
+  }
+});
+
+test("answer ids are recognizably internal, so a leak is detectable", () => {
+  /*
+   * The leak check above compares prose against every answer id. A single-word
+   * id like "inspector" or "meetings" collides with ordinary English, so it
+   * either false-positives on correct prose or — worse — passes only because
+   * the prose happened to capitalize the word. Neither is a check.
+   *
+   * Requiring an underscore makes every id unmistakably ours, which is what
+   * lets the leak check be strict.
+   *
+   * `labelling` is grandfathered. It is written into the stored answers of
+   * every HazCom version already issued, and renaming it would make a revision
+   * of one of those documents fail validation as a contradictory answer.
+   */
+  const grandfathered = new Set(["labelling"]);
+
+  for (const template of PROGRAMS) {
+    for (const question of template.questions) {
+      if (grandfathered.has(question.id)) continue;
+
+      assert.ok(
+        question.id.includes("_"),
+        `${template.id}: "${question.id}" reads as an ordinary word — ` +
+          "give it an underscore so a leak into the prose is detectable",
+      );
     }
   }
 });

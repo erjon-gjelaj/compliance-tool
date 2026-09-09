@@ -481,6 +481,200 @@
           "required": true
         }
       ]
+    },
+    {
+      "questionnaire_schema_key": "loto_v1",
+      "program_key": "loto",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "who_isolates",
+          "prompt": "Who is allowed to apply a lock?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "group_work",
+          "prompt": "Do several people ever work under one isolation?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "shift_change",
+          "prompt": "Does work under isolation ever carry across a shift change?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "other_employers",
+          "prompt": "Do you isolate equipment on sites where other contractors work?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "inspector",
+          "prompt": "Who checks the procedures each year?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are the equipment procedures and inspection records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "confined_space_v1",
+      "program_key": "confined_space",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "who_enters",
+          "prompt": "Who is allowed to enter a permit space?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "rescue_arrangement",
+          "prompt": "Who performs a rescue if something goes wrong inside?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "response_time",
+          "prompt": "How is the rescue response time established?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "monitor_type",
+          "prompt": "Do you use your own gas monitor, or the site's?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "host_permit",
+          "prompt": "Do client sites issue their own entry permits?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where do completed permits end up?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "hot_work_v1",
+      "program_key": "hot_work",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "permit_issuer",
+          "prompt": "Who signs the hot work permit?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "watch_minutes",
+          "prompt": "How long does the fire watch stay after the work stops?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "gas_testing",
+          "prompt": "When do you test the atmosphere before hot work?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "host_permit",
+          "prompt": "Do client sites issue their own hot work permits?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where do completed permits end up?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "fall_protection_v1",
+      "program_key": "fall_protection",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "primary_method",
+          "prompt": "What do you mostly rely on to stop a fall?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "anchor_source",
+          "prompt": "Where do anchor points come from?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "rescue_method",
+          "prompt": "If someone is left hanging in a harness, how do you get them down?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "inspection_cadence",
+          "prompt": "How often is fall protection equipment inspected?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "leading_edge",
+          "prompt": "Do crews ever work at an edge that moves as the work progresses?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are inspection records and rescue plans kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
     }
   ]
 }

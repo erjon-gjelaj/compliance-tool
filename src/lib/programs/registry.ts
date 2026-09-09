@@ -2,6 +2,12 @@ import { EMERGENCY_ACTION_PLAN } from "@/lib/programs/emergency-action-plan";
 import { HAZCOM } from "@/lib/programs/hazcom";
 import { INCIDENT_REPORTING } from "@/lib/programs/incident-reporting";
 import { PPE } from "@/lib/programs/ppe";
+import { JOB_SAFETY_ANALYSIS } from "@/lib/programs/job-safety-analysis";
+import { SAFETY_TRAINING } from "@/lib/programs/safety-training";
+import { DISCIPLINARY } from "@/lib/programs/disciplinary";
+import { SAFETY_POLICY } from "@/lib/programs/safety-policy";
+import { RECORDKEEPING } from "@/lib/programs/recordkeeping";
+import { DRUG_ALCOHOL } from "@/lib/programs/drug-alcohol";
 import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/types";
 import { programConfigByKey } from "@/lib/config";
 
@@ -40,6 +46,12 @@ export const PROGRAMS: ProgramTemplate[] = [
   PPE,
   EMERGENCY_ACTION_PLAN,
   INCIDENT_REPORTING,
+  JOB_SAFETY_ANALYSIS,
+  SAFETY_TRAINING,
+  DISCIPLINARY,
+  SAFETY_POLICY,
+  RECORDKEEPING,
+  DRUG_ALCOHOL,
 ].map(withCatalog);
 
 export function programById(id: string): ProgramTemplate | undefined {

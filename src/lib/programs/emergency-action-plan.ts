@@ -140,7 +140,7 @@ export const EMERGENCY_ACTION_PLAN: ProgramTemplate = {
         blocks: [
           {
             type: "paragraph",
-            text: `${company} maintains this Emergency Action Plan to organise a safe and orderly response by its employees at ${site}. It applies while company employees are working at that location.`,
+            text: `${company} maintains this Emergency Action Plan to organize a safe and orderly response by its employees at ${site}. It applies while company employees are working at that location.`,
           },
           {
             type: "paragraph",

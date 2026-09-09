@@ -30,6 +30,13 @@ const Q = {
   labelling: "labelling",
   multiEmployer: "multi_employer",
   nonRoutine: "non_routine",
+  /*
+   * The stored id keeps its British spelling on purpose. It is written
+   * into the answers of every version already issued, and renaming it
+   * would make a revision of one of those documents fail validation as a
+   * contradictory answer. The prose the customer reads is US spelling;
+   * this is internal and stays as it is.
+   */
   unlabelledPipes: "unlabelled_pipes",
 } as const;
 
@@ -75,13 +82,20 @@ export const HAZCOM: ProgramTemplate = {
   shortName: "Hazard Communication",
   requirementId: "hazard-communication",
   release: "customer_available",
-  templateVersion: "1.0.0",
+  templateVersion: "1.1.0",
 
-  // lib/requirements labels this "Hazard communication programme". Compared
-  // case-insensitively against both spellings, because the reference data uses
-  // British spelling and a review stored before that settled may carry either.
+  /*
+   * Matched against the title a finding carries, which has been three
+   * different strings over this project's life: the config now says "Hazard
+   * Communication", older reference data said "Hazard communication
+   * programme", and reviews stored in between say "program".
+   *
+   * All three are accepted, because the cost of missing one is invisible: the
+   * customer simply never sees an offer to prepare a document we could have
+   * written for them, and nothing anywhere reports it.
+   */
   matchesLabel: (label) =>
-    /^hazard communication (program|programme)$/i.test(label.trim()),
+    /^hazard communication( (program|programme))?$/i.test(label.trim()),
 
   /*
    * Seven questions, two of them conditional, and none asked that the profile
@@ -128,7 +142,7 @@ export const HAZCOM: ProgramTemplate = {
     },
     {
       id: Q.labelling,
-      prompt: "How are chemical containers labelled on your jobs?",
+      prompt: "How are chemical containers labeled on your jobs?",
       kind: "choice",
       required: true,
       options: [
@@ -148,7 +162,7 @@ export const HAZCOM: ProgramTemplate = {
     },
     {
       id: Q.unlabelledPipes,
-      prompt: "Do your crew work on pipes or lines that aren't labelled?",
+      prompt: "Do your crew work on pipes or lines that aren't labeled?",
       help: "Common on plant and refinery work.",
       kind: "boolean",
       required: true,
@@ -204,7 +218,7 @@ export const HAZCOM: ProgramTemplate = {
         blocks: [
           {
             type: "paragraph",
-            text: `The ${role} is responsible for this program: for keeping it current, for maintaining the chemical inventory and the safety data sheet collection, for seeing that containers are labelled, and for arranging employee training.`,
+            text: `The ${role} is responsible for this program: for keeping it current, for maintaining the chemical inventory and the safety data sheet collection, for seeing that containers are labeled, and for arranging employee training.`,
           },
           {
             type: "paragraph",
@@ -286,7 +300,7 @@ export const HAZCOM: ProgramTemplate = {
           },
           {
             type: "paragraph",
-            text: `The ${role} records who has been trained and on what date.`,
+            text: `The ${role} records who was taken through this program, and on what date.`,
           },
         ],
       },
@@ -311,12 +325,12 @@ export const HAZCOM: ProgramTemplate = {
 
     if (unlabelledPipes) {
       sections.push({
-        heading: "Unlabelled Pipes and Lines",
+        heading: "Unlabeled Pipes and Lines",
         sourceRef: "1910.1200(e)(1)(ii)",
         blocks: [
           {
             type: "paragraph",
-            text: `Employees of ${company} work at locations where piping and lines may carry hazardous chemicals without being labelled.`,
+            text: `Employees of ${company} work at locations where piping and lines may carry hazardous chemicals without being labeled.`,
           },
           {
             type: "paragraph",
@@ -337,7 +351,7 @@ export const HAZCOM: ProgramTemplate = {
           },
           {
             type: "paragraph",
-            text: `Before work begins at such a site, the ${role} provides the host employer and any other contractor whose employees may be exposed with access to the safety data sheets for the chemicals ${company} brings on site, tells them how those chemicals will be labelled, and describes the precautions that apply.`,
+            text: `Before work begins at such a site, the ${role} provides the host employer and any other contractor whose employees may be exposed with access to the safety data sheets for the chemicals ${company} brings on site, tells them how those chemicals will be labeled, and describes the precautions that apply.`,
           },
           {
             type: "paragraph",

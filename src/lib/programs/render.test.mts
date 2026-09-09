@@ -82,7 +82,7 @@ test("fixture: multi-employer sites add their sections", () => {
   assert.equal(outcome.ok, true);
   const list = headings(answers);
   assert.ok(list.includes("Multi-Employer Workplaces"));
-  assert.ok(list.includes("Unlabelled Pipes and Lines"));
+  assert.ok(list.includes("Unlabeled Pipes and Lines"));
 });
 
 test("fixture: a contractor working alone gets no multi-employer section", () => {
@@ -91,7 +91,7 @@ test("fixture: a contractor working alone gets no multi-employer section", () =>
   const list = headings(BASE);
 
   assert.ok(!list.includes("Multi-Employer Workplaces"));
-  assert.ok(!list.includes("Unlabelled Pipes and Lines"));
+  assert.ok(!list.includes("Unlabeled Pipes and Lines"));
 });
 
 test("fixture: no non-routine tasks means no non-routine section", () => {

@@ -1,3 +1,5 @@
+import { offerablePrograms } from "@/lib/programs/registry";
+
 /**
  * What can be bought, and for how much.
  *
@@ -47,7 +49,13 @@ export const PROGRAMS_PRODUCT: Product = {
   amountCents: 19900,
   currency: "usd",
   includes: [
-    "All four written programs, prepared in your company's name",
+    /*
+     * No count here on purpose. This line said "all four" for exactly as long
+     * as it took to add a fifth program, and a price list that undersells what
+     * it covers is a worse failure than a vague one. The live number is shown
+     * next to it by `programCount()`, which reads the registry.
+     */
+    "Every written program in the library, prepared in your company's name",
     "Word and PDF of each, kept in your library",
     "Unlimited revisions, including after a hiring client sends one back",
     "Every future program we add, at no extra cost",
@@ -77,3 +85,15 @@ export const FREE_INCLUDES = [
   "Your company profile",
   "Everything you've sent us, kept and searchable",
 ] as const;
+
+/**
+ * How many programs a purchase actually covers, read from the registry.
+ *
+ * Copy that carries a hand-written count goes stale the day somebody adds a
+ * program, and it goes stale quietly: nobody reports a page that undersells
+ * what they are buying. Reading it means the pricing page and the paywall are
+ * correct by construction.
+ */
+export function programCount(): number {
+  return offerablePrograms().length;
+}

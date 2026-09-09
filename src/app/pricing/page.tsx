@@ -10,6 +10,8 @@ import {
   formatPrice,
   programCount,
 } from "@/lib/billing/catalog";
+import { stripeConfigured } from "@/lib/billing/stripe";
+import { invoicingConfigured } from "@/lib/billing/invoice";
 
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
@@ -139,9 +141,21 @@ export default function PricingPage() {
             </li>
             <li>
               <p className="type-label text-millscale">Unlock the programs</p>
+              {/*
+                Reads from what is actually switched on. Saying "by card" while
+                the card path is off promises a checkout the customer will not
+                find, and the invoice path is a real payment method rather than
+                a stopgap worth apologising for.
+              */}
               <p className="type-body mt-2">
-                One payment by card, {price}. It covers every program we
-                prepare, not one of them, and there is nothing recurring.
+                One payment of {price}
+                {stripeConfigured()
+                  ? " by card"
+                  : invoicingConfigured()
+                    ? " by invoice — we send the details and the programs switch on when it lands"
+                    : ""}
+                . It covers every program we prepare, not one of them, and there
+                is nothing recurring.
               </p>
             </li>
             <li>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { TickRule } from "@/components/tick-rule";
 import { Wordmark } from "@/components/wordmark";
@@ -70,9 +71,37 @@ export function SiteFooter() {
 
         <TickRule id="tick-footer" className="mt-12 text-slate-wash" />
 
-        <p className="mt-5 text-xs text-zinc-dust">
-          &copy; {YEAR} {SITE_NAME}. All rights reserved.
-        </p>
+        <div className="mt-5 flex flex-col-reverse items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-zinc-dust">
+            &copy; {YEAR} {SITE_NAME}. All rights reserved.
+          </p>
+
+          {/*
+           * Directory listing badge. The artwork is served from /public
+           * rather than the issuer's CDN: it is a 12KB file with the
+           * wordmark baked in as a raster, so proxying it costs every
+           * visitor a third-party connection for no benefit. What the
+           * directory actually checks is the outbound link, which is
+           * unchanged. `unoptimized` because Next refuses to run an SVG
+           * through the image optimiser without dangerouslyAllowSVG, and
+           * an optimiser is worth nothing on a file this size anyway —
+           * width and height are still declared, so it reserves its space.
+           */}
+          <a
+            href="https://saasbrowser.com/en/saas/1627229/certloop"
+            target="_blank"
+            rel="nofollow noopener"
+            className="shrink-0 rounded-xl opacity-90 transition-opacity hover:opacity-100"
+          >
+            <Image
+              src="/saasbrowser-badge.svg"
+              alt={`${SITE_NAME} listed on SaaS Browser, a SaaS product directory`}
+              width={171}
+              height={60}
+              unoptimized
+            />
+          </a>
+        </div>
       </div>
     </footer>
   );

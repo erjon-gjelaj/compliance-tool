@@ -12,6 +12,9 @@ import { LOCKOUT_TAGOUT } from "@/lib/programs/lockout-tagout";
 import { CONFINED_SPACE } from "@/lib/programs/confined-space";
 import { HOT_WORK } from "@/lib/programs/hot-work";
 import { FALL_PROTECTION } from "@/lib/programs/fall-protection";
+import { RESPIRATORY } from "@/lib/programs/respiratory";
+import { ELECTRICAL_SAFETY } from "@/lib/programs/electrical-safety";
+import { SHORT_SERVICE_EMPLOYEE } from "@/lib/programs/short-service-employee";
 import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/types";
 import { programConfigByKey } from "@/lib/config";
 
@@ -60,6 +63,9 @@ export const PROGRAMS: ProgramTemplate[] = [
   CONFINED_SPACE,
   HOT_WORK,
   FALL_PROTECTION,
+  RESPIRATORY,
+  ELECTRICAL_SAFETY,
+  SHORT_SERVICE_EMPLOYEE,
 ].map(withCatalog);
 
 export function programById(id: string): ProgramTemplate | undefined {

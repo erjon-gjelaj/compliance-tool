@@ -299,9 +299,9 @@
         "universal",
         "respiratory"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "respiratory_v1",
+      "template_body_key": "respiratory",
+      "release_state": "customer_available"
     },
     {
       "program_key": "hearing",
@@ -341,9 +341,9 @@
         "universal",
         "electrical_safety"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "electrical_safety_v1",
+      "template_body_key": "electrical_safety",
+      "release_state": "customer_available"
     },
     {
       "program_key": "hot_work",
@@ -401,9 +401,9 @@
         "universal",
         "sse"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "sse_v1",
+      "template_body_key": "short_service_employee",
+      "release_state": "customer_available"
     },
     {
       "program_key": "bloodborne",

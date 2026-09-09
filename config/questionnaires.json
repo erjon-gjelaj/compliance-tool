@@ -675,6 +675,156 @@
           "required": true
         }
       ]
+    },
+    {
+      "questionnaire_schema_key": "respiratory_v1",
+      "program_key": "respiratory",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "use_type",
+          "prompt": "What kind of respirators do your crews wear?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "medical_route",
+          "prompt": "Who does the medical evaluation?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "fit_frequency",
+          "prompt": "How often is fit testing repeated?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "change_basis",
+          "prompt": "How do people know when to change a cartridge?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "voluntary_use",
+          "prompt": "Does anyone wear a dust mask voluntarily, where it isn't required?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are medical clearances and fit test records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "electrical_safety_v1",
+      "program_key": "electrical_safety",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "work_type",
+          "prompt": "What electrical work do your crews do?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "qualified_basis",
+          "prompt": "How do you establish who is qualified for electrical work?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "live_work",
+          "prompt": "Do your crews ever work on equipment while it is energized?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "label_source",
+          "prompt": "Where does arc flash information come from?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "test_equipment",
+          "prompt": "Do crews carry their own test instruments?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are the qualified list and permits kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "sse_v1",
+      "program_key": "sse",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "period_days",
+          "prompt": "How long is somebody treated as short service?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "mentor_ratio",
+          "prompt": "How many short service employees can one mentor look after?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "identification",
+          "prompt": "How is a short service employee identified on site?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "experienced_exception",
+          "prompt": "Can an experienced hire have the period shortened?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "new_site_clock",
+          "prompt": "Do you treat someone as new again when they go to an unfamiliar site?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where is the short service list kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
     }
   ]
 }

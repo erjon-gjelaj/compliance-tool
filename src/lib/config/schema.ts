@@ -163,6 +163,16 @@ export const requirementFileSchema = z.object({
       checklist: z.string().optional(),
       phrases: z.array(z.string()).min(1),
       action: z.string().min(1),
+      /*
+       * Where the entry's wording came from.
+       *
+       * Zod strips unknown keys, so a source written into the JSON without
+       * this line is silently dropped — which is how a provenance note added
+       * after a real rejection reached nothing at all. Whoever later asks
+       * "why does this say that" needs an answer, and `verified` on its own
+       * cannot give one.
+       */
+      sources: z.array(z.string()).optional(),
     }),
   ),
 });

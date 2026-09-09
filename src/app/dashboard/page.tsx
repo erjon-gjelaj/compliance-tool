@@ -8,7 +8,12 @@ import { listDocumentsForEmail, listSubmissionsForEmail } from "@/lib/dashboard"
 import { listDocumentsForEmail as listGenerated } from "@/lib/programs/store";
 import { listCurrentRequirements } from "@/lib/domain-dashboard";
 import { listMaintenanceDates } from "@/lib/maintenance";
-import { buildPaperwork, nextAction, progress } from "@/lib/paperwork";
+import {
+  buildPaperwork,
+  nextAction,
+  progress,
+  whatItTakes,
+} from "@/lib/paperwork";
 
 export const dynamic = "force-dynamic";
 
@@ -142,7 +147,9 @@ export default async function HomePage() {
           <h2 id="next-heading" className="type-h3 mt-1 text-millscale">
             {next.title}
           </h2>
-          <p className="type-body mt-2 max-w-xl">{next.detail}</p>
+          <p className="type-body mt-2 max-w-xl">
+            {next.detail ?? whatItTakes(next.state)}
+          </p>
           <Link
             href={next.action!.href}
             className="btn-primary mt-5 inline-flex items-center gap-2"
@@ -191,7 +198,11 @@ export default async function HomePage() {
                   <p className="text-sm font-medium text-millscale">
                     {item.title}
                   </p>
-                  <p className="mt-0.5 text-sm text-slate-wash">{item.detail}</p>
+                  {item.detail ? (
+                    <p className="mt-0.5 text-sm text-slate-wash">
+                      {item.detail}
+                    </p>
+                  ) : null}
                 </li>
               ))}
           </ul>

@@ -6,6 +6,7 @@ import {
   nextAction,
   progress,
   programForRequirementKey,
+  whatItTakes,
 } from "./paperwork.ts";
 import type { FileRequirement } from "./domain-dashboard.ts";
 import type { LibraryDocument } from "./dashboard.ts";
@@ -243,8 +244,20 @@ test("a written program we have not automated is not called unknowable", () => {
   });
 
   assert.equal(items[0].state, "not_automated");
-  assert.doesNotMatch(items[0].detail, /no way of knowing/);
   assert.match(items[0].action!.label, /ask/i);
+
+  /*
+   * The wording now lives in whatItTakes rather than on the row: a row sits
+   * under a heading that already explains its group, so repeating it there
+   * cost a reader a dozen identical lines. This checks the sentence the
+   * customer actually reads, wherever it is rendered.
+   */
+  assert.doesNotMatch(whatItTakes(items[0].state), /no way of knowing/);
+  assert.doesNotMatch(
+    whatItTakes("you_provide_it"),
+    /we (could|can) (write|produce|prepare) (it|this)/i,
+    "implied we could produce a certificate that comes from their broker",
+  );
 });
 
 test("the two kinds of missing never collapse into one", () => {

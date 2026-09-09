@@ -101,6 +101,19 @@ const LOOK: Record<
   },
 };
 
+/**
+ * One piece of paperwork.
+ *
+ * The state is carried by a small icon rather than a labelled badge, and the
+ * detail line appears only when the item has one. Both are the same decision:
+ * this row sits under a heading that already says what its whole group is, so
+ * repeating it here costs a reader twelve identical lines to find twelve
+ * names — and the name is the thing they came for.
+ *
+ * The icon stays because it survives scanning where a word does not, and it
+ * carries its label to assistive technology where the visual grouping is not
+ * available.
+ */
 function Row({ item }: { item: PaperworkItem }) {
   const look = LOOK[item.state];
   const Icon = look.icon;
@@ -109,15 +122,17 @@ function Row({ item }: { item: PaperworkItem }) {
     <li className="border border-zinc-dust bg-paper">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4 sm:flex-nowrap">
         <span
-          className={`inline-flex shrink-0 items-center gap-1.5 border px-2.5 py-1 text-xs font-medium ${look.tone}`}
+          className={`inline-flex shrink-0 items-center justify-center border p-1.5 ${look.tone}`}
         >
-          <Icon aria-hidden className="h-3.5 w-3.5" />
-          {look.label}
+          <Icon aria-hidden className="h-4 w-4" />
+          <span className="sr-only">{look.label}</span>
         </span>
 
         <div className="min-w-0 flex-1 basis-full sm:basis-auto">
           <p className="font-medium text-millscale">{item.title}</p>
-          <p className="mt-0.5 text-sm text-slate-wash">{item.detail}</p>
+          {item.detail ? (
+            <p className="mt-0.5 text-sm text-slate-wash">{item.detail}</p>
+          ) : null}
         </div>
 
         {item.action ? (

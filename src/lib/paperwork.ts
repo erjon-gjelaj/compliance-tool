@@ -66,8 +66,21 @@ export type PaperworkItem = {
   key: string;
   title: string;
   state: PaperworkState;
-  /** One line under the title. Never more — a list is for scanning. */
-  detail: string;
+  /**
+   * One line under the title, and only where it says something this row's
+   * group heading has not already said.
+   *
+   * It used to be required, which meant twelve rows under "We can write these
+   * for you" each carried "About two minutes of questions, then it is written
+   * for you." A contractor scanning for the name of a program read the same
+   * sentence twelve times to find twelve names, and the thing they came for
+   * was the smallest text on the row.
+   *
+   * So a row now carries a detail only when it is particular to that row — a
+   * version number, a date that has come due, why a file could not be read.
+   * Everything a whole group shares belongs in the group's own blurb.
+   */
+  detail?: string;
   /** The single thing to do. */
   action: { label: string; href: string } | null;
   /** Set when this is a program we can generate. */
@@ -217,7 +230,6 @@ export function buildPaperwork({
         key: requirement.requirement_key,
         title: requirement.title,
         state: "ask_your_client",
-        detail: "We are not sure this one applies to you. Your client will know.",
         action: null,
       });
       continue;
@@ -239,7 +251,6 @@ export function buildPaperwork({
         key: requirement.requirement_key,
         title: requirement.title,
         state: "we_can_write_it",
-        detail: "About two minutes of questions, then it is written for you.",
         action: {
           label: "Create it",
           href: `/dashboard/programs/${programId}`,
@@ -261,8 +272,6 @@ export function buildPaperwork({
         key: requirement.requirement_key,
         title: requirement.title,
         state: "not_automated",
-        detail:
-          "We do not write this one automatically yet. Send yours, or ask and we will prepare it.",
         action: { label: "Ask us", href: "/dashboard/help" },
       });
       continue;
@@ -272,7 +281,6 @@ export function buildPaperwork({
       key: requirement.requirement_key,
       title: requirement.title,
       state: "you_provide_it",
-      detail: "This one comes from your own records — send it and we will file it.",
       action: { label: "Upload", href: "/dashboard/documents#upload" },
     });
   }
@@ -376,3 +384,31 @@ export function allGenerators() {
 
 /** How many of the catalogue's programs exist as generators. For honest copy. */
 export const CATALOGUE_SIZE = PROGRAM_CATALOG.length;
+
+/**
+ * What doing this item involves, for somewhere it stands on its own.
+ *
+ * A row in the paperwork list sits under a heading that already explains its
+ * group, which is why `detail` is empty for most items. The "Next" card on
+ * the home screen has no such heading — it shows one item and nothing else —
+ * so it needs the sentence the group would otherwise have carried.
+ *
+ * Kept here rather than in the page so the two screens cannot describe the
+ * same piece of paperwork differently.
+ */
+export function whatItTakes(state: PaperworkState): string {
+  switch (state) {
+    case "we_can_write_it":
+      return "A few questions about how you actually work, then we write it and you download the Word and PDF.";
+    case "not_automated":
+      return "We do not write this one automatically yet. Send yours if you have it, or ask us and a person will prepare it.";
+    case "you_provide_it":
+      return "This one comes from your broker, your insurer or your own records. Send it and we will file it with the rest.";
+    case "needs_attention":
+      return "You already have this. Something about it has come due.";
+    case "ask_your_client":
+      return "We cannot see inside your client's portal, so we will not guess whether this applies to you.";
+    case "ready":
+      return "Nothing to do on this one.";
+  }
+}

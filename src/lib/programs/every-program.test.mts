@@ -240,7 +240,9 @@ test("every program is written in American English", () => {
     /\bauthoris/i,
     /\borganis/i,
     /\bminimis/i,
-    /\bspecialis/i,
+    // Not a bare "specialis" prefix: "specialist" is correct American English
+    // and this flagged it. Only the verb forms are British.
+    /\bspecialis[ei]/i,
     /\bprioritis/i,
     /\bbehaviour/i,
     /\butilis/i,

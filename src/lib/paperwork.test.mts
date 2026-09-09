@@ -11,6 +11,20 @@ import type { FileRequirement } from "./domain-dashboard.ts";
 import type { LibraryDocument } from "./dashboard.ts";
 import type { DocumentWithVersions } from "./programs/store.ts";
 import type { MaintenanceRow } from "./maintenance.ts";
+import { PROGRAM_CATALOG } from "./config/index.ts";
+
+/**
+ * A program in the catalog that has no generator yet.
+ *
+ * Asked of the config rather than named, because this test previously used
+ * ladder safety as its example and broke the day ladder safety was
+ * automated — which is a test tracking the implementation rather than the
+ * behavior. What matters is that *some* un-automated program is handled
+ * correctly, whichever one that happens to be.
+ */
+const notAutomated =
+  PROGRAM_CATALOG.find((entry) => entry.release_state !== "customer_available")
+    ?.program_key ?? "excavation";
 
 /**
  * The one list.
@@ -212,8 +226,8 @@ test("a written program we have not automated is not called unknowable", () => {
   /*
    * The distinction this catches, and it misleads in both directions.
    *
-   * A ladder safety program is exactly the kind of thing this product
-   * writes — it simply is not one of the four generators yet. Filing it under
+   * A written safety program is exactly the kind of thing this product
+   * writes — some simply do not have a generator yet. Filing one under
    * "we have no way of knowing this one" tells a contractor we are less
    * capable than we are, and does it for a dozen rows at once, which is most
    * of what their list looks like.
@@ -224,7 +238,7 @@ test("a written program we have not automated is not called unknowable", () => {
   const items = buildPaperwork({
     ...empty,
     requirements: [
-      requirement({ requirement_key: "program.ladder", title: "Ladder Safety" }),
+      requirement({ requirement_key: `program.${notAutomated}`, title: "A written program" }),
     ],
   });
 
@@ -237,7 +251,7 @@ test("the two kinds of missing never collapse into one", () => {
   const items = buildPaperwork({
     ...empty,
     requirements: [
-      requirement({ requirement_key: "program.ladder", title: "Ladder Safety" }),
+      requirement({ requirement_key: `program.${notAutomated}`, title: "A written program" }),
       requirement({ requirement_key: "insurance.gl", title: "Certificate of insurance" }),
     ],
   });

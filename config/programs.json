@@ -319,9 +319,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "hearing_v1",
+      "template_body_key": "hearing_conservation",
+      "release_state": "customer_available"
     },
     {
       "program_key": "electrical_safety",
@@ -421,9 +421,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "bloodborne_v1",
+      "template_body_key": "bloodborne_pathogens",
+      "release_state": "customer_available"
     },
     {
       "program_key": "hand_power_tools",
@@ -457,9 +457,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "ladder_v1",
+      "template_body_key": "ladder_safety",
+      "release_state": "customer_available"
     },
     {
       "program_key": "fire_prevention",
@@ -496,9 +496,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "heat_illness_v1",
+      "template_body_key": "heat_illness",
+      "release_state": "customer_available"
     },
     {
       "program_key": "sub_management",
@@ -514,9 +514,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "sub_management_v1",
+      "template_body_key": "subcontractor_management",
+      "release_state": "customer_available"
     },
     {
       "program_key": "return_to_work",
@@ -547,9 +547,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "stop_work_v1",
+      "template_body_key": "stop_work",
+      "release_state": "customer_available"
     },
     {
       "program_key": "bbs",

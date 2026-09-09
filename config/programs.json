@@ -643,9 +643,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "scaffolding_v1",
+      "template_body_key": "scaffolding",
+      "release_state": "customer_available"
     },
     {
       "program_key": "cranes_rigging",
@@ -683,9 +683,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "aerial_lifts_v1",
+      "template_body_key": "aerial_lifts",
+      "release_state": "customer_available"
     },
     {
       "program_key": "pit",
@@ -724,9 +724,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "silica_v1",
+      "template_body_key": "silica",
+      "release_state": "customer_available"
     },
     {
       "program_key": "asbestos",
@@ -744,9 +744,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "asbestos_v1",
+      "template_body_key": "asbestos",
+      "release_state": "customer_available"
     },
     {
       "program_key": "lead",
@@ -876,9 +876,9 @@
       "required_element_set_keys": [
         "universal"
       ],
-      "questionnaire_schema_key": null,
-      "template_body_key": null,
-      "release_state": "development"
+      "questionnaire_schema_key": "hydroblasting_v1",
+      "template_body_key": "hydroblasting",
+      "release_state": "customer_available"
     },
     {
       "program_key": "abrasive_blasting",

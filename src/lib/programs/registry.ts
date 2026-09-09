@@ -28,6 +28,11 @@ import { HOUSEKEEPING } from "@/lib/programs/housekeeping";
 import { RETURN_TO_WORK } from "@/lib/programs/return-to-work";
 import { MANAGEMENT_OF_CHANGE } from "@/lib/programs/management-of-change";
 import { SAFETY_OBSERVATIONS } from "@/lib/programs/safety-observations";
+import { SCAFFOLDING } from "@/lib/programs/scaffolding";
+import { HYDROBLASTING } from "@/lib/programs/hydroblasting";
+import { ASBESTOS } from "@/lib/programs/asbestos";
+import { AERIAL_LIFTS } from "@/lib/programs/aerial-lifts";
+import { SILICA } from "@/lib/programs/silica";
 import { isOfferable, isTestable, type ProgramTemplate } from "@/lib/programs/types";
 import { programConfigByKey } from "@/lib/config";
 
@@ -92,6 +97,11 @@ export const PROGRAMS: ProgramTemplate[] = [
   RETURN_TO_WORK,
   MANAGEMENT_OF_CHANGE,
   SAFETY_OBSERVATIONS,
+  SCAFFOLDING,
+  HYDROBLASTING,
+  ASBESTOS,
+  AERIAL_LIFTS,
+  SILICA,
 ].map(withCatalog);
 
 export function programById(id: string): ProgramTemplate | undefined {

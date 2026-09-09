@@ -1421,6 +1421,250 @@
           "required": true
         }
       ]
+    },
+    {
+      "questionnaire_schema_key": "scaffolding_v1",
+      "program_key": "scaffolding",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "our_role",
+          "prompt": "What does your company do with scaffolds?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "competent_person",
+          "prompt": "Who decides a scaffold is fit to use?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "tag_system",
+          "prompt": "What tag system do you use?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "inspection_timing",
+          "prompt": "When is a scaffold inspected?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "design_route",
+          "prompt": "What happens when a scaffold goes beyond a standard configuration?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are inspection records and designs kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "hydroblasting_v1",
+      "program_key": "hydroblasting",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "work_type",
+          "prompt": "What do you blast?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "dump_control",
+          "prompt": "How does the operator stop the jet?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "exclusion_route",
+          "prompt": "How is everybody else kept out of the area?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "communication",
+          "prompt": "How do the operator and the pump attendant stay in contact?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "medical_briefing",
+          "prompt": "Do crews carry a card explaining injection injury to a doctor?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are equipment and inspection records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "asbestos_v1",
+      "program_key": "asbestos",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "we_remove",
+          "prompt": "Does your company remove or abate asbestos?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "survey_route",
+          "prompt": "How do you find out whether asbestos is present before a job?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "on_discovery",
+          "prompt": "What happens when someone finds suspect material mid-job?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "awareness_training",
+          "prompt": "Do crews get awareness training so they can recognize it?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are surveys and reports kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "aerial_lifts_v1",
+      "program_key": "aerial_lifts",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "lift_types",
+          "prompt": "What kind of lifts do your crews use?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "who_operates",
+          "prompt": "Who is allowed to operate one?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "inspection_routine",
+          "prompt": "How are lifts checked?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "overhead_check",
+          "prompt": "How do crews establish what's overhead before positioning a lift?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "rescue_plan",
+          "prompt": "Do you have a plan for getting someone down if the lift fails?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where are inspection and operator records kept?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "questionnaire_schema_key": "silica_v1",
+      "program_key": "silica",
+      "version": "1.0.0",
+      "completeness": "complete_from_spec",
+      "questions": [
+        {
+          "question_key": "responsible_role",
+          "prompt": "Who looks after this program day to day?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "silica_tasks",
+          "prompt": "Which of these do your crews do?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "primary_control",
+          "prompt": "How is the dust controlled at the tool?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "cleanup_method",
+          "prompt": "How is the dust cleaned up afterwards?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "exposure_assessment",
+          "prompt": "How do you know the controls are enough?",
+          "response_type": "text",
+          "required": true
+        },
+        {
+          "question_key": "medical_surveillance",
+          "prompt": "Is medical surveillance offered to people doing this work?",
+          "response_type": "boolean",
+          "required": true
+        },
+        {
+          "question_key": "records_location",
+          "prompt": "Where is the exposure control plan kept on site?",
+          "response_type": "text",
+          "required": true
+        }
+      ]
     }
   ]
 }

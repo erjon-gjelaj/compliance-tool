@@ -73,10 +73,10 @@ export const PPE: ProgramTemplate = {
   shortName: "Personal Protective Equipment",
   requirementId: "ppe",
   release: "customer_available",
-  templateVersion: "1.0.0",
+  templateVersion: "1.1.0",
 
   matchesLabel: (label) =>
-    /^personal protective equipment (program|programme)$/i.test(label.trim()),
+    /^personal protective equipment( (program|programme))?$/i.test(label.trim()),
 
   questions: [
     {
@@ -188,7 +188,7 @@ export const PPE: ProgramTemplate = {
         blocks: [
           {
             type: "paragraph",
-            text: `The ${responsible} is responsible for maintaining this program, coordinating PPE hazard assessments, selecting suitable PPE, and arranging instruction and programme review.`,
+            text: `The ${responsible} is responsible for maintaining this program, coordinating PPE hazard assessments, selecting suitable PPE, and arranging instruction and review of this program.`,
           },
           {
             type: "paragraph",
@@ -286,11 +286,11 @@ export const PPE: ProgramTemplate = {
           },
           {
             type: "paragraph",
-            text: "The employee demonstrates understanding and the ability to use the equipment before working under the programme. Instruction is repeated when workplace changes, equipment changes, or observed use shows that the employee no longer has the necessary understanding or skill.",
+            text: "The employee demonstrates understanding and the ability to use the equipment before working under this program. Instruction is repeated when workplace changes, equipment changes, or observed use shows that the employee no longer has the necessary understanding or skill.",
           },
           {
             type: "paragraph",
-            text: "The company records the instruction it provides. This programme does not itself serve as a record that any named employee has completed instruction.",
+            text: "The company records the instruction it provides. This program is not itself a record of what any named employee has completed.",
           },
         ],
       },

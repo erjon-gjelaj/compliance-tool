@@ -6,7 +6,10 @@ import { redirect } from "next/navigation";
 import { currentWorkspace } from "@/lib/workspaces";
 import { mayPrepare } from "@/lib/programs/access";
 import { createCheckout } from "@/lib/billing/checkout";
+import { recordServiceRequest } from "@/lib/service-requests";
+import { getCompanyForEmail } from "@/lib/companies";
 import { stripeConfigured } from "@/lib/billing/stripe";
+import { PROGRAMS_PRODUCT, formatPrice } from "@/lib/billing/catalog";
 import { programById } from "@/lib/programs/registry";
 import { isOfferable } from "@/lib/programs/types";
 import {
@@ -21,6 +24,7 @@ import type {
   ProgramFormState,
   RevisionState,
   CheckoutState,
+  PreparationRequestState,
 } from "@/lib/programs/form-state";
 
 /**
@@ -257,4 +261,54 @@ export async function startCheckout(
   if (!outcome.ok) return { status: "error", error: outcome.reason };
 
   redirect(outcome.url);
+}
+
+/**
+ * Asking to pay by transfer.
+ *
+ * Records the intent and nothing else. No entitlement is granted here and
+ * none should be — a customer saying they will pay is not a payment, and the
+ * only thing that grants access is an operator confirming the money arrived.
+ *
+ * What it does buy is a thread: the request carries which program they were
+ * building, so the invoice, the confirmation and the grant all hang off one
+ * conversation instead of an email nobody can find later.
+ */
+export async function requestInvoice(
+  _previous: PreparationRequestState,
+  formData: FormData,
+): Promise<PreparationRequestState> {
+  const workspace = await currentWorkspace();
+  if (!workspace) redirect("/sign-in");
+
+  const programId = String(formData.get("program_id") ?? "");
+  const template = programById(programId);
+  const company = await getCompanyForEmail(workspace.email);
+
+  try {
+    await recordServiceRequest({
+      email: workspace.email,
+      kind: "document_preparation",
+      note: [
+        `Wants to pay by transfer for: ${PROGRAMS_PRODUCT.name} (${formatPrice(PROGRAMS_PRODUCT)}).`,
+        template ? `Was building: ${template.title}.` : null,
+        company?.name ? `Company: ${company.name}.` : null,
+        "",
+        "Confirm the payment on this request once it lands and the plan is granted automatically.",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      companyId: company?.id ?? null,
+    });
+  } catch (cause) {
+    console.error("Could not record an invoice request:", cause);
+    return {
+      status: "error",
+      error: "We couldn't record that just now. Try again, or use Help.",
+    };
+  }
+
+  revalidatePath("/dashboard/requests");
+
+  return { status: "sent" };
 }

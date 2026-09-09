@@ -6,12 +6,15 @@ import { Check, CheckCircle2, FileDown } from "lucide-react";
 
 import {
   answerProgramStep,
+  requestInvoice,
   startCheckout,
 } from "@/app/dashboard/programs/actions";
 import {
   initialCheckout,
+  initialPreparationRequest,
   initialProgramState,
   type CheckoutState,
+  type PreparationRequestState,
   type ProgramFormState,
 } from "@/lib/programs/form-state";
 import { PROGRAMS_PRODUCT, formatPrice } from "@/lib/billing/catalog";
@@ -124,11 +127,14 @@ export function ProgramForm({
   programId,
   context,
   checkoutEnabled,
+  invoiceEnabled,
 }: {
   programId: string;
   context: CompanyContext;
   /** Whether Stripe is configured, decided on the server. */
   checkoutEnabled: boolean;
+  /** Whether payment by transfer is configured, decided on the server. */
+  invoiceEnabled: boolean;
 }) {
   const template = programById(programId);
 
@@ -241,6 +247,7 @@ export function ProgramForm({
         shortName={template.shortName}
         companyName={context.companyName}
         checkoutEnabled={checkoutEnabled}
+        invoiceEnabled={invoiceEnabled}
       />
     );
   }
@@ -304,6 +311,7 @@ function LockedPanel({
   shortName,
   companyName,
   checkoutEnabled,
+  invoiceEnabled,
 }: {
   /*
    * An id and a name rather than the template. A ProgramTemplate carries
@@ -314,7 +322,10 @@ function LockedPanel({
   programId: string;
   shortName: string;
   companyName: string;
+  /** Card payment is available. */
   checkoutEnabled: boolean;
+  /** Payment by transfer is available. Independent of the card path. */
+  invoiceEnabled: boolean;
 }) {
   const [checkout, checkoutAction] = useActionState<CheckoutState, FormData>(
     startCheckout,
@@ -376,17 +387,79 @@ function LockedPanel({
             is generated as soon as you&rsquo;re back.
           </p>
         </form>
+      ) : invoiceEnabled ? (
+        <InvoicePanel programId={programId} />
       ) : (
         <div className="mt-6">
           <Link href="/dashboard/help" className="btn-primary inline-block">
             Ask us to prepare it
           </Link>
           <p className="mt-4 text-sm text-slate-wash">
-            Card payment isn&rsquo;t switched on yet, so this one goes to us
-            directly.
+            We&rsquo;ll come back to you with what it involves.
           </p>
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Paying by transfer.
+ *
+ * A real payment method rather than an apology for the absence of one. Every
+ * card processor has to verify who receives the money, which is a hurdle some
+ * operators genuinely cannot clear — but two businesses invoicing each other
+ * need no processor at all, and a contractor who already pays their suppliers
+ * by transfer will not find this strange.
+ *
+ * Nothing is granted here. Asking for an invoice is not paying one, and
+ * access follows only from an operator confirming the money arrived.
+ */
+function InvoicePanel({ programId }: { programId: string }) {
+  const [state, action] = useActionState<PreparationRequestState, FormData>(
+    requestInvoice,
+    initialPreparationRequest,
+  );
+
+  if (state.status === "sent") {
+    return (
+      <div className="mt-6 border-l-2 border-verdigris bg-galvanise p-5">
+        <CheckCircle2 aria-hidden className="h-5 w-5 text-verdigris" />
+        <p className="type-body mt-2">
+          <strong className="text-millscale">Invoice on its way.</strong> It has
+          the payment details on it. As soon as the transfer lands we switch the
+          programs on and email you &mdash; then your answers are still here and
+          the document takes a minute.
+        </p>
+        <Link
+          href="/dashboard/requests"
+          className="mt-3 inline-block text-sm font-medium text-verdigris underline underline-offset-4"
+        >
+          Follow it here
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <form action={action} className="mt-6">
+      <input type="hidden" name="program_id" value={programId} />
+
+      {state.error ? (
+        <p role="alert" className="mb-4 text-sm text-rust-flag">
+          {state.error}
+        </p>
+      ) : null}
+
+      <SubmitButton pendingLabel="Sending…" className="btn-primary">
+        Send me an invoice &mdash; {formatPrice(PROGRAMS_PRODUCT)}
+      </SubmitButton>
+
+      <p className="mt-4 text-sm text-slate-wash">
+        Pay by bank transfer. We send the details, and the programs switch on
+        as soon as it lands. Nothing is charged now and there is no card on
+        file.
+      </p>
+    </form>
   );
 }

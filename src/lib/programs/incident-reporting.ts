@@ -50,8 +50,14 @@ export const INCIDENT_REPORTING: ProgramTemplate = {
   release: "customer_available",
   templateVersion: "1.0.0",
 
+  /*
+   * The configured title uses an ampersand and no suffix; older reference data
+   * spelled it out and added "program". All of them are accepted, because a
+   * matcher that misses means the customer is never offered a document we
+   * could have written, and nothing reports that.
+   */
   matchesLabel: (label) =>
-    /^incident reporting and investigation (program|programme)$/i.test(
+    /^incident reporting ?(and|&) ?investigation( (program|programme))?$/i.test(
       label.trim(),
     ),
 
@@ -204,7 +210,7 @@ export const INCIDENT_REPORTING: ProgramTemplate = {
               "Visit or document the scene and establish the sequence of events.",
               "Interview involved employees and witnesses separately, using open questions and recording their own accounts.",
               "Review relevant equipment, materials, procedures, job planning, supervision, communications, and prior reports.",
-              "Identify immediate causes, contributing conditions, and underlying system or programme causes.",
+              "Identify immediate causes, contributing conditions, and underlying system or program causes.",
               "Develop corrective actions that address the causes found and communicate relevant lessons to affected employees.",
             ],
           },
@@ -232,7 +238,7 @@ export const INCIDENT_REPORTING: ProgramTemplate = {
         blocks: [
           {
             type: "paragraph",
-            text: `${company} performs work at customer or host-controlled sites. The ${firstContact} also follows the site's incident-notification and scene-control process and supplies the factual information requested by the authorised site contact.`,
+            text: `${company} performs work at customer or host-controlled sites. The ${firstContact} also follows the site's incident-notification and scene-control process and supplies the factual information requested by the authorized site contact.`,
           },
           {
             type: "paragraph",

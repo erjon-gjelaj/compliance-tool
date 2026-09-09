@@ -103,5 +103,5 @@ test("the programme does not claim a person's instruction is complete", () => {
 
   const text = JSON.stringify(outcome.sections);
   assert.doesNotMatch(text, /\bemployees have completed (training|instruction)\b/i);
-  assert.match(text, /does not itself serve as a record/);
+  assert.match(text, /is not itself a record/);
 });

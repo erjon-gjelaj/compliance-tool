@@ -12,7 +12,9 @@ import { SubmitButton } from "@/components/submit-button";
 import { StatusChip } from "@/components/status-chip";
 import { SERVICE_LABELS } from "@/lib/service-kinds";
 import { listAllRequests, recordEvent } from "@/lib/requests/store";
-import { notifyCertLoopReply } from "@/lib/notify";
+import { recordManualPayment } from "@/lib/billing/purchases";
+import { PROGRAMS_PRODUCT } from "@/lib/billing/catalog";
+import { notifyCertLoopReply, notifyPlanGranted } from "@/lib/notify";
 import type { EventKind } from "@/lib/requests/state";
 import { createAndSendQuote, latestQuote } from "@/lib/quotes";
 
@@ -120,6 +122,67 @@ async function sendQuote(formData: FormData) {
     expiresAt: new Date(`${expiresAt}T23:59:59Z`).toISOString(),
   });
   redirect("/internal/requests");
+}
+
+/**
+ * Confirming a payment that arrived outside any card processor.
+ *
+ * This is the whole of getting paid without Stripe. An operator looks at
+ * their bank, types what it shows, and the entitlement follows from the same
+ * ledger a card payment writes to — so a transfer and a card grant the
+ * customer exactly the same thing.
+ *
+ * The reference is required and is what makes it safe to press twice: it is
+ * unique in the ledger, so the same transfer recorded again grants nothing.
+ * Confirming payments by hand on a busy morning is precisely the workflow
+ * where that happens.
+ *
+ * Nothing here verifies that money moved. Software cannot. The row records
+ * that an operator said it did, and when.
+ */
+async function confirmPayment(formData: FormData) {
+  "use server";
+
+  if (!(await hasInternalSession())) redirect("/internal/requests");
+
+  const email = String(formData.get("email") ?? "").trim();
+  const reference = String(formData.get("reference") ?? "").trim();
+  const amount = Number(formData.get("amount_dollars"));
+
+  if (!email || !reference || !Number.isFinite(amount) || amount < 0) {
+    redirect("/internal/requests?payment=incomplete");
+  }
+
+  let outcome: "granted" | "already" | "failed";
+
+  try {
+    const result = await recordManualPayment({
+      email,
+      productId: PROGRAMS_PRODUCT.id,
+      reference,
+      amountCents: Math.round(amount * 100),
+    });
+    outcome = result.created ? "granted" : "already";
+
+    /*
+     * Only on the delivery that created the row. Telling somebody twice that
+     * their programs are ready is how a product teaches people its email is
+     * noise — and an operator re-entering a reference to check is a normal
+     * thing to do.
+     */
+    if (result.created) {
+      try {
+        await notifyPlanGranted({ email, programName: null });
+      } catch (cause) {
+        console.error("Payment recorded, but the email failed:", cause);
+      }
+    }
+  } catch (cause) {
+    console.error("Could not record a manual payment:", cause);
+    outcome = "failed";
+  }
+
+  redirect(`/internal/requests?payment=${outcome}`);
 }
 
 function Gate({ denied }: { denied: boolean }) {
@@ -252,6 +315,42 @@ export default async function InternalRequestsPage({
                   </SubmitButton>
                 </div>
               </form>
+              {/*
+                Getting paid without a card processor. The operator sees the
+                transfer in their bank and records it here; the customer's
+                plan follows automatically.
+              */}
+              <form action={confirmPayment} className="mt-4 border-t border-zinc-dust pt-4">
+                <input type="hidden" name="email" value={request.email} />
+                <p className="text-sm font-medium text-millscale">
+                  Payment received
+                </p>
+                <p className="mt-1 text-xs text-slate-wash">
+                  Grants the programs to {request.email} and emails them. The
+                  reference stops the same transfer counting twice.
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <input
+                    name="reference"
+                    required
+                    placeholder="Bank reference or check no."
+                    className="border border-zinc-dust bg-galvanise px-3 py-2 text-sm"
+                  />
+                  <input
+                    name="amount_dollars"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    defaultValue={(PROGRAMS_PRODUCT.amountCents / 100).toFixed(2)}
+                    className="border border-zinc-dust bg-galvanise px-3 py-2 text-sm"
+                  />
+                </div>
+                <SubmitButton pendingLabel="Recording…" className="btn-primary mt-3">
+                  Confirm payment and grant access
+                </SubmitButton>
+              </form>
+
               <form action={sendQuote} className="mt-4 border-t border-zinc-dust pt-4">
                 <input type="hidden" name="request_id" value={request.id} />
                 <p className="text-sm font-medium text-millscale">

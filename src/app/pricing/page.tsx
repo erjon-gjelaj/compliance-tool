@@ -8,6 +8,7 @@ import {
   FREE_INCLUDES,
   PROGRAMS_PRODUCT,
   formatPrice,
+  programCount,
 } from "@/lib/billing/catalog";
 
 export const metadata: Metadata = pageMetadata({
@@ -85,6 +86,13 @@ export default function PricingPage() {
                 <span className="type-body font-normal text-slate-wash">once</span>
               </p>
               <p className="type-body mt-3">{PROGRAMS_PRODUCT.summary}</p>
+              {/*
+                Read from the registry rather than written down, so the page
+                cannot undersell the library the day a program is added.
+              */}
+              <p className="mt-2 text-sm text-slate-wash">
+                {programCount()} programs today, and every one we add after.
+              </p>
 
               <ul className="mt-6 grid gap-2.5">
                 {PROGRAMS_PRODUCT.includes.map((item) => (

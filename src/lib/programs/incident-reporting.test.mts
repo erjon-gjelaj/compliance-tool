@@ -118,6 +118,6 @@ test("investigations focus on causes rather than blame", () => {
   if (!outcome.ok) return;
 
   const text = JSON.stringify(outcome.sections);
-  assert.match(text, /underlying system or programme causes/);
+  assert.match(text, /underlying system or program causes/);
   assert.match(text, /not to select a person to blame/);
 });
